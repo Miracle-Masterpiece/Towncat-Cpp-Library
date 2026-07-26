@@ -10,7 +10,8 @@
 #include <utility>
 #include <cassert>
 
-namespace jstd {
+namespace jstd
+{
 
     file::file() {
         _path[0] = '\0';
@@ -110,8 +111,8 @@ namespace jstd {
         return filesystem::remove(_path);
     }
 
-    bool file::rename_to(const char* new_name, std::size_t new_name_length) {
-        return filesystem::rename_to(_path, new_name, filesystem::npos(), new_name_length);
+    bool file::rename_to(const char* new_name) {
+        return filesystem::rename_to(_path, new_name);
     }
 
     bool file::can_execute() const {

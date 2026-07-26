@@ -146,14 +146,20 @@ namespace jstd
     /**
      * 
      */
-    std::size_t fs::get_parent(const char* path, char out_path[], std::size_t buf_size, std::size_t path_length) {
+    std::size_t fs::get_parent(const char* path, char out_path[], std::size_t buf_size) {
         if (buf_size == 0) return 0;
         
-        path_length = normlen(path, path_length);
+        std::size_t len = std::strlen(path);
         
         //Вычисляем максимальную длину выходной строки, с учётом 0-терминатора.
-        std::size_t max_path_size    = math::min(buf_size - 1, path_length);
+        std::size_t max_path_size    = math::min(buf_size - 1, len);
         
+        if (max_path_size == 0)
+        {
+            out_path[0] = '\0';
+            return 0;
+        }
+
         //Путь в буфер
         std::memcpy(out_path, path, max_path_size);
         
@@ -161,40 +167,48 @@ namespace jstd
         out_path[max_path_size] = '\0';
         
         //Нормализация пути, для удаления мусора (/////, ./././)
-        path_length = fs::normalize_path(out_path, path_length);
+        len = fs::normalize_path(out_path);
         
-        return get_parent_from_absolute(out_path, path_length);
+        return get_parent_from_absolute(out_path, len);
     }
 
-    bool fs::mkdirs(const char* path, std::size_t path_length)
+    bool fs::mkdirs(const char* path)
     {
-        std::size_t length = normlen(path, path_length);
+        std::size_t len = std::strlen(path);
 
-        if (length == 0)
+        if (len == 0)
             return true;
 
         std::size_t start = 0;
-        if (is_absolute(path, length))
+        if (is_absolute(path))
         {
             if (is_separator(path[0]))
             {
                 start = 1;
             }
-            else if (length >= 3 && path[1] == ':' && is_separator(path[2]))
+            else if (len >= 3 && path[1] == ':' && is_separator(path[2]))
             {
                 start = 3;
             }
         }
 
-        for (std::size_t i = start; i < length; ++i)
+
+        char part_buffer[io::constants::MAX_LENGTH_PATH];
+        for (std::size_t i = start; i < len; ++i)
         {
-            if (is_separator(path[i]) || i + 1 == length)
+            if (is_separator(path[i]) || i + 1 == len)
             {
                 std::size_t part_length = i + 1;
 
-                if (!exists(path, part_length))
+                if (part_length >= io::constants::MAX_LENGTH_PATH)
+                    throw_except<io_exception>("Path very large '%s'", path);
+                
+                std::memcpy(part_buffer, path, part_length);
+                part_buffer[part_length] = '\0';
+
+                if (!exists(part_buffer))
                 {
-                    if (!mkdir(path, part_length))
+                    if (!mkdir(part_buffer))
                         return false;
                 }
             }
@@ -203,8 +217,8 @@ namespace jstd
         return true;
     }
 
-    std::size_t filesystem::count_files_in_directory(const char* path, const file_filter& filter, std::size_t path_length) {
-        directory_iterator begin(path, path_length);
+    std::size_t filesystem::count_files_in_directory(const char* path, const file_filter& filter) {
+        directory_iterator begin(path);
         directory_iterator end;
         std::size_t count_files = 0;
         while (begin != end) {
@@ -232,28 +246,28 @@ namespace jstd
             throw_except<io_exception>(strerror(errno));
     }
 
-    bool fs::can_execute(const char* path, std::size_t path_length) {
-        return get_access(path, CAN_EXECUTE, path_length);
+    bool fs::can_execute(const char* path) {
+        return get_access(path, CAN_EXECUTE);
     }
     
-    bool filesystem::can_read(const char* path, std::size_t path_length) {
-        return get_access(path, CAN_READ, path_length);
+    bool filesystem::can_read(const char* path) {
+        return get_access(path, CAN_READ);
     }
     
-    bool filesystem::can_write(const char* path, std::size_t path_length) {
-        return get_access(path, CAN_WRITE, path_length);
+    bool filesystem::can_write(const char* path) {
+        return get_access(path, CAN_WRITE);
     }
 
-    bool filesystem::set_executable(const char* path, bool on_off, std::size_t path_length) {
-        return set_access(path, CAN_EXECUTE, on_off, path_length);
+    bool filesystem::set_executable(const char* path, bool on_off) {
+        return set_access(path, CAN_EXECUTE, on_off);
     }
 
-    bool filesystem::set_readable(const char* path, bool on_off, std::size_t path_length) {
-        return set_access(path, CAN_READ, on_off, path_length);
+    bool filesystem::set_readable(const char* path, bool on_off) {
+        return set_access(path, CAN_READ, on_off);
     }
     
-    bool filesystem::set_writable(const char* path, bool on_off, std::size_t path_length) {
-        return set_access(path, CAN_WRITE, on_off, path_length);
+    bool filesystem::set_writable(const char* path, bool on_off) {
+        return set_access(path, CAN_WRITE, on_off);
     }
 }
 
@@ -348,8 +362,8 @@ namespace jstd
         return (std::size_t) len;  
     }
 
-    bool fs::is_absolute(const char* path, std::size_t path_length) {
-        path_length = normlen(path, path_length);
+    bool fs::is_absolute(const char* path) {
+        std::size_t len = std::strlen(path);
         if (path_length < 1)
             return false;
         if (path[0] == '/' || path[0] == '\\')
@@ -357,13 +371,13 @@ namespace jstd
         return false;
     }
 
-    bool fs::exists(const char* path, std::size_t path_length){
+    bool fs::exists(const char* path){
         struct stat filestat;
 		return stat(path, &filestat) == 0;
 	}
 
-    bool fs::is_file(const char* path, std::size_t path_length){
-        if (!exists(path, path_length))
+    bool fs::is_file(const char* path){
+        if (!exists(path))
             return false;
         
         struct stat filestat;
@@ -372,8 +386,8 @@ namespace jstd
         return S_ISREG(filestat.st_mode);
     }
 
-    bool fs::is_dir(const char* path, std::size_t path_length){
-        if (!exists(path, path_length))
+    bool fs::is_dir(const char* path){
+        if (!exists(path))
             return false;
         
         struct stat filestat;
@@ -382,15 +396,15 @@ namespace jstd
         return S_ISDIR(filestat.st_mode);
     }
 
-    std::uintmax_t fs::length(const char* path, std::size_t path_length) {    
+    std::uintmax_t fs::length(const char* path) {    
         struct stat fstat;
         if (stat(path, &fstat) == 0)
             return static_cast<std::uintmax_t>(fstat.st_size);
         return 0;
     }
 
-    timepoint fs::last_modified(const char* path, std::size_t path_length) {        
-        if (!fs::exists(path, path_length))
+    timepoint fs::last_modified(const char* path) {        
+        if (!fs::exists(path))
             return 0;
 
         struct stat filestat;
@@ -401,8 +415,8 @@ namespace jstd
         return (timepoint) ( (sTime.tv_nsec / 1000000) + (sTime.tv_sec * 1000) );
     }
 
-    bool fs::set_last_modified(const char* path, timepoint ms_time, std::size_t path_length) {
-        if (!fs::exists(path, path_length))
+    bool fs::set_last_modified(const char* path, timepoint ms_time) {
+        if (!fs::exists(path))
             return 0;
         
         struct stat fstat;
@@ -418,7 +432,7 @@ namespace jstd
         return true;
     }
 
-    bool fs::create_new_file(const char* path, std::size_t path_length) {
+    bool fs::create_new_file(const char* path) {
         //       \/ это чёртово двойное двоеточие нужно, т.к иначе компилятор будет визжать, 
         //          из-за попытки вызвать filesystem::open(const char*, const char*, int, int).
         int fd = ::open(path, O_CREAT, PERMISSION_ALL);
@@ -432,14 +446,14 @@ namespace jstd
         return true;
     }
 
-    bool fs::mkdir(const char* path, std::size_t path_length) {
+    bool fs::mkdir(const char* path) {
         if (::mkdir(path, PERMISSION_ALL) != 0)
             throw_error();
         return true;
     }
 
-    bool fs::remove(const char* path, std::size_t path_length) {
-		if (!fs::exists(path, path_length))
+    bool fs::remove(const char* path) {
+		if (!fs::exists(path))
             return false;
 
         if (::remove(path) != 0)
@@ -448,13 +462,9 @@ namespace jstd
 		return true;
     }
 
-    bool fs::rename_to(
-        const char* old_path,
-        const char* new_path,
-        std::size_t old_path_length,
-        std::size_t new_path_length) {
+    bool fs::rename_to(const char* old_path, const char* new_path) {
 		
-        if (!fs::exists(old_path, old_path_length))
+        if (!fs::exists(old_path))
             return false;
         
         if (rename(old_path, new_path) != 0)
@@ -463,7 +473,7 @@ namespace jstd
         return true;
     }
 
-    bool fs::get_access(const char* path, unsigned int mode, std::size_t path_length){
+    bool fs::get_access(const char* path, unsigned int mode){
 
         int os_mode = 0;
         if (mode & fs::CAN_READ)    os_mode |= R_OK;
@@ -476,8 +486,8 @@ namespace jstd
 		return true;
 	}
 
-    bool fs::set_access(const char* path, unsigned int mode, bool on_off, std::size_t path_length) {
-        if (!fs::exists(path, path_length))
+    bool fs::set_access(const char* path, unsigned int mode, bool on_off) {
+        if (!fs::exists(path))
             return false;
         
         struct stat filestat;
@@ -496,7 +506,7 @@ namespace jstd
         return true;
     }
 
-    FILE* fs::open(const char* path, const char* mark, std::size_t path_length, std::size_t mark_length) {
+    FILE* fs::open(const char* path, const char* mark) {
         FILE* handle = fopen(path, mark);   
         if (handle == nullptr)
         {
@@ -506,7 +516,7 @@ namespace jstd
         return handle;
     }
 
-    int fs::open_fd(const char* path, int oflags, int pmode, std::size_t path_length) {
+    int fs::open_fd(const char* path, int oflags, int pmode) {
         
         int fd = ::open(path, oflags, pmode);
         if (fd == -1)
@@ -531,7 +541,7 @@ namespace jstd
 
 namespace jstd
 {
-    directory_iterator::directory_iterator(const char* path, std::size_t path_length) : _dir(nullptr), _entry(nullptr) {
+    directory_iterator::directory_iterator(const char* path) : _dir(nullptr), _entry(nullptr) {
         if (path != nullptr)
         {
             _dir = opendir(path);
@@ -631,11 +641,10 @@ namespace jstd
         return utf::u8_to_u16(str, strlen, wstr, wstrlen, WCHAR_BYTE_ORDER);
     }
 
-    static DWORD get_file_attrib(const char* path, std::size_t path_length) {
-        path_length  = normlen(path, path_length);
-    
+    static DWORD get_file_attrib(const char* path) {
+        
         wchar_t wbuf[io::constants::MAX_LENGTH_PATH];
-        char_to_wchar(path, path_length, wbuf, io::constants::MAX_LENGTH_PATH);
+        char_to_wchar(path, std::strlen(path), wbuf, io::constants::MAX_LENGTH_PATH);
         
         return GetFileAttributesW(wbuf);
     }
@@ -660,9 +669,11 @@ namespace jstd
         return wchar_to_char(wbuf, len, buf, bufsize);
     }
     
-    bool fs::is_absolute(const char* path, std::size_t path_length) {
-        path_length = normlen(path, path_length);
-        if (path_length < 3) return false;
+    bool fs::is_absolute(const char* path) {
+        std::size_t len = std::strlen(path);
+        
+        if (len < 3)
+            return false;
         
         char tom_name           = path[0];
         char double_dots        = path[1];
@@ -676,33 +687,33 @@ namespace jstd
         return true;
     }
 
-    bool fs::exists(const char* path, std::size_t path_length) {
-        DWORD attrib = get_file_attrib(path, path_length);
+    bool fs::exists(const char* path) {
+        DWORD attrib = get_file_attrib(path);
         if (attrib != INVALID_FILE_ATTRIBUTES)
             return true;
 		return false;
     }
 
-    bool fs::is_file(const char* path, std::size_t path_length) {
-        if (!exists(path, path_length))
+    bool fs::is_file(const char* path) {
+        if (!exists(path))
             return false;
-        return !is_dir(path, path_length);
+        return !is_dir(path);
     }
     
-    bool fs::is_dir(const char* path,  std::size_t path_length) {
-		if (!exists(path, path_length))
+    bool fs::is_dir(const char* path) {
+		if (!exists(path))
             return false;
-        DWORD attrib = get_file_attrib(path, path_length);
+        DWORD attrib = get_file_attrib(path);
 		if (attrib == INVALID_FILE_ATTRIBUTES)
 			throw_error();
 		return (attrib & FILE_ATTRIBUTE_DIRECTORY) != 0;
     }
 
-    std::uintmax_t fs::length(const char* path, std::size_t path_length) {
-        path_length  = normlen(path, path_length);
-
+    std::uintmax_t fs::length(const char* path) {
         wchar_t wbuf[io::constants::MAX_LENGTH_PATH];
-        char_to_wchar(path, path_length, wbuf, io::constants::MAX_LENGTH_PATH);
+        
+        std::size_t len = std::strlen(path);
+        char_to_wchar(path, len, wbuf, io::constants::MAX_LENGTH_PATH);
         
         struct _stat fstat;
         if (_wstat(wbuf, &fstat) == 0)
@@ -711,14 +722,12 @@ namespace jstd
         return 0;
     }
     
-    timepoint fs::last_modified(const char* path, std::size_t path_length) {
-        if (!fs::exists(path, path_length))
+    timepoint fs::last_modified(const char* path) {
+        if (!fs::exists(path))
             return 0;
         
-        path_length = normlen(path, path_length);
-
         wchar_t wpath[io::constants::MAX_LENGTH_PATH];
-        char_to_wchar(path, path_length, wpath, io::constants::MAX_LENGTH_PATH);
+        char_to_wchar(path, std::strlen(path), wpath, io::constants::MAX_LENGTH_PATH);
 
 		HANDLE hFile = CreateFileW(
                                     wpath,
@@ -752,11 +761,10 @@ namespace jstd
 		return (timepoint) ((time.QuadPart / 10000) - 11644473600000U);
     }
 
-    bool fs::set_last_modified(const char* path, timepoint ms_time, std::size_t path_length) {
-        path_length = normlen(path, path_length);
-
-        wchar_t wpath[io::constants::MAX_LENGTH_PATH];
-        char_to_wchar(path, path_length, wpath, io::constants::MAX_LENGTH_PATH);
+    bool fs::set_last_modified(const char* path, timepoint ms_time) {
+        
+        wchar_t wpath[io::constants::MAX_LENGTH_PATH];        
+        char_to_wchar(path, std::strlen(path), wpath, io::constants::MAX_LENGTH_PATH);
 
         HANDLE hFile = CreateFileW(
             wpath,
@@ -793,11 +801,10 @@ namespace jstd
         return result; 
     }
 
-    bool fs::create_new_file(const char* path, std::size_t path_length) {
-        path_length = normlen(path, path_length);
-
+    bool fs::create_new_file(const char* path) {
+        
         wchar_t wbuf[io::constants::MAX_LENGTH_PATH];
-        char_to_wchar(path, path_length, wbuf, io::constants::MAX_LENGTH_PATH);
+        char_to_wchar(path, std::strlen(path), wbuf, io::constants::MAX_LENGTH_PATH);
 
         HANDLE file = CreateFileW(
             wbuf,  
@@ -820,11 +827,10 @@ namespace jstd
         return true;
     }
 
-    bool fs::mkdir(const char* path, std::size_t path_length) {
-        path_length = normlen(path, path_length);
+    bool fs::mkdir(const char* path) {
 
         wchar_t wbuf[io::constants::MAX_LENGTH_PATH];
-        char_to_wchar(path, path_length, wbuf, io::constants::MAX_LENGTH_PATH);
+        char_to_wchar(path, std::strlen(path), wbuf, io::constants::MAX_LENGTH_PATH);
 
         bool created        = CreateDirectoryW(wbuf, NULL) != 0;
         bool alreadyExists  = GetLastError() == ERROR_ALREADY_EXISTS;
@@ -836,16 +842,14 @@ namespace jstd
         return false;
     }
 
-    bool fs::remove(const char* path, std::size_t path_length) {
-        if (!fs::exists(path, path_length))
+    bool fs::remove(const char* path) {
+        if (!fs::exists(path))
             return false;
 
-        path_length = normlen(path, path_length);
-
         wchar_t wbuf[io::constants::MAX_LENGTH_PATH];
-        char_to_wchar(path, path_length, wbuf, io::constants::MAX_LENGTH_PATH);
+        char_to_wchar(path, std::strlen(path), wbuf, io::constants::MAX_LENGTH_PATH);
 
-        if (fs::is_dir(path, path_length))
+        if (fs::is_dir(path))
         {
             if (!RemoveDirectoryW(wbuf))
                 throw_error();
@@ -859,23 +863,18 @@ namespace jstd
 		return true;
     }
 
-    bool fs::rename_to(
-        const char* old_path,
-        const char* new_path,
-        std::size_t old_path_length, 
-        std::size_t new_path_length) {
+    bool fs::rename_to(const char* old_path, const char* new_path) {
         
-        if (!fs::exists(old_path, old_path_length))
+        if (!fs::exists(old_path))
+        {
             return false;
-
-        old_path_length = normlen(old_path, old_path_length);
-        new_path_length = normlen(new_path, new_path_length);
-
+        }
+        
         wchar_t wbuf_old[io::constants::MAX_LENGTH_PATH];
         wchar_t wbuf_new[io::constants::MAX_LENGTH_PATH];
         
-        char_to_wchar(old_path, old_path_length, wbuf_old, io::constants::MAX_LENGTH_PATH);
-        char_to_wchar(new_path, new_path_length, wbuf_new, io::constants::MAX_LENGTH_PATH);
+        char_to_wchar(old_path, std::strlen(old_path), wbuf_old, io::constants::MAX_LENGTH_PATH);
+        char_to_wchar(new_path, std::strlen(new_path), wbuf_new, io::constants::MAX_LENGTH_PATH);
 
         if (_wrename(wbuf_old, wbuf_new) != 0)
             throw_error();
@@ -883,15 +882,14 @@ namespace jstd
         return true;
     }
     
-    bool fs::get_access(const char* path, unsigned int mode, std::size_t path_length){
+    bool fs::get_access(const char* path, unsigned int mode){
         if (!fs::exists(path))
             return false;
         
         wchar_t wbuf[io::constants::MAX_LENGTH_PATH];
         
         {
-            path_length = normlen(path, path_length);
-            char_to_wchar(path, path_length, wbuf, io::constants::MAX_LENGTH_PATH);
+            char_to_wchar(path, std::strlen(path), wbuf, io::constants::MAX_LENGTH_PATH);
         }
 
         struct _stat filestat;
@@ -905,14 +903,12 @@ namespace jstd
         return filestat.st_mode & mode;
 	}
     
-    bool fs::set_access(const char* path, unsigned int mode, bool on_off, std::size_t path_length) {
+    bool fs::set_access(const char* path, unsigned int mode, bool on_off) {
         if (!fs::exists(path))
             return false;
         
-        path_length = normlen(path, path_length);
-
         wchar_t wbuf[io::constants::MAX_LENGTH_PATH];
-        char_to_wchar(path, path_length, wbuf, io::constants::MAX_LENGTH_PATH);
+        char_to_wchar(path, std::strlen(path), wbuf, io::constants::MAX_LENGTH_PATH);
         
         struct _stat filestat;
         if (_wstat(wbuf, &filestat) != 0)
@@ -931,17 +927,14 @@ namespace jstd
         return true;
     }
 
-    FILE* fs::open(const char* path, const char* mark, std::size_t path_length, std::size_t mark_length) {
-        path_length = normlen(path, path_length);
-        mark_length = normlen(mark, mark_length);
-
+    FILE* fs::open(const char* path, const char* mark) {
         const std::size_t MARK_BUF_SIZE = 8;
 
         wchar_t wbuf_path[io::constants::MAX_LENGTH_PATH];
         wchar_t wbuf_mark[MARK_BUF_SIZE];
         
-        char_to_wchar(path, path_length, wbuf_path, io::constants::MAX_LENGTH_PATH);
-        char_to_wchar(mark, mark_length, wbuf_mark, MARK_BUF_SIZE);
+        char_to_wchar(path, std::strlen(path), wbuf_path, io::constants::MAX_LENGTH_PATH);
+        char_to_wchar(mark, std::strlen(mark), wbuf_mark, MARK_BUF_SIZE);
 
         FILE* handle = _wfopen(wbuf_path, wbuf_mark);
         
@@ -954,11 +947,10 @@ namespace jstd
         return handle;
     }
 
-    int fs::open_fd(const char* path, int oflags, int pmode, std::size_t path_length) {
-        path_length = normlen(path, path_length);
-
+    int fs::open_fd(const char* path, int oflags, int pmode) {
+    
         wchar_t wpath[io::constants::MAX_LENGTH_PATH];
-        char_to_wchar(path, path_length, wpath, io::constants::MAX_LENGTH_PATH);
+        char_to_wchar(path, std::strlen(path), wpath, io::constants::MAX_LENGTH_PATH);
 
         int fd = ::_wopen(wpath, oflags, pmode);
         if (fd == -1)
@@ -987,13 +979,11 @@ namespace jstd
         return (len == 1 && path[0] == '.') || (len == 2 && path[0] == '.' && path[1] == '.');
     }
 
-    directory_iterator::directory_iterator(const char* path, std::size_t path_length) : _dir(), _entry(), _end(path == nullptr ? true : false) {
+    directory_iterator::directory_iterator(const char* path) : _dir(), _entry(), _end(path == nullptr ? true : false) {
         if (path != nullptr) {
-            
-            path_length = normlen(path, path_length);
-            
+
             wchar_t wbuf[io::constants::MAX_LENGTH_PATH];
-            std::size_t len = char_to_wchar(path, path_length, wbuf, io::constants::MAX_LENGTH_PATH);
+            std::size_t len = char_to_wchar(path, std::strlen(path), wbuf, io::constants::MAX_LENGTH_PATH);
             
             if (len >= io::constants::MAX_LENGTH_PATH - 3)
                 throw_except<io_exception>("Path very long");

@@ -11,11 +11,12 @@ namespace tca
     class base_allocator;
 }
 
-namespace jstd {
+namespace jstd
+{
 
 class file_filter;
 
-class file{
+class file {
     
     /**
      * UTF-8 path
@@ -200,7 +201,7 @@ public:
      * @throw sequrity_exception 
      *      Eсли доступ к файлу запрещён.
      */
-    bool rename_to(const char* new_name, std::size_t new_name_length = npos());
+    bool rename_to(const char* new_name);
 
     /**
      * Может ли файл выполняться.
@@ -373,6 +374,7 @@ public:
     }
 };
 
+}
+namespace tc = jstd;
 
-};
 #endif //JSTD_CPP_LANG_IO_FILE_H

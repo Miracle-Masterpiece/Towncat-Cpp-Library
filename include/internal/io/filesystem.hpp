@@ -62,7 +62,7 @@ public:
      * 
      */
     static std::size_t
-        get_parent(const char* path, char out_path[], std::size_t buf_size, std::size_t path_length = npos());
+        get_parent(const char* path, char out_path[], std::size_t buf_size);
 
     /**
      * 
@@ -74,13 +74,13 @@ public:
      * 
      */
     static bool
-        is_absolute(const char* path, std::size_t path_length = npos());
+        is_absolute(const char* path);
 
     /**
      * 
      */
     static bool
-        exists(const char* path, std::size_t path_length = npos());
+        exists(const char* path);
     
     /**
      * 
@@ -92,122 +92,122 @@ public:
      * 
      */
     static bool
-        is_file(const char* path, std::size_t path_length = npos());
+        is_file(const char* path);
     
     /**
      * 
      */
     static bool
-        is_dir(const char* path,  std::size_t path_length = npos());
+        is_dir(const char* path);
     
     /**
      * 
      */
     static std::uintmax_t
-        length(const char* path, std::size_t path_length = npos());
+        length(const char* path);
     
     /**
      * @return seconds
      */
     static timepoint
-        last_modified(const char* path, std::size_t path_length = npos());
+        last_modified(const char* path);
     
     /**
      * 
      */
     static bool
-        set_last_modified(const char* path, timepoint seconds, std::size_t path_length = npos());
+        set_last_modified(const char* path, timepoint seconds);
     
     /**
      * 
      */
     static bool
-        create_new_file(const char* path, std::size_t path_length = npos());
+        create_new_file(const char* path);
     
     /**
      * 
      */
     static bool
-        mkdir(const char* path, std::size_t path_length = npos());
+        mkdir(const char* path);
     
     /**
      * 
      */
     static bool
-        mkdirs(const char* path, std::size_t path_length = npos());
+        mkdirs(const char* path);
 
     /**
      * 
      */
     static bool
-        remove(const char* path, std::size_t path_length = npos());
+        remove(const char* path);
     
     /**
      * 
      */
     static bool
-        rename_to(const char* old_path, const char* new_path, std::size_t old_path_length = npos(), std::size_t new_path_length = npos());
+        rename_to(const char* old_path, const char* new_path);
 
     /**
      * 
      */
     static bool
-        get_access(const char* path, unsigned int op, std::size_t path_len = npos());
+        get_access(const char* path, unsigned int op);
     
     /**
      * 
      */
     static bool
-        set_access(const char* path, unsigned int op, bool on_off, std::size_t path_len = npos());
+        set_access(const char* path, unsigned int op, bool on_off);
 
     /**
      * 
      */
     static bool
-        can_execute(const char* path, std::size_t path_length = npos());
+        can_execute(const char* path);
     
     /**
      * 
      */
     static bool
-        can_read(const char* path, std::size_t path_length = npos());    
+        can_read(const char* path);
     
     /**
      * 
      */
     static bool
-        can_write(const char* path,      std::size_t path_length = npos());
+        can_write(const char* path);
 
 
     /**
      * 
      */
     static bool
-        set_executable(const char* path, bool executable,    std::size_t path_length = npos());
+        set_executable(const char* path, bool executable);
     
     /**
      * 
      */
     static bool
-        set_readable(const char* path,   bool readable,      std::size_t path_length = npos());
+        set_readable(const char* path,   bool readable);
     
     /**
      * 
      */
     static bool
-        set_writable(const char* path,   bool writable,      std::size_t path_length = npos());
+        set_writable(const char* path,   bool writable);
 
     /**
      * 
      */
     static std::size_t
-        count_files_in_directory(const char* path, const file_filter& filter, std::size_t path_length = npos());
+        count_files_in_directory(const char* path, const file_filter& filter);
 
     /**
      * 
      */
     static FILE*
-        open(const char* path, const char* mark, std::size_t path_length = npos(), std::size_t mark_length = npos());
+        open(const char* path, const char* mark);
     
     /**
      * 
@@ -225,7 +225,7 @@ public:
      * 
      */
     static int
-        open_fd(const char* path, int oflags, int pmode, std::size_t path_length = npos());
+        open_fd(const char* path, int oflags, int pmode);
 
     /**
      * 
@@ -285,7 +285,7 @@ class directory_iterator {
 public:
     // Открывает папку и начинает её перебирать.
     // Если path не указан, то создаётся итератор, как бы указывающий на конец.
-    directory_iterator(const char* path = nullptr, std::size_t path_length = filesystem::npos());
+    directory_iterator(const char* path = nullptr);
 
     // Перемещает другой directory_iterator.
     directory_iterator(directory_iterator&& other);

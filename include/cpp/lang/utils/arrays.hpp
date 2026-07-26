@@ -138,7 +138,7 @@ namespace jstd {
         );
 #ifdef JSTD_TRIVIAL_COPY_CHECK
         if (std::is_trivially_copyable<T>::value) {
-            std::memcpy((void*) dst, (void*) src, sizeof(T) * length);
+            std::memcpy((void*) dst, (const void*) src, sizeof(T) * length);
             return;
         }
 #endif//JSTD_TRIVIAL_COPY_CHECK
