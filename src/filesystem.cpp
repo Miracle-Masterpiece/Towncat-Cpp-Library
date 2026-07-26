@@ -364,7 +364,7 @@ namespace jstd
 
     bool fs::is_absolute(const char* path) {
         std::size_t len = std::strlen(path);
-        if (path_length < 1)
+        if (len < 1)
             return false;
         if (path[0] == '/' || path[0] == '\\')
             return true;
