@@ -34,6 +34,7 @@ namespace jstd {
     
     file::file(file&& f) {
         std::memcpy(_path, f._path, sizeof(_path));
+      	f._path[0] = '\0';
     }
     
     file& file::operator= (const file& f) {
@@ -44,7 +45,10 @@ namespace jstd {
     
     file& file::operator= (file&& f) {
         if (&f != this)
+	{
             std::memcpy(_path, f._path, sizeof(_path));
+	    f._path[0] = '\0';
+	}
         return *this;
     }
     

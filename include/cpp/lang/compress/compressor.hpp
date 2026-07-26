@@ -1,7 +1,7 @@
 #ifndef AAC7C627_E31E_4105_BCFC_83270DB4A54B
 #define AAC7C627_E31E_4105_BCFC_83270DB4A54B
 
-#include <cstdint>
+#include <cstddef>
 
 /**
  * Абстрактный базовый класс для потокового сжатия данных.

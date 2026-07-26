@@ -2,6 +2,7 @@
 #define _ALLOCATORS_BASE_ALLOCATOR_H
 
 #include <cctype>
+#include <cstddef>
 
 namespace tca
 {

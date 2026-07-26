@@ -668,11 +668,12 @@ namespace jstd
         char double_dots        = path[1];
         char slash              = path[2];
         
-        if ((tom_name >= 'a' && tom_name <= 'z'))   return true;
-        if ((tom_name >= 'A' && tom_name <= 'Z'))   return true;
-        if ((slash == '\\' || slash == '/'))        return true;
+        if ((tom_name < 'a' || tom_name > 'z')) return false;
+        if ((tom_name < 'A' || tom_name > 'Z')) return false;
+        if (double_dots != ':')                 return false;
+        if (!fs::is_separator(slash))           return false;
         
-        return false;
+        return true;
     }
 
     bool fs::exists(const char* path, std::size_t path_length) {

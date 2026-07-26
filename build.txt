@@ -1,0 +1,41 @@
+
+OS   		= WINDOWS
+ARCH 		= X86-64
+BUILD_TYPE 	= SHARED
+BUILD_ARCH 	= ${TARGET_${OS}_${ARCH}}
+
+# Windows
+TARGET_WINDOWS_ARM7 	 = --target=armv7-w64-windows-gnu
+TARGET_WINDOWS_AARCH64   = --target=aarch64-w64-windows-gnu
+TARGET_WINDOWS_X86-64  	 = --target=x86_64-w64-windows-gnu
+TARGET_WINDOWS_X86  	 = --target=i686-w64-windows-gnu
+WINDOWS_LIB 		 = -lws2_32
+WINDOWS_SHARED		 = -fPIC -shared
+WINDOWS_STATIC_EXTENSION = lib
+WINDOWS_SHARED_EXTENSION = dll
+
+
+
+BUILD_EXTENSION = ${${OS}_${BUILD_TYPE}_EXTENSION}
+
+# Paths
+SOURCE_DIR = src
+OBJECT_DIR = bin/${OS}_${ARCH}
+OUTPUT_DIR = build
+OUTPUT     = libtc${ARCH}.${BUILD_EXTENSION}
+
+# Compiler settings
+compiler = clang++ ${BUILD_ARCH}
+linker   = clang++ ${BUILD_ARCH} ${${OS}_${BUILD_TYPE}}
+include  = -I"include"
+standard =
+warning  = -Wall -pedantic -Wextra -Wno-unused-template -Wno-unused-parameter
+lib      = ${${OS}_LIB}
+define   = 
+
+MAKE_STATIC = ar rcs ${__OUTPUT__} ${__OBJECTS__}
+MAKE_SHARED = ${linker} ${__OBJECTS__} -o ${__OUTPUT__} ${lib}
+
+# System
+COMPILE= ${compiler} -c ${__SOURCE__} -o ${__OBJECT__} ${include} ${standard} ${define} ${warning} -MMD
+LINK   = ${MAKE_${BUILD_TYPE}}

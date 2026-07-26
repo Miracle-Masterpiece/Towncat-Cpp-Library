@@ -2,10 +2,10 @@
 #define ALLOCATORS_HELPERS_H
 
 #include <cctype>
-#include <cstdint>
+#include <cstddef>
 
 #ifndef NDEBUG
-#include <cassert>
+# include <cassert>
 #endif
 
 namespace tca

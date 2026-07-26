@@ -57,7 +57,7 @@ namespace jstd
 
     tc::string date::to_string(tca::allocator* alloc) const {
         char buf[128];    
-        std::size_t len = strftime(buf, sizeof(buf), "%d.%m.%Y %H:%M:%S", &_localTime);
+        strftime(buf, sizeof(buf), "%d.%m.%Y %H:%M:%S", &_localTime);
         return tc::string(buf, alloc);
     }
 

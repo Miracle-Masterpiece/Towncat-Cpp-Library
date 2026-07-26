@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <utility>
+#include <cstddef>
 #include <cpp/lang/utils/traits.hpp>
 #include <cpp/lang/stacktrace/stacktrace.hpp>
 

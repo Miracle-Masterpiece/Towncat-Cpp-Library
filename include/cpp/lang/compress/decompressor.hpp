@@ -1,7 +1,7 @@
 #ifndef A6CDFE96_6B88_495C_92FC_56F238D141CA
 #define A6CDFE96_6B88_495C_92FC_56F238D141CA
 
-#include <cstdint>
+#include <cstddef>
 
 namespace jstd
 {

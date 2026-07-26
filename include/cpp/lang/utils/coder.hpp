@@ -23,10 +23,10 @@ namespace utf8
     template<typename U8>
     bool is_header(const U8& ch) {
         unsigned char chr = (unsigned char) (ch & 0xFF);
-        if (ch < 0x7f)           return true;
-        if ((ch & 0xE0) == 0xC0) return true;
-        if ((ch & 0xF0) == 0xE0) return true;
-        if ((ch & 0xF8) == 0xF0) return true;
+        if ( chr < 0x7f)          return true;
+        if ((chr & 0xE0) == 0xC0) return true;
+        if ((chr & 0xF0) == 0xE0) return true;
+        if ((chr & 0xF8) == 0xF0) return true;
         return false;
     }
 

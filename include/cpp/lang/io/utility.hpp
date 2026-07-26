@@ -2,7 +2,7 @@
 #define JSTD_CPP_LANG_IO_IOUTILITY_H
 
 #include <cpp/lang/io/constants.hpp>
-#include <cstdint>
+#include <cstddef>
 
 namespace jstd
 {

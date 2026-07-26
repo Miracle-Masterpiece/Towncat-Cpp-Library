@@ -2,6 +2,7 @@
 #define _JSTD_CPP_LANG_IO_OUTPUTSTREAM_H_
 
 #include <cstdint>
+#include <cstddef>
 
 namespace jstd
 {
