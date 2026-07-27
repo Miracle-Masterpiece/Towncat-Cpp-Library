@@ -247,7 +247,7 @@ namespace jstd
             }
 
             {
-                const DWORD PAGE_SIZE                   = internal::get_page_size();
+                const std::size_t PAGE_SIZE             = internal::get_page_size();
                 const std::size_t offset_for_view       = offset & ~PAGE_SIZE;
                 const std::size_t page_offset           = offset - offset_for_view;
                 

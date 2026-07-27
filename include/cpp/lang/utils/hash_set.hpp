@@ -29,7 +29,7 @@ class hash_set {
     /**
      * 
      */
-    static const int32_t INIT_CAPACITY  = 16;
+    static const std::size_t INIT_CAPACITY  = 16;
     
     /**
      * 

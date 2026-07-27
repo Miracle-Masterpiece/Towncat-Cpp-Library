@@ -11,11 +11,16 @@ namespace jstd {
     }
     
     std::size_t cstr::length() const {
-        if (m_length == ~(std::size_t) 0) {
+        if (m_length == ~(std::size_t) 0)
+        {
             if (m_cstr != nullptr)
+            {
                 m_length = std::strlen(m_cstr);
+            }
             else
+            {
                 m_length = 0;
+            }
         }
         return m_length;
     }

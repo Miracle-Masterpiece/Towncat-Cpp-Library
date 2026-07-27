@@ -1,7 +1,7 @@
 #include <internal/bsd_socket.hpp>
 #include <iostream>
 #include <cpp/lang/types.hpp>
-#include <cpp/lang/utils/traits.hpp>
+#include <cpp/lang/utils/utils.hpp>
 
 #if defined(__WIN32)
 #define _____WIN_CODE____(___code) ___code 
@@ -26,18 +26,18 @@ namespace bsd_socket
     void ms_to_timeval(struct timeval* tv, timepoint millisec) {
         // Меня настолько взбесили предупреждения, 
         // что я решил сделать функцию, которая сама будет присваивать и делать static_cast
-        assign_static_cast( tv->tv_sec, millisec / 1000 );
-        assign_static_cast( tv->tv_usec, (millisec % 1000) * 1000 );
+        utils::assign_static_cast( tv->tv_sec, millisec / 1000 );
+        utils::assign_static_cast( tv->tv_usec, (millisec % 1000) * 1000 );
 
     }   
 
     timepoint timeval_to_ms(struct timeval* tv) {
         
         timepoint s_sec;
-        assign_static_cast(s_sec, tv->tv_sec * 1000);
+        utils::assign_static_cast(s_sec, tv->tv_sec * 1000);
 
         timepoint s_usec;
-        assign_static_cast(s_usec, tv->tv_usec / 1000);
+        utils::assign_static_cast(s_usec, tv->tv_usec / 1000);
 
         return s_sec + s_usec;
     }
@@ -574,8 +574,8 @@ namespace bsd_socket
     void set_linger(SOCK_TYPE sock, const socket_option& value) {
         struct linger l;
         
-        assign_static_cast( l.l_linger, value.linger.sec_time );
-        assign_static_cast( l.l_onoff,  value.linger.on_off );
+        utils::assign_static_cast( l.l_linger, value.linger.sec_time );
+        utils::assign_static_cast( l.l_onoff,  value.linger.on_off );
         
         if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (const char*) &l, sizeof(l)) != 0)
             throw_except<socket_exception>("set_linger fail: %s", socket_error_string());
@@ -586,8 +586,8 @@ namespace bsd_socket
         socklen_t len = sizeof(l);
         if (getsockopt(sock, SOL_SOCKET, SO_LINGER, (char*) &l, &len) != 0)
             throw_except<socket_exception>("set_linger fail: %s", socket_error_string());
-        assign_static_cast(value.linger.on_off,     l.l_onoff);
-        assign_static_cast(value.linger.sec_time,   l.l_linger);
+        utils::assign_static_cast(value.linger.on_off,     l.l_onoff);
+        utils::assign_static_cast(value.linger.sec_time,   l.l_linger);
     }
 
     void set_keep_alive(SOCK_TYPE sock, const socket_option& value) {

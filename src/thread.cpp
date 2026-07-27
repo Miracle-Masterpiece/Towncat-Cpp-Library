@@ -126,7 +126,7 @@ namespace jstd {
     }
 
     void thread::set_name(const char* new_name) {
-        ncopy(new_name, m_name, sizeof(m_name));
+        ncopy(m_name, new_name, sizeof(m_name));
     }
     
     void thread::join() {

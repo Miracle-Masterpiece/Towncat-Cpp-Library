@@ -131,10 +131,8 @@ namespace jstd {
     template<typename T>
     void placement_copy(T* dst, const T* src, std::size_t length) {
         JSTD_DEBUG_CODE(
-            if (dst == nullptr)
-                throw_except<null_pointer_exception>("dst is null");
-            if (src == nullptr)
-                throw_except<null_pointer_exception>("src is null");
+            if (dst == nullptr) throw_except<null_pointer_exception>("dst is null");
+            if (src == nullptr) throw_except<null_pointer_exception>("src is null");
         );
 #ifdef JSTD_TRIVIAL_COPY_CHECK
         if (std::is_trivially_copyable<T>::value) {
@@ -202,10 +200,8 @@ namespace jstd {
     template<typename T>
     void copy(T* dst, const T* src, std::size_t length) {
         JSTD_DEBUG_CODE(
-            if (dst == nullptr)
-                throw_except<null_pointer_exception>("dst is null");
-            if (src == nullptr)
-                throw_except<null_pointer_exception>("src is null");
+            if (dst == nullptr) throw_except<null_pointer_exception>("dst is null");
+            if (src == nullptr) throw_except<null_pointer_exception>("src is null");
         );
 #ifdef JSTD_TRIVIAL_COPY_CHECK
         if (std::is_trivially_copyable<T>::value) {
@@ -330,24 +326,30 @@ namespace jstd {
      * @note Если dst_max == 0, функция немедленно возвращает 0, не выполняя копирования.
      */
     template<typename T>
-    int32_t ncopy(const T* src, T* dst, int32_t dst_max) {
-#ifndef NDEBUG
-        check_non_null(src, "src must be != null");
-        check_non_null(dst, "dst must be != null");
-        if (dst_max < 0)
-            throw_except<illegal_argument_exception>("max_size must be >= 0");
-        if (dst_max == 0)
-            return 0;
-#endif//NDEBUG
-        int32_t i;
-        for (i = 0; i < dst_max; ++i) {
-            if (i == dst_max - 1) {
+    std::size_t ncopy(T* dst, const T* src, std::size_t dst_max) {
+        JSTD_DEBUG_CODE(
+            check_non_null(src, "src must be != null");
+            check_non_null(dst, "dst must be != null");
+            if (dst_max == 0)
+                return 0;
+        )
+        
+        std::size_t i;
+        for (i = 0; i < dst_max; ++i)
+        {
+            
+            if (i == dst_max - 1)
+            {
                 dst[i] = 0;
                 return i;
             }
+            
             dst[i] = src[i];
+            
             if (src[i] == 0)
+            {
                 break;
+            }
         }
 
         return i;

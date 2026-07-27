@@ -3,11 +3,12 @@
 
 #include <cpp/lang/utils/cond_compile.hpp>
 #include <cpp/lang/utils/comparator.hpp>
-#include <cpp/lang/utils/traits.hpp>
 #include <cpp/lang/system.hpp>
+#include <cpp/lang/traits/primitive_traits.hpp>
 #include <cstdint>
 #include <utility>
 #include <cstring>
+#include <climits>
 
 namespace jstd
 {
@@ -21,154 +22,64 @@ void throw_except(const char* format, ...);
 namespace utils
 {
 
+namespace internal
+{
     /**
-     * Меняет порядок байт.
-     * 
+     * Recursive byte-swap for integer types.
+     *
+     * Reverses the byte order of value x of type T with size SZ bytes.
+     *
+     * @tparam T
+     *      Unsigned integer type.
+     *
+     * @tparam SZ
+     *      Size of T in bytes (must be a power of two).
+     *
      * @param x
-     *      Значение, у которого поменять порядок байт.
-     * 
+     *      Value to byte-swap.
+     *
      * @return
-     *      Значение с изменённым порядком байт.
+     *      Byte-swapped value.
+     *
+     * @note
+     *      Recursively swaps halves: for SZ > 1, the lower and upper halves
+     *      are swapped after each is individually byte-reversed.
+     */
+    template<typename T, std::size_t SZ>
+    T bswap(T x) {
+        if (SZ == 1)
+        {
+            return x & ~ ((unsigned char) 0);
+        }
+        
+        const std::size_t HSZ   = SZ / 2;
+        const std::size_t HBS   = CHAR_BIT * HSZ;
+        const std::size_t HMASK = (T(1) << HBS) - T(1);
+        
+        return (bswap<T, HSZ>(x & HMASK) << HBS) | bswap<T, HSZ>(x >> HBS);
+    }
+}
+    
+    /**
+     * Byte-swaps an integer value.
      * 
-     * @code 
-     * {
-     *      int32_t x = 0x11223344;
-     *      int swapped_x = bswap(x);
-     *      //x == 0x44332211
-     * }
-     * 
-     * @since 1.1
-     * 
-     * @IntrinsicCandidate
+     * @tparam T
+     *      The integer type of the value to swap.
+     *
+     * @param x
+     *      The value to byte-swap.
+     *
+     * @return
+     *      Byte-swapped value.
+     *
+     * @note
+     *      The input is cast to unsigned to ensure defined behavior during shifts.
+     *      The result is cast back to T, preserving the binary representation.
      */
     template<typename T>
     T bswap(T x) {
-        unsigned char* v = reinterpret_cast<unsigned char*>(&x);
-        const std::size_t T_SIZE = sizeof(x);
-        const std::size_t T_HALF_SIZE = T_SIZE / 2;
-        unsigned char tmp;
-        for (std::size_t i = 0; i < T_HALF_SIZE; ++i) {
-            tmp     = v[i];
-            v[i]    = v[T_SIZE - i - 1];
-            v[T_SIZE - i - 1] = tmp;
-        }
-        return x;
-    }
-
-    /**
-     * Оптимизированная версия функции для изменения порядка байт в 16 битной переменной.
-     * @see template<typename T> bswap(T x);
-     * @since 1.1
-     */
-    template<>
-    inline uint16_t bswap<uint16_t>(uint16_t x) {
-        return (uint16_t)
-            (
-                (((x & 0xff00) >> 8)) |
-                (((x & 0x00ff) << 8))
-            ); 
-    }
-
-    /**
-     * Оптимизированная версия функции для изменения порядка байт в 32 битной переменной.
-     * @see template<typename T> bswap(T x);
-     * @since 1.1
-     */
-    template<>
-    inline uint32_t bswap<uint32_t>(uint32_t x) {
-        return (uint32_t)
-            (
-                bswap<uint16_t>((uint16_t) ((x >> 16) & 0xffff)) | 
-                bswap<uint16_t>((uint16_t) (x & 0xffff)) << 16
-            );
-    }
-
-    /**
-     * Оптимизированная версия функции для изменения порядка байт в 64 битной переменной.
-     * @see template<typename T> bswap(T x);
-     * @since 1.1
-     */
-    template<>
-    inline uint64_t bswap<uint64_t>(uint64_t x) {
-        return (uint64_t)
-            (
-                (uint64_t) bswap<uint32_t>((uint32_t) ((x >> 32) & 0xffffffff)) | 
-                (uint64_t) bswap<uint32_t>((uint32_t) (x & 0xffffffff)) << 32
-            );
-    }
-
-    /**
-     * Оптимизированная версия функции для изменения порядка байт в 16 битной знаковой переменной.
-     * @see template<typename T> bswap(T x);
-     * @since 1.1
-     */
-    template<>
-    inline int16_t bswap<int16_t>(int16_t x) {
-        return (int16_t)
-            (
-                (((x & 0xff00) >> 8)) |
-                (((x & 0x00ff) << 8))
-            ); 
-    }
-
-    /**
-     * Оптимизированная версия функции для изменения порядка байт в 32 битной знаковой переменной.
-     * @see template<typename T> bswap(T x);
-     * @since 1.1
-     */
-    template<>
-    inline int32_t bswap<int32_t>(int32_t x) {
-        return (int32_t)
-            (
-                bswap<uint16_t>((uint16_t) ((x >> 16) & 0xffff)) | 
-                bswap<uint16_t>((uint16_t) (x & 0xffff)) << 16
-            );
-    }
-
-    /**
-     * Оптимизированная версия функции для изменения порядка байт в 64 битной знаковой переменной.
-     * @see template<typename T> bswap(T x);
-     * @since 1.1
-     */
-    template<>
-    inline int64_t bswap<int64_t>(int64_t x) {
-        return (int64_t)
-            (
-                (int64_t) bswap<int32_t>((int32_t) ((x >> 32) & 0xffffffff)) | 
-                (int64_t) bswap<int32_t>((int32_t) ((x >> 0)  & 0xffffffff)) << 32
-            );
-    }
-
-    /**
-     * Оптимизированная версия функции для изменения порядка байт float переменной.
-     * @see template<typename T> bswap(T x);
-     * @since 1.1
-     */
-    template<>
-    inline float bswap(float x) {
-    #if __SIZEOF_FLOAT__ == 4
-        uint32_t* v = reinterpret_cast<uint32_t*>(&x);
-        *v = bswap<uint32_t>(*v);
-        return *reinterpret_cast<float*>(v);
-    #else
-    #   error float not 32-bit
-    #endif
-    }
-
-    /**
-     * Оптимизированная версия функции для изменения порядка байт double переменной.
-     * @see template<typename T> bswap(T x);
-     * @since 1.1
-     */
-    template<>
-    inline double bswap(double x) {
-    #if __SIZEOF_DOUBLE__ == 8
-        uint64_t* v = reinterpret_cast<uint64_t*>(&x);
-        *v = bswap<uint64_t>(*v);
-        return *reinterpret_cast<double*>(v);
-    #else
-    #   error double not 64-bit
-    #endif
+        typedef typename make_unsigned<T>::type U;
+        return static_cast<T>(internal::bswap<T, sizeof(U)>(static_cast<U>(x)));
     }
 
     /**
@@ -205,6 +116,29 @@ namespace utils
             dest    += sizeof(T);
             source  += sizeof(T);
         }
+    }
+
+    /**
+     * Assigns a source value to a target using static_cast with perfect forwarding.
+     *
+     * @tparam TARGET_T
+     *      The target type.
+     *
+     * @tparam SOURCE_T
+     *      The source type (deduced, supports perfect forwarding).
+     *
+     * @param t
+     *      Target reference to assign to.
+     *
+     * @param s
+     *      Source value to cast and assign (forwarded as rvalue reference).
+     *
+     * @note
+     *      Equivalent to: t = static_cast<TARGET_T>(std::forward<SOURCE_T>(s));
+     */
+    template<typename TARGET_T, typename SOURCE_T>
+    static void assign_static_cast(TARGET_T& t, SOURCE_T&& s) {
+        t = static_cast<TARGET_T>(std::forward<SOURCE_T>(s));
     }
 
     /**
@@ -269,9 +203,9 @@ namespace utils
      */
     template<typename T>
     void write_with_order(void* ptr, T v, byte_order out_order) {
-        static_assert(jstd::is_primitive<T>::value, "T must be primitive");
-        if (out_order != jstd::system::native_byte_order())
-            v = jstd::utils::bswap<T>(v);
+        static_assert(is_primitive<T>::value, "T must be primitive");
+        if (out_order != system::native_byte_order())
+            v = bswap<T>(v);
         std::memcpy(ptr, &v, sizeof(T));
     }
 
@@ -336,7 +270,8 @@ namespace internal
         std::size_t j = right;
         T& pivot = array[(left + right) / 2];
 
-        while (i <= j) {
+        while (i <= j)
+        {
             while (compare(array[i], pivot) < 0) ++i;
             while (compare(array[j], pivot) > 0) --j;
 

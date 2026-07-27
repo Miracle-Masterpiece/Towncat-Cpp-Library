@@ -1,41 +1,94 @@
 
 OS   		= WINDOWS
-ARCH 		= X86-64
-BUILD_TYPE 	= SHARED
-BUILD_ARCH 	= ${TARGET_${OS}_${ARCH}}
+TARGET_ARCH = X86-64
+TARGET_TYPE = SHARED
+OUTPUT_NAME	= tclib-${TARGET_ARCH}
 
 # Windows
-TARGET_WINDOWS_ARM7 	 = --target=armv7-w64-windows-gnu
-TARGET_WINDOWS_AARCH64   = --target=aarch64-w64-windows-gnu
-TARGET_WINDOWS_X86-64  	 = --target=x86_64-w64-windows-gnu
-TARGET_WINDOWS_X86  	 = --target=i686-w64-windows-gnu
-WINDOWS_LIB 		 = -lws2_32
-WINDOWS_SHARED		 = -fPIC -shared
-WINDOWS_STATIC_EXTENSION = lib
-WINDOWS_SHARED_EXTENSION = dll
+CXX_ARM7_WINDOWS    = armv7-w64-mingw32-g++
+CXX_AARCH64_WINDOWS	= aarch64-w64-mingw32-g++
+CXX_X86-64_WINDOWS	= x86_64-w64-mingw32-g++
+CXX_X86_WINDOWS	    = i686-w64-mingw32-g++
+
+# Windows compiler flags
+CXX_WINDOWS_STATIC_FLAGS =
+CXX_WINDOWS_SHARED_FLAGS =
+
+# Windows linker flags
+LDD_WINDOWS_STATIC_FLAGS =
+LDD_WINDOWS_SHARED_FLAGS = -shared -fPIC
+
+# Windows Librarires
+LDD_WINDOWS_LIB	= -lws2_32
+
+# Output windows
+WINDOWS_SHARED_OUTPUT = ${OUTPUT_NAME}.dll
+WINDOWS_STATIC_OUTPUT = ${OUTPUT_NAME}.lib
 
 
 
-BUILD_EXTENSION = ${${OS}_${BUILD_TYPE}_EXTENSION}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Linux
+CXX_ARM7_LINUX		= clang++ --target=arm-linux-gnueabihf
+CXX_AARCH64_LINUX	= clang++ --target=aarch64-linux-gnu
+CXX_X86-64_LINUX	= clang++ --target=x86_64-linux-gnu
+CXX_X86_LINUX		= clang++ --target=i686-linux-gnu
+
+# Linux compiler flags
+CXX_LINUX_STATIC_FLAGS =
+CXX_LINUX_SHARED_FLAGS = -shared -fPIC
+
+# Linux linker flags
+LDD_LINUX_STATIC_FLAGS =
+LDD_LINUX_SHARED_FLAGS = -shared -fPIC
+
+# Linux Librarires
+LDD_LINUX_LIB	=
+
+# Output linux
+LINUX_SHARED_OUTPUT = ${OUTPUT_NAME}.so
+LINUX_STATIC_OUTPUT = ${OUTPUT_NAME}.a
+
+
+
+# Crossplatform
+OUTPUT      = ${${OS}_${TARGET_TYPE}_OUTPUT}
+CXX_FLAGS   = ${CXX_${OS}_${TARGET_TYPE}_FLAGS}
+LDD_FLAGS   = ${LDD_${OS}_${TARGET_TYPE}_FLAGS}
+LDD_LIB     = ${LDD_${OS}_LIB}
+
 
 # Paths
 SOURCE_DIR = src
-OBJECT_DIR = bin/${OS}_${ARCH}
+OBJECT_DIR = bin/${OS}_${TARGET_ARCH}
 OUTPUT_DIR = build
-OUTPUT     = libtc${ARCH}.${BUILD_EXTENSION}
+
 
 # Compiler settings
-compiler = clang++ ${BUILD_ARCH}
-linker   = clang++ ${BUILD_ARCH} ${${OS}_${BUILD_TYPE}}
-include  = -I"include"
-standard =
-warning  = -Wall -pedantic -Wextra -Wno-unused-template -Wno-unused-parameter
-lib      = ${${OS}_LIB}
-define   = 
+COMPILER = ${CXX_${TARGET_ARCH}_${OS}} ${CXX_FLAGS}
+LINKER   = ${CXX_${TARGET_ARCH}_${OS}} ${LDD_FLAGS}
+STANDARD = 
+DEFINE   =
+INCLUDE  = -I"include"
+WARNING  = -Wall -pedantic -Wextra -Wsign-promo -Wfloat-equal -Wconversion -Wno-unused-parameter -Wno-unused-value -Wnon-virtual-dtor -Wno-unused-function
 
 MAKE_STATIC = ar rcs ${__OUTPUT__} ${__OBJECTS__}
-MAKE_SHARED = ${linker} ${__OBJECTS__} -o ${__OUTPUT__} ${lib}
+MAKE_SHARED = ${LINKER} ${__OBJECTS__} -o ${__OUTPUT__} ${LDD_LIB}
 
 # System
-COMPILE= ${compiler} -c ${__SOURCE__} -o ${__OBJECT__} ${include} ${standard} ${define} ${warning} -MMD
-LINK   = ${MAKE_${BUILD_TYPE}}
+COMPILE= ${COMPILER} -c ${__SOURCE__} -o ${__OBJECT__} ${INCLUDE} ${STANDARD} ${DEFINE} ${WARNING} -MMD
+LINK   = ${MAKE_${TARGET_TYPE}}

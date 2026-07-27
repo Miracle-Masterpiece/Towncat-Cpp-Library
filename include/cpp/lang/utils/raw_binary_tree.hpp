@@ -399,7 +399,7 @@ public:
         if (n == nullptr)
             return in;
         
-        const int32_t cmp = m_key_comparator(in->key, n->key);
+        const int cmp = m_key_comparator(in->key, n->key);
         if (cmp >= 0)
         {
             n->right = insert_entry0(n->right, in);
@@ -446,7 +446,7 @@ public:
     typename raw_binary_tree<K, COMPARATOR_T, NODE_T>::node* raw_binary_tree<K, COMPARATOR_T, NODE_T>::remove_entry0(node* n, const K& key, node** deleted) {
         if (n == nullptr)
             return nullptr;
-        int32_t cmp = m_key_comparator(key, n->key);
+        int cmp = m_key_comparator(key, n->key);
         if (cmp > 0)
         {
             n->right = remove_entry0(n->right, key, deleted);
@@ -489,7 +489,7 @@ public:
     typename raw_binary_tree<K, COMPARATOR_T, NODE_T>::node* raw_binary_tree<K, COMPARATOR_T, NODE_T>::remove_entry0(node* n, node* entry, node** deleted) {
       if (n == nullptr)
             return nullptr;
-        int32_t cmp = m_key_comparator(entry->key, n->key);
+        int cmp = m_key_comparator(entry->key, n->key);
         if (cmp > 0)
         {
             n->right = remove_entry0(n->right, entry, deleted);
@@ -572,7 +572,7 @@ public:
         const COMPARATOR_T& compare = m_key_comparator;
         while (root)
         {
-            int32_t cmp = compare(key, root->key);
+            int cmp = compare(key, root->key);
             if (cmp == 0)
                 return root;
             if (cmp < 0)
@@ -595,7 +595,7 @@ public:
         const COMPARATOR_T& compare = m_key_comparator;
         while (root)
         {
-            int32_t cmp = compare(key, root->key);
+            int cmp = compare(key, root->key);
             if (cmp == 0)
                 return root;
             if (cmp > 0)

@@ -417,26 +417,7 @@ public:
      */
     template<typename COMPARATOR_T = compare_to<E>>
     std::size_t binary_search(const E& searched) const;
-
-    /**
-     * Минимальный размер буфера для хранения строкового представления объекта.
-     */
-    static const int32_t TO_STRING_MIN_BUFFER_SIZE = 64;
     
-    /**
-     * Сохраняет строковое представление объекта.
-     * 
-     * @param buf
-     *      Буфер, куда будет сохранено строковое представление объекта.
-     * 
-     * @param bufsize
-     *      Размер буфера, для сохранения строки.
-     * 
-     * @return
-     *      Количество записанных символов. (Не включая нуль-терминатор)
-     */
-    int to_string(char buf[], std::size_t bufsize) const;
-
     template<typename DATA_TYPE, typename VALUE_TYPE>
     class iterator {
         DATA_TYPE*  m_data;
@@ -797,11 +778,6 @@ public:
     template<typename E>
     array_list<E>::~array_list() {
         cleanup();
-    }
-
-    template<typename E>
-    int array_list<E>::to_string(char buf[], std::size_t bufsize) const {
-        return std::snprintf(buf, bufsize, "[data=0x%llx, capacity=%lli, size=%lli]", (long long) m_data, (long long) m_capacity, (long long) m_size);
     }
 
     /**

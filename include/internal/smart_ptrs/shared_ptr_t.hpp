@@ -4,7 +4,6 @@
 #include <allocators/Helpers.hpp>
 #include <allocators/allocator.hpp>
 #include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/utils/traits.hpp>
 #include <cstdint>
 #include <utility>
 #include <cstdio>
@@ -12,6 +11,9 @@
 #include <cassert>
 #include <cpp/lang/utils/arrays.hpp>
 #include <typeinfo>
+#include <cpp/lang/traits/cv_traits.hpp>
+#include <cpp/lang/traits/relatoship_traits.hpp>
+#include <cpp/lang/traits/SFINAE.hpp>
 
 namespace jstd 
 {

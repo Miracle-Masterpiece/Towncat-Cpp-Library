@@ -1,5 +1,6 @@
 #include <internal/bsd_socket_class.hpp>
 #include <internal/bsd_socket.hpp>
+#include <cpp/lang/utils/utils.hpp>
 #include <iostream>
 
 namespace jstd 
@@ -38,9 +39,9 @@ namespace bsd_socket
             return;
         try {
             bsd_socket::close((SOCK_TYPE) handle);
-            assign_static_cast(handle, NULL_SOCKET);
+            utils::assign_static_cast(handle, NULL_SOCKET);
         } catch (...) {
-            assign_static_cast(handle, NULL_SOCKET);
+            utils::assign_static_cast(handle, NULL_SOCKET);
             throw;
         }
     }

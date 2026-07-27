@@ -1,4 +1,0 @@
-bin/WINDOWS_X86-64/src/malloc_free_allocator.o: \
-  src/malloc_free_allocator.cpp \
-  include/allocators/malloc_free_allocator.hpp \
-  include/allocators/allocator.hpp include/allocators/base_allocator.hpp

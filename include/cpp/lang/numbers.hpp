@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <climits>
 #include <cpp/lang/math/math.hpp>
-#include <cpp/lang/utils/traits.hpp>
 #include <cpp/lang/exceptions.hpp>
 
 namespace jstd 

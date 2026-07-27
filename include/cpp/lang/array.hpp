@@ -3,13 +3,13 @@
 
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/utils.hpp>
-#include <cpp/lang/utils/traits.hpp>
 #include <allocators/allocator.hpp>
 #include <utility>
 #include <new>
 #include <cpp/lang/utils/arrays.hpp>
 #include <cpp/lang/utils/objects.hpp>
 #include <initializer_list>
+#include <cpp/lang/traits/cv_traits.hpp>
 
 namespace jstd
 {

@@ -7,8 +7,8 @@
 #include <cstdint>
 #include <utility>
 #include <cstddef>
-#include <cpp/lang/utils/traits.hpp>
 #include <cpp/lang/stacktrace/stacktrace.hpp>
+#include <cpp/lang/traits/primitive_traits.hpp>
 
 #define JSTD_THROWABLE_CAUSE_SIZE 256
 
