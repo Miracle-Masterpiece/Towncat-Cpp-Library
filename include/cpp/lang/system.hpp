@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cpp/lang/types.hpp>
 
-namespace jstd 
+namespace tc 
 {
 
 enum byte_order {
@@ -95,6 +95,6 @@ namespace internal
 
 }//namespace jstd
 
-namespace tc = jstd;
+
 
 #endif//_ALLOCATORS_SYSTEM_H

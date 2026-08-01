@@ -27,7 +27,7 @@
 #endif
 
 
-namespace jstd
+namespace tc
 {
     namespace internal
     {
@@ -43,14 +43,14 @@ namespace jstd
  *                               M A P P E D _ F I L E
  * ##########################################################################################
  */
-namespace jstd 
+namespace tc 
 {
 
     file_channel::file_channel() : m_fd(), m_oflags(ZERO_FLAG) {
 
     }
 
-    file_channel::file_channel(const jstd::file& path, int oflags) : m_fd(), m_oflags(oflags) {
+    file_channel::file_channel(const tc::file& path, int oflags) : m_fd(), m_oflags(oflags) {
         open(path, oflags);
     }
 
@@ -80,7 +80,7 @@ namespace jstd
         );
     }
 
-    void file_channel::open(const jstd::file& path, int oflags) {
+    void file_channel::open(const tc::file& path, int oflags) {
         JSTD_DEBUG_CODE (
             if ((oflags & open_option::CREATE) && (oflags & open_option::APPEND))
                 throw_except<io_exception>("CREATE + APPEND not allowed!");
@@ -299,7 +299,7 @@ namespace jstd
  *                          M A P P E D _ B Y T E _ B U F F E R
  * ##########################################################################################
  */
-namespace jstd
+namespace tc
 {
     mapped_byte_buffer::mapped_byte_buffer() : byte_buffer(), m_base(nullptr) {
         JSTD_WIN_CODE(
@@ -371,7 +371,7 @@ namespace jstd
 
 }
 
-namespace jstd
+namespace tc
 {
     namespace internal
     {

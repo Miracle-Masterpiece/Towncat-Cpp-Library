@@ -6,7 +6,7 @@
 #include <cpp/lang/io/iostream.hpp>
 #include <iostream>
 
-namespace jstd 
+namespace tc 
 {
 
     wav_data::wav_data() : m_allocator(nullptr), data(nullptr) {

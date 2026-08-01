@@ -1,7 +1,7 @@
 #include <cpp/lang/compress/decompressor.hpp>
 
 
-namespace jstd
+namespace tc
 {
 
     decompressor::decompressor() : input(nullptr), input_size(0) {

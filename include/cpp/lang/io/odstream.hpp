@@ -6,7 +6,7 @@
 #include <cpp/lang/system.hpp>
 #include <cpp/lang/utils/utils.hpp>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Класс предназначен для буферезированной записи бинарных данных.

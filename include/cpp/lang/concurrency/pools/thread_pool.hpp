@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cpp/lang/concurrency/cond_var.hpp>
 
-namespace jstd
+namespace tc
 {
 
 namespace concurrency
@@ -258,6 +258,6 @@ public:
 }//namespace concurrency
 
 
-}//namespace jstd
+}//namespace tc
 
 #endif//JSTD_CPP_LANG_CONCURRENCY_THREAD_POOL_H

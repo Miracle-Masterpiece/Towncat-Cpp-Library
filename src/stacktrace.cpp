@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string>
 
-namespace jstd
+namespace tc
 {
 
     calltrace::calltrace() JSTD_CALLTRACE_CODE( : m_stacktrace() ) {

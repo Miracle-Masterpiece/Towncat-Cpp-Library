@@ -14,7 +14,7 @@
 #endif
 
 
-namespace jstd
+namespace tc
 {
 
 class calltrace {

@@ -10,7 +10,7 @@
 #include <cstring>
 #include <climits>
 
-namespace jstd
+namespace tc
 {
 
 class null_pointer_exception;
@@ -168,7 +168,7 @@ namespace internal
      */
     template<typename T>
     T read_with_order(const void* ptr, byte_order out_order) {
-        static_assert(jstd::is_primitive<T>::value, "T must be primitive");
+        static_assert(tc::is_primitive<T>::value, "T must be primitive");
         T v;
         std::memcpy(&v, ptr, sizeof(T));
         if (out_order != system::native_byte_order())
@@ -329,7 +329,5 @@ namespace internal
 }
 
 }
-
-namespace tc = jstd;
 
 #endif//_ALLOCATORS_UTILS_H_

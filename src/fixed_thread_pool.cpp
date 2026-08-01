@@ -4,7 +4,7 @@
 #include <cpp/lang/concurrency/pools/fixed_thread_pool.hpp>
 
 
-namespace jstd
+namespace tc
 {
 namespace concurrency
 {

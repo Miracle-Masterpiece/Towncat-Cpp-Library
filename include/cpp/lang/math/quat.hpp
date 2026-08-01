@@ -4,17 +4,17 @@
 #include <internal/math_defs.hpp>
 #include <cpp/lang/math/math.hpp>
 #include <cpp/lang/math/vec3.hpp>
-#include <cpp/lang/utils/objects.hpp>
-#include <cstdint>
-#include <cstdio>
+#include <cpp/lang/string.hpp
 
-namespace jstd {
+namespace tc
+{
 
 template<typename T>
 struct base_quat;
 
 typedef base_quat<float> quat;
 typedef base_quat<double> quatd;
+typedef base_quat<long double> quatld;
 
 /**
  * Шаблонная структура для представления кватернионов.
@@ -301,32 +301,15 @@ struct base_quat {
      */
     bool operator!=(const base_quat<T>& other) const;
 
-
     /**
-     * Минимальный рекомендуемый размер буфера для строкового представления кватерниона.
+     * Преобразует кватернион в строковое представление.
      */
-    static const int32_t TO_STRING_MIN_BUFFER_SIZE = 48;
-
-    /**
-     * Преобразует кватернион в строку.
-     * 
-     * Формат строки: "(i, j, k, a)", где значения приведены к строковому виду.
-     * 
-     * @param buf 
-     *      Массив символов, в который будет записана строка.
-     * 
-     * @param bufsize 
-     *      Размер буфера.
-     * 
-     * @return 
-     *      Количество записанных символов (не включая завершающий нуль-символ).
-     */
-    int32_t to_string(char buf[], int32_t bufsize) const;
+    tc::string to_string(tca::allocator* = tca::get_default_allocator()) const;
 
     /**
      * Возвращает хеш-код кватерниона.
      */
-    uint64_t hashcode() const;
+    std::size_t hashcode() const;
 };
 
 
@@ -471,9 +454,12 @@ struct base_quat {
     template<typename T>
     base_quat<T> base_quat<T>::div(const T& scalar) const {
         const T EPSILON = (const T) 0.000001;
-        if (math::abs(scalar) > EPSILON) {
+        if (math::abs(scalar) > EPSILON)
+        {
             return base_quat<T>(i / scalar, j / scalar, k / scalar, a / scalar);
-        } else {
+        }
+        else
+        {
             return base_quat<T>(0, 0, 0, 1);
         }
     }
@@ -487,22 +473,33 @@ struct base_quat {
     base_quat<T> base_quat<T>::normalized() const {
         const T mag = magnitude();
         const T EPSILON = (const T) 0.000001;
-        if (mag < EPSILON) {
+        if (mag < EPSILON)
+        {
             return base_quat<T>(0, 0, 0, 1);
-        } else {
+        }
+        else
+        {
             return base_quat<T>(i / mag, j / mag, k / mag, a / mag);
         }
     }
 
     template<typename T>
-    int32_t base_quat<T>::to_string(char buf[], int32_t bufsize) const {
-        return std::snprintf(buf, bufsize, "[i=%g, j=%g, k=%g, a=%g]", (double) i, (double) j, (double) k, (double) a);
+    tc::string base_quat<T>::to_string(tca::allocator* alloc) const {
+        tc::string result(alloc);
+        
+        result
+        .append("[i=").append(tc::to_string(x)).append(',')
+         .append("j=").append(tc::to_string(y)).append(',')
+         .append("k=").append(tc::to_string(z)).append(',')
+         .append("a=").append(tc::to_string(w)).append(']');
+        
+        return alloc;
     }
 
     template<typename T>
-    uint64_t base_quat<T>::hashcode() const {
-        const T data[] = {i, j, k, a};
-        return objects::hashcode(data, 4);
+    std::size_t base_quat<T>::hashcode() const {
+        const T arr[] = {i, j, k, a};
+        return objects::hashcode(arr, sizeof(arr) / sizeof(*arr));
     }    
 }
 

@@ -3,7 +3,7 @@
 #include <utility>
 #include <cassert>
 
-namespace jstd
+namespace tc
 {
     
     lz4_compressor::lz4_compressor() : compressor(),

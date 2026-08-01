@@ -1,7 +1,7 @@
 #include <cpp/lang/math/math.hpp>
 #include <cpp/lang/utils/random.hpp>
 
-namespace jstd
+namespace tc
 {
 namespace math
 {

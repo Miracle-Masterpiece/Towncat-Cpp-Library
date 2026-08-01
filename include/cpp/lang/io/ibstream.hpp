@@ -4,7 +4,7 @@
 #include <cpp/lang/io/istream.hpp>
 #include <allocators/allocator.hpp>
 
-namespace jstd
+namespace tc
 {
 
 /**

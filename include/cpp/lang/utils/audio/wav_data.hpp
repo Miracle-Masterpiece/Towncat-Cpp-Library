@@ -5,7 +5,7 @@
 #include <cpp/lang/io/istream.hpp>
 #include <cstdint>
 
-namespace jstd
+namespace tc
 {
 
 class file;

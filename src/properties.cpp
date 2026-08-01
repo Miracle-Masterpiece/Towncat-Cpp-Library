@@ -1,7 +1,7 @@
 #include <cpp/lang/io/properties.hpp>
 #include <cpp/lang/utils/date.hpp>
 
-namespace jstd {
+namespace tc {
 
     properties::properties(tca::allocator* allocator) : 
     m_allocator(allocator), 

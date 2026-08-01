@@ -5,7 +5,7 @@
 #include <cpp/lang/utils/unique_ptr.hpp>
 #include <cstdint>
 
-namespace jstd
+namespace tc
 {
 
 template<typename T>

@@ -1,7 +1,7 @@
 #include <cpp/lang/exceptions.hpp>
 #include <utility>
 
-namespace jstd 
+namespace tc 
 {
 
 

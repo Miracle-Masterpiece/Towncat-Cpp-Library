@@ -5,7 +5,7 @@
 #include <allocators/allocator.hpp>
 #include <cpp/lang/string.hpp>
 
-namespace jstd
+namespace tc
 {
 namespace utf
 {
@@ -485,7 +485,7 @@ namespace utf32
     
 }//namespace utf
 }//namespace jstd
-namespace tc = jstd;
+
 
 
 

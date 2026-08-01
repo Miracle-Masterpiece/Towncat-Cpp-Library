@@ -11,7 +11,7 @@
 #include <initializer_list>
 #include <cassert>
 
-namespace jstd
+namespace tc
 {
 
 /**

@@ -1,6 +1,6 @@
 #include <cpp/lang/cstr.hpp>
 
-namespace jstd {
+namespace tc {
 
     cstr::cstr(const char* s) : m_cstr(s), m_length(~(std::size_t) 0) {
         

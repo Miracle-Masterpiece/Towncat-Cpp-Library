@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <utility>
 
-namespace jstd
+namespace tc
 {
     lz4_decompressor::lz4_decompressor() : decompressor(),
     window_pos(0),

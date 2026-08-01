@@ -5,7 +5,7 @@
 #include <cpp/lang/io/file.hpp>
 #include <cstdio>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Класс предназначен для записи в файл.

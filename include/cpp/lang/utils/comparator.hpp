@@ -1,7 +1,7 @@
 #ifndef JSTD_CPP_LANG_UTILS_COMPARATOR_H
 #define JSTD_CPP_LANG_UTILS_COMPARATOR_H
 
-namespace jstd {
+namespace tc {
 
 template<typename T>
 struct compare_to {

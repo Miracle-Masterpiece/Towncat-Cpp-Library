@@ -4,7 +4,7 @@
 #include <cpp/lang/utils/images/image.hpp>
 #include <algorithm>
 
-namespace jstd {
+namespace tc {
     using namespace texturing;
 
     image_packer::image_packer() : 

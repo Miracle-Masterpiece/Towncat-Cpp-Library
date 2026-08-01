@@ -1,7 +1,7 @@
 #ifndef JSTD_CPP_LANG_IO_CHANNEL_H
 #define JSTD_CPP_LANG_IO_CHANNEL_H
 
-namespace jstd
+namespace tc
 {
 
 /**

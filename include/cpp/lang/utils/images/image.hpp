@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <allocators/allocator.hpp>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Класс image представляет собой двумерное изображение в формате массива байт (пикселей),

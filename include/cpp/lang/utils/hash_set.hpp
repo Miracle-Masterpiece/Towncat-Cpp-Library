@@ -3,7 +3,7 @@
 
 #include <cpp/lang/utils/hash_map.hpp>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Представляет собой множество уникальных элементов на основе хеш-таблицы.

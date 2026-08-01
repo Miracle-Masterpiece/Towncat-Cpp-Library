@@ -2,38 +2,30 @@
 #define JSTD_CPP_LANG_MATH_VEC4_H
 
 #include <cpp/lang/exceptions.hpp>
-#include <cstdint>
 #include <cpp/lang/utils/objects.hpp>
 #include <cpp/lang/math/math.hpp>
-#include <type_traits>
 #include <internal/math_defs.hpp>
+#include <cpp/lang/string.hpp>
 
-namespace jstd {
+namespace tc
+{
 
 template<typename T>
 struct base_vec4;
 
-typedef base_vec4<math::internal::real_t> vec4;
+typedef base_vec4<float> vec4;
+typedef base_vec4<double> vec4d;
+typedef base_vec4<long double> vec4ld;
 
-typedef base_vec4<double>           vec4d;
+typedef base_vec4<short> vec4s;
+typedef base_vec4<signed int> vec4i;
+typedef base_vec4<signed long> vec4l;
 
-typedef base_vec4<short>            vec4s;
-typedef base_vec4<signed int>       vec4i;
-typedef base_vec4<signed long>      vec4l;
+typedef base_vec4<unsigned short> vec4us;
+typedef base_vec4<unsigned int> vec4ui;
+typedef base_vec4<unsigned long> vec4ul;
+typedef base_vec4<unsigned long long> vec4ull;
 
-typedef base_vec4<unsigned short>   vec4us;
-typedef base_vec4<unsigned int>     vec4ui;
-typedef base_vec4<unsigned long>    vec4ul;
-
-typedef base_vec4<int8_t>   vec4i8;
-typedef base_vec4<int16_t>  vec4i16;
-typedef base_vec4<int32_t>  vec4i32;
-typedef base_vec4<int64_t>  vec4i64;
-
-typedef base_vec4<uint8_t>  vec4u8;
-typedef base_vec4<uint16_t> vec4u16;
-typedef base_vec4<uint32_t> vec4u32;
-typedef base_vec4<uint64_t> vec4u64;
 
 /**
  * Обобщённый четырёхкомпонентный вектор.
@@ -48,20 +40,29 @@ typedef base_vec4<uint64_t> vec4u64;
  */
 template<typename T>
 struct base_vec4 {
-    union {
-        T x, r, A;
-    };
 
-    union {
-        T y, g, B;
-    };
+    union
+    {
+        struct
+        {
+            union {
+                T x, r, A;
+            };
 
-    union {
-        T z, b, C;
-    };
+            union {
+                T y, g, B;
+            };
 
-    union {
-        T w, a, D;
+            union {
+                T z, b, C;
+            };
+
+            union {
+                T w, a, D;
+            };
+        };
+        
+        T arr[4];
     };
 
     /**
@@ -306,7 +307,7 @@ struct base_vec4 {
      * @return 
      *      Ссылка на компонент вектора.
      */
-    T& operator[](int32_t index);
+    T& operator[](std::size_t index);
 
     /**
      * Доступ к компоненту вектора по индексу (константный доступ).
@@ -317,7 +318,7 @@ struct base_vec4 {
      * @return 
      *      Константная ссылка на компонент вектора.
      */
-    const T& operator[](int32_t index) const;
+    const T& operator[](std::size_t index) const;
 
     /**
      * Получение компонента вектора по индексу.
@@ -328,7 +329,7 @@ struct base_vec4 {
      * @return 
      *      Ссылка на компонент вектора.
      */
-    T& get(int32_t idx);
+    T& get(std::size_t idx);
 
     /**
      * Получение компонента вектора по индексу (константный доступ).
@@ -339,7 +340,7 @@ struct base_vec4 {
      * @return 
      *      Константная ссылка на компонент вектора.
      */
-    const T& get(int32_t idx) const;
+    const T& get(std::size_t idx) const;
 
     /**
      * Вычисление скалярного произведения двух векторов.
@@ -407,25 +408,12 @@ struct base_vec4 {
      * @return 
      *      Хеш-код вектора.
      */
-    uint64_t hashcode() const;
+    std::size_t hashcode() const;
 
     /**
-     * Константа минимального размера буфера для преобразования в строку.
+     * Преобразует вектор в строковое представление.
      */
-    static const int32_t TO_STRING_MIN_BUFFER_SIZE = 56;
-
-    /**
-     * Преобразование вектора в строку.
-     * 
-     * @param buf 
-     *      Буфер для записи строки.
-     * @param bufsize 
-     *      Размер буфера.
-     * 
-     * @return 
-     *      Количество записанных символов.
-     */
-    int32_t to_string(char buf[], int32_t bufsize) const;
+    tc::string to_string(tca::allocator* = tca::get_default_allocator()) const;
 
     /**
      * Операция увеличения компонента вектора на другой вектор покомпонентно.
@@ -691,39 +679,25 @@ struct base_vec4 {
     }
 
     template<typename T>
-    T& base_vec4<T>::operator[] (int32_t idx) {
+    T& base_vec4<T>::operator[] (std::size_t idx) {
         return get(idx);
     }
     
     template<typename T>
-    const T& base_vec4<T>::operator[] (int32_t idx) const {
+    const T& base_vec4<T>::operator[] (std::size_t idx) const {
         return get(idx);
     }
 
     template<typename T>
-    T& base_vec4<T>::get(int32_t idx) {
-        switch (idx) {
-            case 0 : return x;
-            case 1 : return y;
-            case 2 : return z;
-            case 3 : return w;
-        }
-        throw_except<index_out_of_bound_exception>("Index %i out of bound for length 4", idx);
-        //for suppress warning
-        return x;
+    T& base_vec4<T>::get(std::size_t idx) {
+        JSTD_DEBUG_CODE(check_index(idx, 4));
+        return arr[idx];
     }
     
     template<typename T>
-    const T& base_vec4<T>::get(int32_t idx) const {
-        switch (idx) {
-            case 0 : return x;
-            case 1 : return y;
-            case 2 : return z;
-            case 3 : return w;
-        }
-        throw_except<index_out_of_bound_exception>("Index %i out of bound for length 4", idx);
-        //for suppress warning
-        return x;
+    const T& base_vec4<T>::get(std::size_t idx) const {
+        JSTD_DEBUG_CODE(check_index(idx, 4));
+        return arr[idx];
     }
 
     template<typename T>
@@ -758,9 +732,8 @@ struct base_vec4 {
     }
     
     template<typename T>
-    uint64_t base_vec4<T>::hashcode() const {
-        const T data[] = {x, y, z, w};
-        return objects::hashcode(data, 4);
+    std::size_t base_vec4<T>::hashcode() const {
+        return objects::hashcode(arr, sizeof(arr) / sizeof(*arr));
     }
 
     template<typename T>
@@ -873,8 +846,16 @@ struct base_vec4 {
     }
 
     template<typename T>
-    int32_t base_vec4<T>::to_string(char buf[], int32_t bufsize) const {
-        return std::snprintf(buf, bufsize, "[x=%g, y=%g, z=%g, w=%g]", (double) x, (double) y, (double) z, (double) w);
+    tc::string base_vec4<T>::to_string(tca::allocator* alloc) const {
+        tc::string result(alloc);
+        
+        result
+        .append("[x=").append(tc::to_string(x)).append(',')
+         .append("y=").append(tc::to_string(y)).append(',')
+         .append("z=").append(tc::to_string(z)).append(',')
+         .append("w=").append(tc::to_string(w)).append(']');
+        
+        return alloc;
     }
 
     template<typename T>

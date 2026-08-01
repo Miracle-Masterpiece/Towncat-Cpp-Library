@@ -1,7 +1,7 @@
 #ifndef CPP_LANG_CONCURRENCY_RUNNABLE_H
 #define CPP_LANG_CONCURRENCY_RUNNABLE_H
 
-namespace jstd {
+namespace tc {
     
 /**
  * Абстрактная структура, представляющая исполнимый объект, который может быть выполнен.

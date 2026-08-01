@@ -4,7 +4,8 @@
 #include <cstdio>
 #include <cstddef>
 
-namespace tca {
+namespace tca
+{
 
     linear_allocator::linear_allocator() : 
     allocator(nullptr),

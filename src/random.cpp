@@ -1,7 +1,7 @@
 #include <cpp/lang/utils/random.hpp>
 #include <cpp/lang/math/math.hpp>
 
-namespace jstd
+namespace tc
 {
 
     unsigned long long random::random_seed() {

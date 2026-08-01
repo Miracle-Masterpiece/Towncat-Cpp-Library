@@ -4,7 +4,7 @@
 #include <cpp/lang/io/istream.hpp>
 #include <allocators/base_allocator.hpp>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Класс предназначен для представления массива char, как входного потока.

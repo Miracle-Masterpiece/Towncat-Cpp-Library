@@ -4,7 +4,7 @@
 #include <cpp/lang/exceptions.hpp>
 #include <cstdint>
 
-namespace jstd
+namespace tc
 {
 
 /**

@@ -3,7 +3,7 @@
 #include <cpp/lang/utils/utils.hpp>
 #include <iostream>
 
-namespace jstd 
+namespace tc 
 {
 namespace bsd_socket 
 {

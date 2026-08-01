@@ -1,7 +1,7 @@
 #include <cpp/lang/utils/smooth_noise.hpp>
 #include <cpp/lang/math/math.hpp>
 
-namespace jstd
+namespace tc
 {
 
     smooth_noise::smooth_noise(curve_func curve) : m_curve_func(curve) {

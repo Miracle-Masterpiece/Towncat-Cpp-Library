@@ -3,7 +3,7 @@
 
 #include <cpp/lang/traits/cv_traits.hpp>
 
-namespace jstd
+namespace tc
 {
 /**
  * Meta-function for checking type equivalence.
@@ -101,6 +101,5 @@ struct is_related {
 };
 
 }
-namespace tc = jstd;
 
 #endif /* A28F06C4_5886_42EA_9E1F_2F6F55AEB2BC */

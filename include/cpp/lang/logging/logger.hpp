@@ -1,7 +1,7 @@
 #ifndef JSTD_CPP_LANG_LOGGING_LOGGER_H
 #define JSTD_CPP_LANG_LOGGING_LOGGER_H
 
-namespace jstd
+namespace tc
 {
     class throwable;
     class ostream;

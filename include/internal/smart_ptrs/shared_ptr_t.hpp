@@ -15,7 +15,7 @@
 #include <cpp/lang/traits/relatoship_traits.hpp>
 #include <cpp/lang/traits/SFINAE.hpp>
 
-namespace jstd 
+namespace tc 
 {
 namespace internal 
 {

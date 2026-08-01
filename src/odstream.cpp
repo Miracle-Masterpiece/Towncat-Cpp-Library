@@ -2,7 +2,7 @@
 #include <cpp/lang/exceptions.hpp>
 #include <iostream>
 
-namespace jstd {
+namespace tc {
 
     odstream::odstream() : _out(nullptr) {
 

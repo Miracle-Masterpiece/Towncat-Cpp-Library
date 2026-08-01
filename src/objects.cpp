@@ -3,7 +3,7 @@
 #include <cpp/lang/numbers.hpp>
 #include <cpp/lang/utils/comparator.hpp>
 
-namespace jstd 
+namespace tc 
 {
 namespace objects 
 {

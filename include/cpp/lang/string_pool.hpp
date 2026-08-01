@@ -7,7 +7,7 @@
 #include <cpp/lang/cstr.hpp>
 #include <cpp/lang/string.hpp>
 
-namespace jstd 
+namespace tc 
 {
 
 /**
@@ -150,6 +150,6 @@ public:
 };
 
 }
-namespace tc = jstd;
+
 
 #endif//JSTD_CPP_LANG_STRING_POOL_H

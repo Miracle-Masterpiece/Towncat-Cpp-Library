@@ -5,7 +5,7 @@
 #include <cpp/lang/traits/pointer_traits.hpp>
 #include <cstdint>
 
-namespace jstd
+namespace tc
 {
 
 namespace internal
@@ -137,6 +137,6 @@ struct equal_to {
 
 } //namespace jstd
 
-namespace tc = jstd;
+
 
 #endif//JSTD_CPP_LANG_UTILS_HASH_H_

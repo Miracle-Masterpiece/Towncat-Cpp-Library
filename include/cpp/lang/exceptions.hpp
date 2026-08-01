@@ -12,7 +12,7 @@
 
 #define JSTD_THROWABLE_CAUSE_SIZE 256
 
-namespace jstd 
+namespace tc 
 {
 
 class throwable {

@@ -5,7 +5,7 @@
 #include <cpp/lang/utils/hash.hpp>
 #include <cpp/lang/utils/cond_compile.hpp>
 
-namespace jstd
+namespace tc
 {
 
 class null_pointer_exception;

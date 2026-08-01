@@ -1,6 +1,6 @@
 #ifndef _JSTD_INTERNAL_BSD_SOCKET_ERRORS_H_
 #define _JSTD_INTERNAL_BSD_SOCKET_ERRORS_H_
-namespace jstd {
+namespace tc {
 namespace bsd_socket {
 
     /**

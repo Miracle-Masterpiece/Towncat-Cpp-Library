@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <cassert>
 
-namespace jstd {
+namespace tc {
 
 template<typename T>
 class list_node {

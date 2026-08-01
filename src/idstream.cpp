@@ -1,7 +1,7 @@
 #include <cpp/lang/io/idstream.hpp>
 #include <iostream>
 
-namespace jstd {
+namespace tc {
 
     idstream::idstream() : _in(nullptr) {
         

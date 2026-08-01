@@ -1,7 +1,7 @@
 #ifndef ED0D28B4_2EF2_47B2_8256_83B76C0AD537
 #define ED0D28B4_2EF2_47B2_8256_83B76C0AD537
 
-namespace jstd
+namespace tc
 {
 
 /**
@@ -71,7 +71,5 @@ template<typename T>
 struct pure_type<T&&> : base_pure_type<typename pure_type<T>::type> {};
 
 }
-
-namespace tc = jstd;
 
 #endif /* ED0D28B4_2EF2_47B2_8256_83B76C0AD537 */

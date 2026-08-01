@@ -7,7 +7,7 @@
 #include <cpp/lang/io/bytebuffer.hpp>
 #include <cstddef>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Класс, реализующий сокетное соединение.

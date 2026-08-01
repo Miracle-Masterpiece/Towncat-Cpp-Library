@@ -1,6 +1,6 @@
 #include <cpp/lang/concurrency/pools/thread_pool.hpp>
 
-namespace jstd
+namespace tc
 {
 namespace concurrency
 {

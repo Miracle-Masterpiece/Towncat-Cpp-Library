@@ -6,7 +6,7 @@
 
 #define BYTE_BITS 8
 
-namespace jstd {
+namespace tc {
 
     static std::size_t null_value() {
         return (std::size_t) -1;

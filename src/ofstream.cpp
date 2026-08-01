@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iostream>
 
-namespace jstd {
+namespace tc {
 
     ofstream::ofstream() : _handle(nullptr) {
 

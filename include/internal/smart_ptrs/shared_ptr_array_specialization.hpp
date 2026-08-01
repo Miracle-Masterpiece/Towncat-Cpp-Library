@@ -2,7 +2,7 @@
 #define JSTD_INTERNAL_SMART_PTRS_SHARED_PTR_ARRAY_SPECIALIZATION_H
 #include <internal/smart_ptrs/shared_ptr_t.hpp>
 
-namespace jstd
+namespace tc
 {
 
 template<typename T>

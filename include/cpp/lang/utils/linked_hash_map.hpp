@@ -6,7 +6,7 @@
 #include <cpp/lang/array.hpp>
 #include <cassert>
 
-namespace jstd
+namespace tc
 {
 
 template<typename TKEY, typename TVALUE, typename THASHER = hash_for<TKEY>, typename TEQUALER = equal_to<TKEY>>

@@ -11,7 +11,7 @@ namespace tca
     class base_allocator;
 }
 
-namespace jstd
+namespace tc
 {
 
 class file_filter;
@@ -375,6 +375,6 @@ public:
 };
 
 }
-namespace tc = jstd;
+
 
 #endif //JSTD_CPP_LANG_IO_FILE_H

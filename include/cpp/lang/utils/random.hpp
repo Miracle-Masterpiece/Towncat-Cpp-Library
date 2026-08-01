@@ -6,7 +6,7 @@
 #include <cpp/lang/utils/limits.hpp>
 #include <cpp/lang/exceptions.hpp>
 
-namespace jstd
+namespace tc
 {
 
 /**

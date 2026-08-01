@@ -53,7 +53,7 @@ class arena_free_list_allocator : public allocator {
     /**
      * 
      */
-    jstd::raw_binary_tree<std::size_t, jstd::compare_to<std::size_t>, memblock> m_tree;
+    tc::raw_binary_tree<std::size_t, tc::compare_to<std::size_t>, memblock> m_tree;
 
     /**
      * 

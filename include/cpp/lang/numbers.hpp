@@ -6,7 +6,7 @@
 #include <cpp/lang/math/math.hpp>
 #include <cpp/lang/exceptions.hpp>
 
-namespace jstd 
+namespace tc 
 {
 
 #if __SIZEOF_FLOAT__ == __SIZEOF_INT__
@@ -283,7 +283,7 @@ namespace internal
                 }
                 throw_except<number_format_exception>("Invalid integer string");
             }
-            result += (INT_T) ((s[i] - 48) * digit);
+            result += (INT_T) ((s[i] - 48 /* a.k.a '0' */ ) * digit);
             digit *= 10;
         }
 
@@ -297,8 +297,8 @@ namespace internal
             len = internal::str_len(s);
         }
 
-        static const STR_T DOT       = 46;
-        static const STR_T START_NUM = 48;
+        static const STR_T DOT       = 46;  // '.'
+        static const STR_T START_NUM = 48;  // '0'
 
         bool is_negative      = false;
         FLOAT_T result        = 0;

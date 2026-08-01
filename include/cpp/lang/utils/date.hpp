@@ -6,7 +6,7 @@
 #include <cpp/lang/types.hpp>
 #include <cpp/lang/string.hpp>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Класс для работы с датой и временем.

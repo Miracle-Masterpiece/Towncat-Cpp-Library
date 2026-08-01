@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <cpp/lang/compress/compressor.hpp>
 
-namespace jstd
+namespace tc
 {
 
 class lz4_compressor : public compressor {
@@ -174,6 +174,6 @@ public:
 };
 
 }
-namespace tc = jstd;
+
 
 #endif /* BA02FACF_D516_4679_8D5D_BDBF01904A8B */

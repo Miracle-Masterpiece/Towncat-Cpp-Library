@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-namespace jstd
+namespace tc
 {
 
 /**
@@ -79,8 +79,8 @@ public:
     virtual ~decompressor();
 };
 
-} //namespace jstd
+} //namespace tc
 
-namespace tc = jstd;
+
 
 #endif /* A6CDFE96_6B88_495C_92FC_56F238D141CA */

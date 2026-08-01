@@ -1,7 +1,7 @@
 #ifndef A647B5FB_A481_4E2B_AE2B_E5B3373A98C3
 #define A647B5FB_A481_4E2B_AE2B_E5B3373A98C3
 
-namespace jstd
+namespace tc
 {
 
 /**
@@ -203,6 +203,6 @@ struct add_volatile {
 };
 
 }
-namespace tc = jstd;
+
 
 #endif /* A647B5FB_A481_4E2B_AE2B_E5B3373A98C3 */

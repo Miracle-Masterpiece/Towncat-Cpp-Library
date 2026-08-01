@@ -3,7 +3,7 @@
 #include <cpp/lang/utils/unique_ptr.hpp>
 #include <new>
 
-namespace jstd
+namespace tc
 {
 
 namespace texturing

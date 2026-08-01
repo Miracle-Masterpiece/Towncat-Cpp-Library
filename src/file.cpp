@@ -10,7 +10,7 @@
 #include <utility>
 #include <cassert>
 
-namespace jstd
+namespace tc
 {
 
     file::file() {

@@ -5,7 +5,7 @@
 #include <allocators/inline_linear_allocator.hpp>
 #include <cerrno>
 
-namespace jstd
+namespace tc
 {
     using fs = filesystem;
 }
@@ -13,7 +13,7 @@ namespace jstd
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                      C   R   O   S   S   P   L   A   T   F   O   R   M    
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-namespace jstd
+namespace tc
 {
     /**
      * 
@@ -274,7 +274,7 @@ namespace jstd
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                          D   I   R   E   N   T   R   Y   
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-namespace jstd
+namespace tc
 {
     directory_entry::directory_entry(const char* path, std::size_t path_length) {
         path_length      = normlen(path, path_length);
@@ -623,7 +623,7 @@ namespace jstd
 #include <sys/types.h>
 #include <sys/stat.h>
 #define WCHAR_BYTE_ORDER byte_order::LE
-namespace jstd
+namespace tc
 {
     
     static void throw_error() {
@@ -971,7 +971,7 @@ namespace jstd
     }
 }
 
-namespace jstd
+namespace tc
 {
 
     static bool is_current_or_prev_folder(const wchar_t* path) {

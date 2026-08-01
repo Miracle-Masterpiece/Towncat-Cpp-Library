@@ -4,36 +4,26 @@
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/objects.hpp>
 #include <cpp/lang/math/vec4.hpp>
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
+#include <cpp/lang/string.hpp>
 
-namespace jstd {
+namespace tc {
 
 template<typename T>
 struct base_mat4;
 
-typedef base_mat4<math::internal::real_t>   mat4;
-
-typedef base_mat4<double>           mat4d;
+typedef base_mat4<float>  mat4;
+typedef base_mat4<double> mat4d;
+typedef base_mat4<long double> mat4ld;
 
 typedef base_mat4<short>            mat4s;
 typedef base_mat4<signed int>       mat4i;
 typedef base_mat4<signed long>      mat4l;
+typedef base_mat4<signed long long> mat4ll;
 
 typedef base_mat4<unsigned short>   mat4us;
 typedef base_mat4<unsigned int>     mat4ui;
 typedef base_mat4<unsigned long>    mat4ul;
-
-typedef base_mat4<int8_t>   mat4i8;
-typedef base_mat4<int16_t>  mat4i16;
-typedef base_mat4<int32_t>  mat4i32;
-typedef base_mat4<int64_t>  mat4i64;
-
-typedef base_mat4<uint8_t>  mat4u8;
-typedef base_mat4<uint16_t> mat4u16;
-typedef base_mat4<uint32_t> mat4u32;
-typedef base_mat4<uint64_t> mat4u64;
+typedef base_mat4<unsigned long>    mat4ull;
 
 template<typename T>
 struct base_mat4 {
@@ -111,17 +101,12 @@ struct base_mat4 {
     /**
      * 
      */
-    uint64_t hashcode() const;
+    std::size_t hashcode() const;
 
     /**
-     * 
+     * Преобразует матрицу в строковое представление.
      */
-    static const int32_t TO_STRING_MIN_BUFFER_SIZE = 224;
-    
-    /**
-     * 
-     */
-    int32_t to_string(char buf[], int32_t bufsize) const;
+    tc::string to_string(tca::allocator* = tca::get_default_allocator()) const;
 
     /**
      * 
@@ -151,12 +136,12 @@ struct base_mat4 {
     /**
      * 
      */
-    const T& get(int32_t row, int32_t col) const;
+    const T& get(std::size_t row, std::size_t col) const;
     
     /**
      * 
      */
-    T& get(int32_t row, int32_t col);
+    T& get(std::size_t row, std::size_t col);
 
     /**
      * 
@@ -175,10 +160,10 @@ struct base_mat4 {
 };
     
     template<typename T>
-    const T& base_mat4<T>::get(int32_t row, int32_t col) const {
-        const int32_t y = row;
-        const int32_t x = col;
-        const int32_t idx = y + x * 4;
+    const T& base_mat4<T>::get(std::size_t row, std::size_t col) const {
+        const std::size_t y = row;
+        const std::size_t x = col;
+        const std::size_t idx = y + x * 4;
         JSTD_DEBUG_CODE(
             check_index(idx, 16);
         );
@@ -186,10 +171,10 @@ struct base_mat4 {
     }
 
     template<typename T>
-    T& base_mat4<T>::get(int32_t row, int32_t col) {
-        const int32_t y = row;
-        const int32_t x = col;
-        const int32_t idx = y + x * 4;
+    T& base_mat4<T>::get(std::size_t row, std::size_t col) {
+        const std::size_t y = row;
+        const std::size_t x = col;
+        const std::size_t idx = y + x * 4;
         JSTD_DEBUG_CODE(
             check_index(idx, 16);
         );
@@ -199,8 +184,8 @@ struct base_mat4 {
     template<typename MT>
     base_vec4<MT> mat_mul_vec(const base_mat4<MT>& m, const base_vec4<MT>& v) {
         base_vec4<MT> result;
-        for (int32_t y = 0; y < 4; ++y)
-            for (int32_t x = 0; x < 4; ++x)
+        for (std::size_t y = 0; y < 4; ++y)
+            for (std::size_t x = 0; x < 4; ++x)
                 result.get(y) += m.get(y, x) * v.get(x);
         return result;
     }
@@ -208,8 +193,8 @@ struct base_mat4 {
     template<typename MT>
     base_vec4<MT> vec_mul_mat(const base_vec4<MT>& v, const base_mat4<MT>& m) {
         base_vec4<MT> result;
-        for (int32_t y = 0; y < 4; ++y)
-            for (int32_t x = 0; x < 4; ++x)
+        for (std::size_t y = 0; y < 4; ++y)
+            for (std::size_t x = 0; x < 4; ++x)
                 result.get(y) += v.get(x) * m.get(x, y);
         return result;
     }
@@ -267,9 +252,9 @@ struct base_mat4 {
     template<typename T>
     base_mat4<T> base_mat4<T>::transpose() const {
         base_mat4<T> result = *this;
-        int32_t idx = 0;
-		for (int32_t x = 0; x < 4; ++x)
-			for (int32_t y = 0; y < 16; y+= 4)
+        std::size_t idx = 0;
+		for (std::size_t x = 0; x < 4; ++x)
+			for (std::size_t y = 0; y < 16; y+= 4)
 				result.m_data[idx++] = m_data[x + y];
         return result;
     }
@@ -290,30 +275,26 @@ struct base_mat4 {
     }
     
     template<typename T>
-    uint64_t base_mat4<T>::hashcode() const {
-        return objects::hashcode(m_data, 16);
+    std::size_t base_mat4<T>::hashcode() const {
+        return objects::hashcode(m_data, sizeof(m_data) / sizeof(*m_data));
     }
 
     template<typename T>
-    int32_t base_mat4<T>::to_string(char buf[], int32_t bufsize) const {
-        int32_t offset = 0;
+    tc::string base_mat4<T>::to_string(tca::allocator* alloc) const {
+        tc::string result(alloc);
         
-        for (int32_t y = 0; y < 4; ++y) {
+        for (std::size_t y = 0; y < 4; ++y) {
             const T v0 = get(y, 0);
             const T v1 = get(y, 1);
             const T v2 = get(y, 2);
             const T v3 = get(y, 3);
             if (bufsize <= offset)
                 break;
-            int32_t len = std::snprintf(buf + offset, bufsize - offset, "%g, %g, %g, %g\n", (double) v0, (double) v1, (double) v2, (double) v3);
-            if (len == 0)
-                break;
-            offset += len;
+            result.append(tc::to_string(T)).append(' ');
         }   
     
-        return offset;
+        return result;
     }
-
 
     template<typename T>
     base_mat4<T> base_mat4<T>::mul(const base_mat4<T>& m) const {
@@ -324,8 +305,8 @@ struct base_mat4 {
          * 8  9  10 11      8  9  10 11
          * 12 13 14 15      12 13 14 15
          */
-        for (int32_t y = 0; y < 4; ++y) {
-            for (int32_t x = 0; x < 4; ++x) {
+        for (std::size_t y = 0; y < 4; ++y) {
+            for (std::size_t x = 0; x < 4; ++x) {
                 r.get(y, x) = 
                                 get(y, 0) * m.get(0, x) +
                                 get(y, 1) * m.get(1, x) +
@@ -345,7 +326,7 @@ struct base_mat4 {
     template<typename T>
     base_mat4<T> base_mat4<T>::add(const base_mat4<T>& m) const {
         base_mat4<T> result;
-        for (int32_t i = 0; i < 4 * 4; ++i)
+        for (std::size_t i = 0; i < 4 * 4; ++i)
             result.m_data[i] = m_data[i] + m.m_data[i];
         return result;
     }
@@ -358,7 +339,7 @@ struct base_mat4 {
     template<typename T>
     base_mat4<T> base_mat4<T>::sub(const base_mat4<T>& m) const {
         base_mat4<T> result;
-        for (int32_t i = 0; i < 4 * 4; ++i)
+        for (std::size_t i = 0; i < 4 * 4; ++i)
             result.m_data[i] = m_data[i] - m.m_data[i];
         return result;
     }

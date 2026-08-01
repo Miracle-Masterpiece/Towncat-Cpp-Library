@@ -1,7 +1,7 @@
 #include <cpp/lang/concurrency/mutex.hpp>
 #include <utility>
 
-namespace jstd
+namespace tc
 {
 
     mutex::mutex() {

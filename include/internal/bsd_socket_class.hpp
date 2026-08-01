@@ -4,7 +4,7 @@
 #include <cpp/lang/net/base_socket.hpp>
 #include <cstdint>
 
-namespace jstd
+namespace tc
 {
 
 namespace bsd_socket

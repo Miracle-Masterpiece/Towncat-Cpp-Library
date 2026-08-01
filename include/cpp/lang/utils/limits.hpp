@@ -4,7 +4,7 @@
 #include <climits>
 #include <cfloat>
 
-namespace jstd
+namespace tc
 {
 
 template<typename T>

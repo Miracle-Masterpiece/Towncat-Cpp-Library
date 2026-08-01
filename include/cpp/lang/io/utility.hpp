@@ -4,7 +4,7 @@
 #include <cpp/lang/io/constants.hpp>
 #include <cstddef>
 
-namespace jstd
+namespace tc
 {
 
 /**
@@ -42,6 +42,6 @@ public:
 };
 
 }
-namespace tc = jstd;
+
 
 #endif//JSTD_CPP_LANG_IO_IOUTILITY_H

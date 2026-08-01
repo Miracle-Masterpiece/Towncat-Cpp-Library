@@ -7,7 +7,7 @@
 #include <cpp/lang/traits/relatoship_traits.hpp>
 #include <typeinfo>
 
-namespace jstd
+namespace tc
 {
 
 template<typename T>
@@ -323,7 +323,7 @@ public:
     }
 }
 
-namespace jstd
+namespace tc
 {
 
 template<typename T>

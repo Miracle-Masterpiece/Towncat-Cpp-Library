@@ -6,7 +6,7 @@
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include <cpp/lang/utils/images/stb_image_resize.h>
 
-namespace jstd {
+namespace tc {
 
     image::image() :
     m_allocator(nullptr),

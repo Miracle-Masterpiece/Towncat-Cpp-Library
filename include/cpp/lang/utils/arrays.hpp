@@ -13,7 +13,7 @@
 
 #define JSTD_TRIVIAL_COPY_CHECK 
 
-namespace jstd {
+namespace tc {
 
     /**
      * Конструирует массив объектов типа T в заранее выделенной области памяти с использованием placement new.

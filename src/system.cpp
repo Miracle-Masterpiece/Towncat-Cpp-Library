@@ -12,8 +12,8 @@
 	#include<time.h>
 #endif
 
-namespace tc = jstd;
-namespace jstd
+namespace tc = tc;
+namespace tc
 {   
 namespace system
 {
@@ -105,7 +105,7 @@ namespace internal
 #endif
 
     int tsprintf(const char* format, ...) {
-        static jstd::mutex ls_mutex;
+        static tc::mutex ls_mutex;
         ls_mutex.lock();
             std::va_list args;
             va_start(args, format);

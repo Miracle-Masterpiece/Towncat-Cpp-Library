@@ -11,7 +11,7 @@
 #include <initializer_list>
 #include <cpp/lang/traits/cv_traits.hpp>
 
-namespace jstd
+namespace tc
 {
     
 /**

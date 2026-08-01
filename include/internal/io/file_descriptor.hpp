@@ -3,7 +3,7 @@
 #ifndef JSTD_INTERNAL_IO_FILE_DESCRIPTOR_H
 #define JSTD_INTERNAL_IO_FILE_DESCRIPTOR_H
 
-namespace jstd
+namespace tc
 {
 
 namespace internal 

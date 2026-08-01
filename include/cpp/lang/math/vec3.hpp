@@ -2,37 +2,28 @@
 #define JSTD_CPP_LANG_MATH_VEC3_H
 
 #include <cpp/lang/exceptions.hpp>
-#include <cstdint>
-#include <cpp/lang/utils/objects.hpp>
 #include <cpp/lang/math/math.hpp>
-#include <type_traits>
 #include <internal/math_defs.hpp>
+#include <cpp/lang/string.hpp>
 
-namespace jstd {
+namespace tc {
 
 template<typename T>
 struct base_vec3;
 
-typedef base_vec3<math::internal::real_t> vec3;
-typedef base_vec3<double>       vec3d;
+typedef base_vec3<float>  vec3;
+typedef base_vec3<double> vec3d;
+typedef base_vec3<long double> vec3ld;
 
-typedef base_vec3<short>        vec3s;
-typedef base_vec3<signed int>   vec3i;
-typedef base_vec3<signed long>  vec3l;
+typedef base_vec3<short> vec3s;
+typedef base_vec3<signed int> vec3i;
+typedef base_vec3<signed long> vec3l;
+typedef base_vec3<signed long long> vec3ll;
 
-typedef base_vec3<unsigned short>   vec3us;
-typedef base_vec3<unsigned int>     vec3ui;
-typedef base_vec3<unsigned long>    vec3ul;
-
-typedef base_vec3<int8_t>   vec3i8;
-typedef base_vec3<int16_t>  vec3i16;
-typedef base_vec3<int32_t>  vec3i32;
-typedef base_vec3<int64_t>  vec3i64;
-
-typedef base_vec3<uint8_t>  vec3u8;
-typedef base_vec3<uint16_t> vec3u16;
-typedef base_vec3<uint32_t> vec3u32;
-typedef base_vec3<uint64_t> vec3u64;
+typedef base_vec3<unsigned short> vec3us;
+typedef base_vec3<unsigned int> vec3ui;
+typedef base_vec3<unsigned long> vec3ul;
+typedef base_vec3<unsigned long long> vec3ull;
 
 /**
  * Обобщённый трёхкомпонентный вектор.
@@ -48,18 +39,28 @@ typedef base_vec3<uint64_t> vec3u64;
 template<typename T>
 struct base_vec3 {
 
-    union {
-        T x, r, A;
-    };
-    
-    union {
-        T y, g, B;
-    };
+    union
+    {
+        struct
+        {
+            union
+            {
+                T x, r, A;
+            };
+            
+            union
+            {
+                T y, g, B;
+            };
 
-    union {
-        T z, b, C;
+            union
+            {
+                T z, b, C;
+            };
+        };
+        
+        T arr[3]
     };
-
 
     /**
      * Конструктор по значениям компонентов.
@@ -238,7 +239,7 @@ struct base_vec3 {
      * @return 
      *      Ссылка на компоненту.
      */
-    T& operator[](int32_t index);
+    T& operator[](std::size_t index);
 
     /**
      * Доступ к компоненте по индексу. (Константный)
@@ -249,7 +250,7 @@ struct base_vec3 {
      * @return 
      *      Ссылка на компоненту.
      */
-    const T& operator[](int32_t index) const;
+    const T& operator[](std::size_t index) const;
 
     /**
      * Доступ к компоненте по индексу.
@@ -260,7 +261,7 @@ struct base_vec3 {
      * @return 
      *      Ссылка на компоненту.
      */
-    T& get(int32_t index);
+    T& get(std::size_t index);
 
     /**
      * Доступ к компоненте по индексу. (Константный)
@@ -271,7 +272,7 @@ struct base_vec3 {
      * @return 
      *      Ссылка на компоненту.
      */
-    const T& get(int32_t index) const;
+    const T& get(std::size_t index) const;
     
     /**
      * Скалярное произведение (dot product).
@@ -338,26 +339,12 @@ struct base_vec3 {
      * @return 
      *      64-битное хеш-значение.
      */
-    uint64_t hashcode() const;
-
-    /**
-     * Минимальный рекомендуемый размер буфера для to_string.
-     */
-    static const int32_t TO_STRING_MIN_BUFFER_SIZE = 48;
+    std::size_t hashcode() const;
 
     /**
      * Преобразует вектор в строковое представление.
-     * 
-     * @param buf 
-     *      Буфер, куда будет записана строка.
-     * 
-     * @param bufsize 
-     *      Размер буфера.
-     * 
-     * @return 
-     *      Количество записанных символов (не включая 0-терминатор).
      */
-    int32_t to_string(char buf[], int32_t bufsize) const;
+    tc::string to_string(tca::allocator* = tca::get_default_allocator()) const;
 
     /**
      * Оператор сложения с другим вектором (на месте).
@@ -639,37 +626,25 @@ struct base_vec3 {
     }
 
     template<typename T>
-    T& base_vec3<T>::operator[] (int32_t index) {
+    T& base_vec3<T>::operator[] (std::size_t index) {
         return get(index);
     }
     
     template<typename T>
-    const T& base_vec3<T>::operator[] (int32_t index) const {
+    const T& base_vec3<T>::operator[] (std::size_t index) const {
         return get(index);
     }
 
     template<typename T>
-    T& base_vec3<T>::get(int32_t index) {
-        switch(index) {
-            case 0 : return x;
-            case 1 : return y;
-            case 2 : return z;
-        }
-        throw_except<index_out_of_bound_exception>("Index %i out of bound for length 3", index);
-        //for suppress warning
-        return x;
+    T& base_vec3<T>::get(std::size_t idx) {
+        JSTD_DEBUG_CODE(check_index(idx, 3));
+        return arr[idx];
     }
 
     template<typename T>
-    const T& base_vec3<T>::get(int32_t index) const {
-        switch(index) {
-            case 0 : return x;
-            case 1 : return y;
-            case 2 : return z;
-        }
-        throw_except<index_out_of_bound_exception>("Index %i out of bound for length 3", index);
-        //for suppress warning
-        return x;
+    const T& base_vec3<T>::get(std::size_t index) const {
+        JSTD_DEBUG_CODE(check_index(idx, 3));
+        return arr[idx];
     }
 
     template<typename T>
@@ -712,9 +687,8 @@ struct base_vec3 {
     }
     
     template<typename T>
-    uint64_t base_vec3<T>::hashcode() const {
-        const T data[] = {x, y, z};
-        return objects::hashcode(data, 3);
+    std::size_t base_vec3<T>::hashcode() const {
+        return objects::hashcode(arr, sizeof(arr) / sizeof(*arr));
     }
 
     template<typename T>
@@ -783,8 +757,13 @@ struct base_vec3 {
     }
 
     template<typename T>
-    int32_t base_vec3<T>::to_string(char buf[], int32_t bufsize) const {
-        return std::snprintf(buf, bufsize, "[x=%g, y=%g, z=%g]", (double) x, (double) y, (double) z);
+    tc::string base_vec3<T>::to_string(tca::allocator* alloc) const {
+        tc::string result(alloc);
+        result
+        .append("[x=").append(tc::to_string(x)).append(',')
+         .append("y=").append(tc::to_string(y)).append(',')
+         .append("z=").append(tc::to_string(z)).append(']');
+        return alloc;
     }
 
     template<typename T>

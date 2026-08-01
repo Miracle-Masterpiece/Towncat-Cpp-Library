@@ -4,7 +4,7 @@
 #include <cpp/lang/exceptions.hpp>
 #include <cerrno>
 
-namespace jstd
+namespace tc
 {
 
     date::date(int day, int month, int year, int second, int minute, int hour) {

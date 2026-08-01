@@ -4,7 +4,7 @@
 #include <cpp/lang/io/ostream.hpp>
 #include <allocators/allocator.hpp>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Класс предназначен для представления байтового массива, как выходной поток в который сохраняются данные.

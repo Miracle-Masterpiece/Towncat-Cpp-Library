@@ -9,7 +9,7 @@
 #define JSTD_THREAD_NAME_BUFFER 64
 #endif
 
-namespace jstd {
+namespace tc {
 
 struct runnable;
 

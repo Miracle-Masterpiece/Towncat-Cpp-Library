@@ -9,7 +9,7 @@
 #include <cstring>
 #include <climits>
 
-namespace jstd {
+namespace tc {
 
 JSTD_DEBUG_CODE(
     class index_out_of_bound_exception;

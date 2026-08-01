@@ -3,7 +3,7 @@
 
 #include <cpp/lang/types.hpp>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Структура для настройки параметров сокета.

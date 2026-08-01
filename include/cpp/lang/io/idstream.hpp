@@ -5,7 +5,7 @@
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/utils.hpp>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Класс предназначен для буферезированного чтения бинарных данных.

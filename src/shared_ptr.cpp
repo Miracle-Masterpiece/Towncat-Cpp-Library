@@ -2,7 +2,7 @@
 #include <cpp/lang/math/math.hpp>
 #include <allocators/Helpers.hpp>
 
-namespace jstd
+namespace tc
 {
 namespace internal
 {

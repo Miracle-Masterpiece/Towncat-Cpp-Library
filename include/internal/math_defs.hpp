@@ -1,7 +1,7 @@
 #ifndef JSTD_CPP_INTERNAL_MATH_DEFS_H
 #define JSTD_CPP_INTERNAL_MATH_DEFS_H
 
-namespace jstd {
+namespace tc {
 namespace math {
 namespace internal {
 

@@ -15,7 +15,7 @@
     #include <windows.h>
 #endif
 
-namespace jstd
+namespace tc
 {
 
 class filesystem {

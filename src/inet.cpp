@@ -9,7 +9,7 @@
 #endif//_WIN32
 
 
-namespace jstd {
+namespace tc {
 
     /*static*/ bool inet_context::already_init = false;
     inet_context::inet_context() {

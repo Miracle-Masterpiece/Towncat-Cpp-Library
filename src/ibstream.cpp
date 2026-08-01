@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cassert>
 
-namespace jstd {
+namespace tc {
 
     ibstream::ibstream() : _allocator(nullptr), _buffer(nullptr), _capacity(0), _offset(0), _limit(0), _in(nullptr) {
 

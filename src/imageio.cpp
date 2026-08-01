@@ -44,7 +44,7 @@ static void jstd_free(void* ptr) {
     return jstd_allocator_for_stb_image.deallocate(ptr);
 }
 
-namespace jstd 
+namespace tc 
 {
 
 namespace imageio 

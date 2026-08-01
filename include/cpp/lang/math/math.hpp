@@ -2,7 +2,6 @@
 #define JSTD_CPP_LANG_MATH_MATH_H
 
 #include <cmath>
-#include <cstdint>
 
 #ifndef M_PI
     #define M_PI 3.141592653589793
@@ -12,7 +11,7 @@
     #define M_HALF_PI (3.141592653589793 / 2.0)
 #endif
 
-namespace jstd
+namespace tc
 {
 namespace math
 {

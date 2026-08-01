@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iostream>
 
-namespace jstd {
+namespace tc {
 
     ifstream::ifstream() : istream(), m_handle(nullptr), m_available(0) {
 

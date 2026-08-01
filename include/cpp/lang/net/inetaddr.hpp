@@ -12,7 +12,7 @@
 struct in_addr;
 struct in6_addr;
 
-namespace jstd
+namespace tc
 {
 
 class inet_family {
@@ -74,7 +74,7 @@ public:
     static const inet_family IPV6;
 };
 
-namespace tc = jstd;
+
 
 namespace internal
 {

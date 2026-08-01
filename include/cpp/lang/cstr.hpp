@@ -5,7 +5,7 @@
 #include <cpp/lang/utils/hash.hpp>
 #include <cpp/lang/utils/objects.hpp>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Представляет собой неизменяемую строку в стиле C (null-terminated), с кэшируемой длиной и удобными методами доступа.

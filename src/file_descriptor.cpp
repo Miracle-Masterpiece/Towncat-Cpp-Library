@@ -25,7 +25,7 @@
 # define JSTD_POSIX_CODE(code) code
 #endif
 
-namespace jstd
+namespace tc
 {
 namespace internal
 {

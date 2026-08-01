@@ -3,7 +3,7 @@
 #include <condition_variable>
 #include <cpp/lang/concurrency/mutex.hpp>
 
-namespace jstd
+namespace tc
 {
 
 class cond_var {

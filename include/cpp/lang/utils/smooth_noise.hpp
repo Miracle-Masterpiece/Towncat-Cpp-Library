@@ -4,7 +4,7 @@
 #include <cpp/lang/utils/random.hpp>
 #include <cpp/lang/numbers.hpp>
 
-namespace jstd
+namespace tc
 {
 
 /**

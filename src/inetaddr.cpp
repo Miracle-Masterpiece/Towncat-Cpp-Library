@@ -33,7 +33,7 @@
 #define WIN_CODE(code) code
 #endif
 
-namespace jstd
+namespace tc
 {
 
   /*static */ const char* getStringError() {

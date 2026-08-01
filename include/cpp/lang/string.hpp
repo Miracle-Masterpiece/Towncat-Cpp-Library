@@ -12,7 +12,7 @@
 #include <cstdio>
 #include <cwchar>
 
-namespace jstd
+namespace tc
 {
 
 template<typename TCHAR>
@@ -1027,6 +1027,5 @@ struct compare_to<tstring<T>> {
 };
 
 }//namespace jstd
-namespace tc = jstd;
 
 #endif /* A6379E4D_4085_4DC3_B5E7_3C4A783981AF */

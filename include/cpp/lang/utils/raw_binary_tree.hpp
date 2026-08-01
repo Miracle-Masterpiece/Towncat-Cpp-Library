@@ -6,7 +6,7 @@
 #include <cassert>
 #include <utility>
 
-namespace jstd
+namespace tc
 {
 
 template<typename K>
@@ -107,7 +107,7 @@ public:
 
 }// namespace jstd
 
-namespace jstd
+namespace tc
 {
 
 /**

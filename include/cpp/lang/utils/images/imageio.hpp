@@ -6,7 +6,7 @@
 #include <cpp/lang/io/ostream.hpp>
 #include <cpp/lang/io/file.hpp>
 
-namespace jstd
+namespace tc
 {
 namespace imageio
 {
@@ -83,6 +83,6 @@ namespace imageio
 
 }//namespace imageio
 }//namespace jstd 
-namespace tc = jstd;
+namespace tc = tc;
 
 #endif//JSTD_CPP_LANG_UTILS_IMAGES_IMAGEIO_H

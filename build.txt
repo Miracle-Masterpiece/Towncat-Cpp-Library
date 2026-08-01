@@ -6,17 +6,19 @@ OUTPUT_NAME	= tclib-${TARGET_ARCH}
 
 # Windows
 CXX_ARM7_WINDOWS    = armv7-w64-mingw32-g++
-CXX_AARCH64_WINDOWS	= aarch64-w64-mingw32-g++
-CXX_X86-64_WINDOWS	= x86_64-w64-mingw32-g++
+CXX_AARCH64_WINDOWS = aarch64-w64-mingw32-g++
+CXX_X86-64_WINDOWS  = x86_64-w64-mingw32-g++
 CXX_X86_WINDOWS	    = i686-w64-mingw32-g++
 
 # Windows compiler flags
 CXX_WINDOWS_STATIC_FLAGS =
 CXX_WINDOWS_SHARED_FLAGS =
+CXX_WINDOWS_EXE_FLAGS =
 
 # Windows linker flags
 LDD_WINDOWS_STATIC_FLAGS =
 LDD_WINDOWS_SHARED_FLAGS = -shared -fPIC
+LDD_WINDOWS_EXE_FLAGS =
 
 # Windows Librarires
 LDD_WINDOWS_LIB	= -lws2_32
@@ -24,6 +26,7 @@ LDD_WINDOWS_LIB	= -lws2_32
 # Output windows
 WINDOWS_SHARED_OUTPUT = ${OUTPUT_NAME}.dll
 WINDOWS_STATIC_OUTPUT = ${OUTPUT_NAME}.lib
+WINDOWS_EXE_OUTPUT    = a.exe
 
 
 
@@ -81,13 +84,14 @@ OUTPUT_DIR = build
 # Compiler settings
 COMPILER = ${CXX_${TARGET_ARCH}_${OS}} ${CXX_FLAGS}
 LINKER   = ${CXX_${TARGET_ARCH}_${OS}} ${LDD_FLAGS}
-STANDARD = 
+STANDARD = -std=c++23
 DEFINE   =
 INCLUDE  = -I"include"
 WARNING  = -Wall -pedantic -Wextra -Wsign-promo -Wfloat-equal -Wconversion -Wno-unused-parameter -Wno-unused-value -Wnon-virtual-dtor -Wno-unused-function
 
 MAKE_STATIC = ar rcs ${__OUTPUT__} ${__OBJECTS__}
 MAKE_SHARED = ${LINKER} ${__OBJECTS__} -o ${__OUTPUT__} ${LDD_LIB}
+MAKE_EXE = ${LINKER} ${__OBJECTS__} -o ${__OUTPUT__} ${LDD_LIB}
 
 # System
 COMPILE= ${COMPILER} -c ${__SOURCE__} -o ${__OBJECT__} ${INCLUDE} ${STANDARD} ${DEFINE} ${WARNING} -MMD

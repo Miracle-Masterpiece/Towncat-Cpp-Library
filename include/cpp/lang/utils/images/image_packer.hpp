@@ -7,7 +7,7 @@
 #include <cpp/lang/array.hpp>
 #include <cstdint>
 
-namespace jstd {
+namespace tc {
 
 namespace texturing {
     class node;

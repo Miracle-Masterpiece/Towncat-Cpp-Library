@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cpp/lang/compress/decompressor.hpp>
 
-namespace jstd
+namespace tc
 {
 
 class lz4_decompressor : public decompressor {
@@ -124,8 +124,8 @@ public:
     std::size_t decompress(char buf[], std::size_t sz) override;
 };
 
-} //namespace jstd
+} //namespace tc
 
-namespace tc = jstd;
+
 
 #endif /* B72D3EC0_A785_4B9E_A22A_414586432947 */

@@ -1,7 +1,7 @@
 #ifndef DC7409F7_2255_4C74_B267_17B9E891E355
 #define DC7409F7_2255_4C74_B267_17B9E891E355
 
-namespace jstd
+namespace tc
 {
 
 /**
@@ -170,6 +170,6 @@ struct remove_reference<T&&> {
 };
 
 }
-namespace tc = jstd;
+
 
 #endif /* DC7409F7_2255_4C74_B267_17B9E891E355 */

@@ -2,7 +2,7 @@
 #define _JSTD_CPP_LANG_NET_INET_H_
 
 
-namespace jstd {
+namespace tc {
 
 /**
  * Класс для автоматического управления жизненным циклом сетевой подсистемы.

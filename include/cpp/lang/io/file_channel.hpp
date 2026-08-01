@@ -7,7 +7,7 @@
 #include <cpp/lang/io/file.hpp>
 #include <cpp/lang/io/channel.hpp>
 
-namespace jstd
+namespace tc
 {
 
 /**
@@ -188,7 +188,7 @@ public:
      * 
      * @see mmaped_file::open
      */
-    file_channel(const jstd::file& path, int option);
+    file_channel(const tc::file& path, int option);
     
     /**
      * Перемещает открытый дескриптор из другого объекта в этот.
@@ -228,7 +228,7 @@ public:
      *      Если попытка открыть файл дважды. 
      *      Если произошла ошибка ввода/вывода.
      */
-    void open(const jstd::file& path, int option);
+    void open(const tc::file& path, int option);
     
     /**
      * Возвращает длину файла. (В байтах).

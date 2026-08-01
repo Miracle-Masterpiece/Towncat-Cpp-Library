@@ -2,7 +2,7 @@
 #include <cpp/lang/exceptions.hpp>
 #include <cstring>
 
-namespace jstd 
+namespace tc 
 {
 
 namespace num 

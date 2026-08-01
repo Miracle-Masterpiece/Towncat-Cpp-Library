@@ -1,7 +1,7 @@
 #include <cpp/lang/utils/shared_ptr.hpp>
 #include <cassert>
 
-namespace jstd
+namespace tc
 {
 
 namespace internal

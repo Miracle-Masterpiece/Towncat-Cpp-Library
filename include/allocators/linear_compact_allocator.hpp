@@ -27,7 +27,7 @@ namespace tca {
 
     struct Header {
         
-        jstd::internal::sptr::shared_control_block * _reference;
+        tc::internal::sptr::shared_control_block * _reference;
         
         /**
          * Указатель на функцию, которая занимается перемещением данных из src в dst
@@ -126,7 +126,7 @@ namespace tca {
         //Указатель на базовый аллокатор.
         base_allocator*  _allocator;
        
-        //Аллокатор для выделения памяти под jstd::internal::sptr::shared_control_block.
+        //Аллокатор для выделения памяти под tc::internal::sptr::shared_control_block.
         pool_allocator m_ctrl_block_allocator;
 
         //Указатель на блок памяти
@@ -151,7 +151,7 @@ namespace tca {
         void grow();
 
         //Функция для выделения сырых байтов под данные, а так же установки фукнции для перемещения.
-        jstd::internal::sptr::shared_control_block* allocate(std::size_t sz, std::size_t count, void (*move_func)(void*, void*, std::size_t));
+        tc::internal::sptr::shared_control_block* allocate(std::size_t sz, std::size_t count, void (*move_func)(void*, void*, std::size_t));
 
         /**
          * Функция перемещения по-умолчанию.
@@ -219,7 +219,7 @@ namespace tca {
          *      shared_ptr на объект.
          */
         template<typename T, typename... ARGS>
-        jstd::shared_ptr<T> allocate(ARGS&&... args);
+        tc::shared_ptr<T> allocate(ARGS&&... args);
         
         /**
          * Выделяет память под массив объект типа T
@@ -228,7 +228,7 @@ namespace tca {
          *      shared_ptr на массив объектов.
          */
         template<typename T>
-        jstd::shared_ptr<T[]> allocate_array(uint32_t length);
+        tc::shared_ptr<T[]> allocate_array(uint32_t length);
 
         /**
          * Устанавливает новую ёмкость для внутреннего буфера аллокатора. (В байтах)
@@ -264,7 +264,7 @@ namespace tca {
         if (std::is_trivially_copyable<T>::value) {
             memcpy(dst, src, sizeof(T) * count);
         } else {
-            using non_const_type = typename jstd::remove_cv<T>::type;
+            using non_const_type = typename tc::remove_cv<T>::type;
             non_const_type* d = const_cast<non_const_type*>(reinterpret_cast<T*>(dst));
             non_const_type* s = const_cast<non_const_type*>(reinterpret_cast<T*>(src));
             for (std::size_t i = 0; i < count; ++i) {
@@ -275,21 +275,21 @@ namespace tca {
     }
 
     template<typename T, typename... ARGS>
-    jstd::shared_ptr<T> compact_linear_allocator::allocate(ARGS&&... args) {
-        jstd::internal::sptr::shared_control_block* block = allocate(sizeof(T), 1, mov<T>);
-        if (!block) return jstd::shared_ptr<T>();
+    tc::shared_ptr<T> compact_linear_allocator::allocate(ARGS&&... args) {
+        tc::internal::sptr::shared_control_block* block = allocate(sizeof(T), 1, mov<T>);
+        if (!block) return tc::shared_ptr<T>();
         new (block->m_object) T(args...);
-        return jstd::shared_ptr<T>(block);
+        return tc::shared_ptr<T>(block);
     }
 
     template<typename T>
-    jstd::shared_ptr<T[]> compact_linear_allocator::allocate_array(uint32_t length) {
-        jstd::internal::sptr::shared_control_block* block = allocate(sizeof(T), length, mov<T>);
+    tc::shared_ptr<T[]> compact_linear_allocator::allocate_array(uint32_t length) {
+        tc::internal::sptr::shared_control_block* block = allocate(sizeof(T), length, mov<T>);
         if (!block) 
-            return jstd::shared_ptr<T[]>();
-        using non_const_T = typename jstd::remove_cv<T>::type;
-        jstd::placement_new(reinterpret_cast<non_const_T*>(block->m_object), length);
-        return jstd::shared_ptr<T[]>(block, length);
+            return tc::shared_ptr<T[]>();
+        using non_const_T = typename tc::remove_cv<T>::type;
+        tc::placement_new(reinterpret_cast<non_const_T*>(block->m_object), length);
+        return tc::shared_ptr<T[]>(block, length);
     }
 }
 

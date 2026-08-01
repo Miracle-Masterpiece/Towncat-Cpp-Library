@@ -5,7 +5,7 @@
 
 namespace tca {
 
-    using namespace jstd::internal::sptr;
+    using namespace tc::internal::sptr;
 
     /**
      * 
@@ -49,7 +49,7 @@ namespace tca {
 
     compact_linear_allocator::compact_linear_allocator(std::size_t capacity, base_allocator* allocator) : 
     _allocator(allocator), 
-    m_ctrl_block_allocator(sizeof(jstd::internal::sptr::shared_control_block), pool_allocator::DEFAULT_COUNT_BUCKETS, allocator), 
+    m_ctrl_block_allocator(sizeof(tc::internal::sptr::shared_control_block), pool_allocator::DEFAULT_COUNT_BUCKETS, allocator), 
     _capacity(capacity),
     _offset(0) {
         _data           = allocator->allocate_align(capacity, alignof(std::max_align_t));
@@ -181,7 +181,7 @@ namespace tca {
         _offset = writePointer;
     }
 
-    jstd::internal::sptr::shared_control_block* compact_linear_allocator::allocate(std::size_t sz, std::size_t count, void (*move_func)(void*, void*, std::size_t)) {
+    tc::internal::sptr::shared_control_block* compact_linear_allocator::allocate(std::size_t sz, std::size_t count, void (*move_func)(void*, void*, std::size_t)) {
         std::size_t total = align_up(Header::byteSize() + sz * count, alignof(std::max_align_t));
         
         if (_offset + total > _capacity) {
@@ -200,7 +200,7 @@ namespace tca {
             }
         }
     
-        jstd::internal::sptr::shared_control_block* ctrl_block = (jstd::internal::sptr::shared_control_block*) m_ctrl_block_allocator.allocate();
+        tc::internal::sptr::shared_control_block* ctrl_block = (tc::internal::sptr::shared_control_block*) m_ctrl_block_allocator.allocate();
         if (ctrl_block == nullptr)  //если котролирующий блок не удалось выделить, возвращает нулевой shared_ptr
             return nullptr;
         
@@ -212,7 +212,7 @@ namespace tca {
         header->_reference                      = ctrl_block;
         _offset += total;
         
-        new (ctrl_block) jstd::internal::sptr::shared_control_block(nullptr, header->dataPointer(), total);
+        new (ctrl_block) tc::internal::sptr::shared_control_block(nullptr, header->dataPointer(), total);
         return ctrl_block;
     }
 

@@ -3,7 +3,7 @@
 
 #include <climits>
 
-namespace jstd
+namespace tc
 {
 
 /**
@@ -98,7 +98,7 @@ template<> struct is_primitive<const volatile long double> {static const bool va
 }
 
 
-namespace jstd
+namespace tc
 {
 
 // Is unsigned 
@@ -158,6 +158,6 @@ template<> struct make_signed<unsigned long long>   {typedef signed long long ty
 
 }
 
-namespace tc = jstd;
+
 
 #endif /* EC12E84B_2C4A_448B_AA66_F927509E8ECF */

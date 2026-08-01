@@ -7,7 +7,7 @@
 #include <exception>
 #include <iostream>
 
-namespace jstd {
+namespace tc {
     
     /*static*/ const thread::state thread::state::NEW         = {0};
     /*static*/ const thread::state thread::state::RUNNABLE    = {1};
@@ -96,7 +96,7 @@ namespace jstd {
             _this->run();
         } catch (const throwable& e1) {
  #if defined(JSTD_ENABLE_CALLTRACE)
-            static jstd::mutex mutex;
+            static tc::mutex mutex;
             mutex.lock();
                 system::tsprintf("Exception in thread\"%s\"\n", _this->get_name());
                 e1.print_stack_trace();

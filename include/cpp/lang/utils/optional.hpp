@@ -4,7 +4,7 @@
 #include <utility>
 #include <cpp/lang/exceptions.hpp>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Класс optional<T> предоставляет контейнер для хранения объекта типа T, 

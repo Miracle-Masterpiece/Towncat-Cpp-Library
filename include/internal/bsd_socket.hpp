@@ -24,7 +24,7 @@
     #error Unsupported platform!
 #endif
 
-namespace jstd
+namespace tc
 {
 
 namespace bsd_socket

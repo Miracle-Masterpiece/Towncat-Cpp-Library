@@ -6,7 +6,7 @@
 #include <cpp/lang/io/ostream.hpp>
 #include <cpp/lang/io/istream.hpp>
 
-namespace jstd {
+namespace tc {
 
 /**
  * Класс для хранения и управления парой "ключ-значение".

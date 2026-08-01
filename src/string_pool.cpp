@@ -1,6 +1,6 @@
 #include <cpp/lang/string_pool.hpp>
 
-namespace jstd
+namespace tc
 {
     using scp = string_const_pool;
     

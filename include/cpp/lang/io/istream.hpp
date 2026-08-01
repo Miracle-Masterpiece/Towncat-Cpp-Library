@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstddef>
 
-namespace jstd
+namespace tc
 {
 
 /**

@@ -5,7 +5,7 @@
 #include <allocators/base_allocator.hpp>
 #include <allocators/allocator.hpp>
 
-namespace jstd
+namespace tc
 {
 
 /**

@@ -6,7 +6,7 @@
 #include <cpp/lang/utils/linked_list.hpp>
 #include <cpp/lang/array.hpp>
 
-namespace jstd
+namespace tc
 {
 namespace concurrency
 {

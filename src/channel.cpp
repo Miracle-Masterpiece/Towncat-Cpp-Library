@@ -1,6 +1,6 @@
 #include <cpp/lang/io/channel.hpp>
 
-namespace jstd
+namespace tc
 {
 
     channel::channel() {

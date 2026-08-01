@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cassert>
 
-namespace jstd {
+namespace tc {
     
     omstream::omstream(std::size_t init_buf_size, tca::allocator* allocator) : 
     _allocator(allocator),

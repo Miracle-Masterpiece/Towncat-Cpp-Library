@@ -3,7 +3,7 @@
 
 #include <mutex>
 
-namespace jstd
+namespace tc
 {
 
 class mutex {
@@ -38,6 +38,6 @@ public:
     }
 };
 
-}// namespace jstd
+}// namespace tc
 
 #endif//JSTD_CPP_LANG_CONCURRENCY_MUTEX_H

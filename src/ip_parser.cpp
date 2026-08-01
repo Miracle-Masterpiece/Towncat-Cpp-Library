@@ -4,7 +4,7 @@
 #include <cassert>
 #include <cstdlib>
 
-namespace jstd
+namespace tc
 {
 namespace net
 {

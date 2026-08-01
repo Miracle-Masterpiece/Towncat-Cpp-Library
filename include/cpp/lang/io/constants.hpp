@@ -1,7 +1,7 @@
 #ifndef JSTD_CPP_LANG_IO_IOCONSTANTS_H
 #define JSTD_CPP_LANG_IO_IOCONSTANTS_H
 
-namespace jstd
+namespace tc
 {
 namespace io
 {

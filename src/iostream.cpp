@@ -2,7 +2,7 @@
 #include <cpp/lang/io/ostream.hpp>
 #include <cpp/lang/exceptions.hpp>
 
-namespace jstd {
+namespace tc {
     
     void close_stream_and_suppress_except(class istream* in) {
         try {

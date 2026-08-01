@@ -1,7 +1,7 @@
 #ifndef E48BE300_4482_4C64_BC3D_90198EE230EC
 #define E48BE300_4482_4C64_BC3D_90198EE230EC
 
-namespace jstd
+namespace tc
 {
 
 /**
@@ -19,6 +19,5 @@ struct enable_if<true, T> {
 };
 
 }
-namespace tc = jstd;
 
 #endif /* E48BE300_4482_4C64_BC3D_90198EE230EC */

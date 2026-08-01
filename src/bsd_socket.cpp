@@ -17,7 +17,7 @@
 #define _____UNIX_CODE____(___code) 
 #endif
 
-namespace jstd 
+namespace tc 
 {
 
 namespace bsd_socket 

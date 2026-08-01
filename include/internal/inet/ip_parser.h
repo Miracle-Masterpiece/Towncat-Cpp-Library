@@ -3,7 +3,7 @@
 
 #include <cpp/lang/net/inetaddr.hpp>
 
-namespace jstd
+namespace tc
 {
 namespace net
 {
