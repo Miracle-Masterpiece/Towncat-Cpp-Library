@@ -12,4 +12,10 @@ bin/WINDOWS_X86-64/src/errors.o: src/errors.cpp \
  include/cpp/lang/traits/SFINAE.hpp \
  include/cpp/lang/traits/relatoship_traits.hpp \
  include/cpp/lang/traits/cv_traits.hpp \
- include/cpp/lang/traits/pure_traits.hpp
+ include/cpp/lang/traits/pure_traits.hpp include/cpp/lang/errcode.hpp \
+ include/cpp/lang/utils/images/image.hpp \
+ include/cpp/lang/utils/images/imageio.hpp \
+ include/cpp/lang/io/istream.hpp include/cpp/lang/io/ostream.hpp \
+ include/cpp/lang/io/file.hpp include/cpp/lang/array.hpp \
+ include/cpp/lang/utils/arrays.hpp include/cpp/lang/io/utility.hpp \
+ include/cpp/lang/io/constants.hpp

@@ -225,8 +225,15 @@ namespace tc {
         return image(std::move(img));
     }
 
-    int image::to_string(char buf[], std::size_t bufsize) const {
-        return snprintf(buf, bufsize, "[w: %i, h: %i, channels: %i]", (int) m_width, (int) m_height, (int) m_channels);
+    string image::to_string(tca::allocator* alloc) const {
+        string result(alloc);
+        
+        result
+        .append("[w:").append(tc::to_string(m_width)).append(',')
+        .append("h:").append(tc::to_string(m_height)).append(',')
+        .append("c:").append(tc::to_string(m_channels)).append(']');
+
+        return result;
     }
 
     /*static*/ image image::make_view(image::byte* data, int width, int height, int channels) {

@@ -364,6 +364,16 @@ public:
     }
     
     /**
+     * Checks whether expected contains a value.
+     * 
+     * @return
+     *      true if contains a value, false if contains an error.
+     */
+    operator bool() const {
+        return is_val;
+    }
+    
+    /**
      * Copy constructor.
      * 
      * @param e

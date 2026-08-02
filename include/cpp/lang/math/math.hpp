@@ -318,6 +318,27 @@ namespace math
     inline long double floor(long double x) {
         return ::floorl(x);
     }
+    
+    /**
+     * 
+     */
+    inline float ceil(float x) {
+        return ::ceilf(x);
+    }
+
+    /**
+     * 
+     */
+    inline double ceil(double x) {
+        return ::ceil(x);
+    }
+
+    /**
+     * 
+     */
+    inline long double ceil(long double x) {
+        return ::ceill(x);
+    }
 
     /**
      * 
@@ -333,6 +354,16 @@ namespace math
     template<typename T>
     T hypot(const T& x, const T& y, const T& z) {
         return sqrt<T>(x*x + y*y + z*z);
+    }
+
+    /**
+     * 
+     */
+    template<typename T>
+    T clamp(const T& val, const T& min, const T& max) {
+        if (val < min) return min;
+        if (val > max) return max;
+        return val;
     }
 
     /**

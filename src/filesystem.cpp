@@ -4,6 +4,7 @@
 #include <cpp/lang/math.hpp>
 #include <allocators/inline_linear_allocator.hpp>
 #include <cerrno>
+#include <cassert>
 
 namespace tc
 {

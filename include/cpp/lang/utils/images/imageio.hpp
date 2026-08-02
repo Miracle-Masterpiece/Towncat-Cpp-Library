@@ -45,7 +45,7 @@ namespace imageio
      * 
      * Остальные выбрасываемые исключения, такие-же, как и у функции {@code load_image(istream*, tca::allocator*)}.
      */
-    image load_image(const file& file , tca::allocator* allocator = tca::get_scoped_or_default());
+    image load_image(const file& file , tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Сохраняет изображение в поток вывода.
@@ -83,6 +83,5 @@ namespace imageio
 
 }//namespace imageio
 }//namespace jstd 
-namespace tc = tc;
 
 #endif//JSTD_CPP_LANG_UTILS_IMAGES_IMAGEIO_H

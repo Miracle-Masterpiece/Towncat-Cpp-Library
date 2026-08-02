@@ -3,8 +3,10 @@
 
 #include <cstdint>
 #include <allocators/allocator.hpp>
+#include <cpp/lang/string.hpp>
 
-namespace tc {
+namespace tc
+{
 
 /**
  * Класс image представляет собой двумерное изображение в формате массива байт (пикселей),
@@ -246,19 +248,9 @@ public:
     const gray& get_gray(int x, int y) const;
 
     /**
-     * Записывает краткое строковое представление изображения в указанный буфер.
-     * Формат строки может включать размер и количество каналов.
-     *
-     * @param buf 
-     *      Буфер, в который будет записана строка.
-     * 
-     * @param bufsize 
-     *      Размер буфера.
-     * 
-     * @return 
-     *      Количество записанных символов.
+     * Возвращает краткое строковое представление изображения.
      */
-    int to_string(char buf[], std::size_t bufsize) const;
+    string to_string(tca::allocator* = tca::get_default_allocator()) const;
 
     /**
      * Создаёт копию изображения.

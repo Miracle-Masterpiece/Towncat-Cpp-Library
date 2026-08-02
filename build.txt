@@ -21,7 +21,7 @@ LDD_WINDOWS_SHARED_FLAGS = -shared -fPIC
 LDD_WINDOWS_EXE_FLAGS =
 
 # Windows Librarires
-LDD_WINDOWS_LIB	= -lws2_32
+LDD_WINDOWS_LIB	= -lws2_32 -lstdc++exp
 
 # Output windows
 WINDOWS_SHARED_OUTPUT = ${OUTPUT_NAME}.dll
@@ -60,7 +60,7 @@ LDD_LINUX_STATIC_FLAGS =
 LDD_LINUX_SHARED_FLAGS = -shared -fPIC
 
 # Linux Librarires
-LDD_LINUX_LIB	=
+LDD_LINUX_LIB	= -lstdc++exp
 
 # Output linux
 LINUX_SHARED_OUTPUT = ${OUTPUT_NAME}.so
