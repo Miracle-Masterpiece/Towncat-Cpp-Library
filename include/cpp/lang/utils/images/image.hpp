@@ -15,10 +15,9 @@ namespace tc
  */
 class image {
 public:
-    using byte = unsigned char;
     struct rgba {
-        byte r, g, b, a;
-        rgba(byte r = 0, byte g = 0, byte b = 0, byte a = 0) : r(r), g(g), b(b), a(a) {}
+        unsigned char r, g, b, a;
+        rgba(unsigned char r = 0, unsigned char g = 0, unsigned char b = 0, unsigned char a = 0) : r(r), g(g), b(b), a(a) {}
         rgba(const rgba&)               = default;
         rgba(rgba&&)                    = default;
         rgba& operator=(const rgba&)    = default;
@@ -27,8 +26,8 @@ public:
         int to_string(char buf[], std::size_t bufsize) const;
     };
     struct rgb {
-        byte r, g, b;
-        rgb(byte r = 0, byte g = 0, byte b = 0) : r(r), g(g), b(b) {}
+        unsigned char r, g, b;
+        rgb(unsigned char r = 0, unsigned char g = 0, unsigned char b = 0) : r(r), g(g), b(b) {}
         rgb(const rgb&)             = default;
         rgb(rgb&&)                  = default;
         rgb& operator=(const rgb&)  = default;
@@ -37,8 +36,8 @@ public:
         int to_string(char buf[], std::size_t bufsize) const;
     };
     struct gray {
-        byte brightness;
-        gray(byte brightness = 0) : brightness(brightness) {}
+        unsigned char brightness;
+        gray(unsigned char brightness = 0) : brightness(brightness) {}
         gray(const gray&)               = default;
         gray(gray&&)                    = default;
         gray& operator=(const gray&)    = default;
@@ -53,7 +52,7 @@ private:
     tca::allocator* m_allocator;
 
     union {
-        byte*   m_pixels;                    // Указатель на массив пикселей изображения.
+        unsigned char* m_pixels;                    // Указатель на массив пикселей изображения.
         rgba*   m_rgba;
         rgb*    m_rgb;
         gray*   m_gray;
@@ -82,12 +81,12 @@ private:
     /**
      * Для создания view на массив байтов.
      */
-    image(image::byte* data, int w, int h, int channels);
+    image(unsigned char* data, int w, int h, int channels);
     
     /**
      * Для захвата владения над массивом байтов.
      */
-    image(image::byte* data, tca::allocator* allocator, int w, int h, int channels);
+    image(unsigned char* data, tca::allocator* allocator, int w, int h, int channels);
 
 public:
     /**
@@ -163,7 +162,7 @@ public:
      * @return 
      *      Указатель на первый байт массива пикселей.
      */
-    byte* pixels();
+    unsigned char* pixels();
 
     /**
      * Возвращает указатель на пиксели изображения (константная версия).
@@ -171,7 +170,7 @@ public:
      * @return 
      *      Указатель на первый байт массива пикселей (только для чтения).
      */
-    const byte* pixels() const;
+    const unsigned char* pixels() const;
 
     /**
      * Возвращает ширину изображения.
@@ -289,7 +288,7 @@ public:
      * @throw null_pointer_exception
      *      Если data равна nullptr.
      */
-    static image make_view(image::byte* data, int width, int height, int channels);
+    static image make_view(unsigned char* data, int width, int height, int channels);
 
     /**
      * Захватывает указатель на массив изображения в своё владение. 
@@ -317,7 +316,7 @@ public:
      *      Если data равна nullptr.
      *      Если allocator равен nullptr.
      */
-    static image lock(image::byte* data, tca::allocator* allocator, int width, int height, int channels);
+    static image lock(unsigned char* data, tca::allocator* allocator, int width, int height, int channels);
 };
     
 

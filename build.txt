@@ -1,8 +1,8 @@
 
-OS   		= WINDOWS
+OS   	    = WINDOWS
 TARGET_ARCH = X86-64
 TARGET_TYPE = SHARED
-OUTPUT_NAME	= tclib-${TARGET_ARCH}
+OUTPUT_NAME = tclib-${TARGET_ARCH}
 
 # Windows
 CXX_ARM7_WINDOWS    = armv7-w64-mingw32-g++
@@ -13,7 +13,7 @@ CXX_X86_WINDOWS	    = i686-w64-mingw32-g++
 # Windows compiler flags
 CXX_WINDOWS_STATIC_FLAGS =
 CXX_WINDOWS_SHARED_FLAGS =
-CXX_WINDOWS_EXE_FLAGS =
+CXX_WINDOWS_EXE_FLAGS = -g
 
 # Windows linker flags
 LDD_WINDOWS_STATIC_FLAGS =

@@ -3,18 +3,25 @@
 
 #include <cmath>
 
-#ifndef M_PI
-    #define M_PI 3.141592653589793
-#endif
-
-#ifndef M_HALF_PI
-    #define M_HALF_PI (3.141592653589793 / 2.0)
-#endif
-
 namespace tc
 {
 namespace math
 {
+
+    /**
+     * 
+     */
+    static const double PI          = 3.141592653589793;
+    
+    /**
+     * 
+     */
+    static const double HALF_PI     = PI / 2.0;
+
+    /**
+     * 
+     */
+    static const double E           = 2.718281828459045;
 
     /**
      * 
@@ -28,42 +35,42 @@ namespace math
      * 
      */
     constexpr double to_radians(double angle) {
-        return angle * (M_PI / 180.0);
+        return angle * (PI / 180.0);
     }
 
     /**
      * 
      */
     constexpr double to_degrees(double rad) {
-        return rad * (180.0 / M_PI);
+        return rad * (180.0 / PI);
     }
 
     /**
      * 
      */
     constexpr float to_radians(float angle) {
-        return angle * (float) (M_PI / 180.0);
+        return angle * (static_cast<float>(PI) / 180.0f);
     }
 
     /**
      * 
      */
     constexpr float to_degrees(float rad) {
-        return rad * (float) (180.0 / M_PI);
+        return rad * (180.0f / static_cast<float>(PI));
     }
 
     /**
      * 
      */
     constexpr long double to_radians(long double angle) {
-        return angle * (M_PI / 180.0);
+        return angle * (PI / 180.0);
     }
 
     /**
      * 
      */
     constexpr long double to_degrees(long double rad) {
-        return rad * (180.0 / M_PI);
+        return rad * (180.0 / PI);
     }
 
     /**
@@ -257,21 +264,21 @@ namespace math
      * 
      */
     inline double cosine(double x) {
-        return (1 - cos(M_PI * x)) / 2;
+        return (1 - cos(PI * x)) / 2;
     }
 
     /**
      * 
      */
     inline float cosine(float x) {
-        return (1 - cos((float) M_PI * x)) / 2;
+        return (1 - cos(static_cast<float>(PI) * x)) / 2;
     }
 
     /**
      * 
      */
     inline long double cosine(long double x) {
-        return (1 - cos(M_PI * x)) / 2;
+        return (1 - cos(PI * x)) / 2;
     }
 
     /**

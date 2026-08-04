@@ -17,7 +17,7 @@ namespace tc {
 
     }
     
-    image::image(image::byte* data, int w, int h, int channels) : 
+    image::image(unsigned char* data, int w, int h, int channels) : 
     m_allocator(nullptr),
     m_pixels(data),
     m_width(w),
@@ -26,7 +26,7 @@ namespace tc {
 
     }
 
-    image::image(image::byte* data, tca::allocator* allocator, int w, int h, int channels) :
+    image::image(unsigned char* data, tca::allocator* allocator, int w, int h, int channels) :
     m_allocator(allocator),
     m_pixels(data), 
     m_width(w), 
@@ -36,7 +36,7 @@ namespace tc {
     }
 
     image::image(int width, int height, int channels, tca::allocator* allocator) {
-        byte* pixels = reinterpret_cast<byte*>(allocator->allocate_align(sizeof(byte) * (width * height * channels), alignof(byte)));
+        unsigned char* pixels = reinterpret_cast<unsigned char*>(allocator->allocate_align((width * height * channels), alignof(unsigned char)));
         if (pixels == nullptr)
             throw_except<out_of_memory_error>("Out of memory!");
         std::memset(pixels, 0, (width * height * channels));
@@ -111,11 +111,11 @@ namespace tc {
         return m_height;
     }
 
-    image::byte* image::pixels() {
+    unsigned char* image::pixels() {
         return m_pixels;
     }
     
-    const image::byte* image::pixels() const {
+    const unsigned char* image::pixels() const {
         return m_pixels;
     }
 
@@ -236,14 +236,14 @@ namespace tc {
         return result;
     }
 
-    /*static*/ image image::make_view(image::byte* data, int width, int height, int channels) {
+    /*static*/ image image::make_view(unsigned char* data, int width, int height, int channels) {
         JSTD_DEBUG_CODE(
             check_non_null(data);
         );
         return image(data, width, height, channels);
     }
 
-    /**static */ image image::lock(image::byte* data, tca::allocator* allocator, int width, int height, int channels) {
+    /**static */ image image::lock(unsigned char* data, tca::allocator* allocator, int width, int height, int channels) {
         JSTD_DEBUG_CODE(
             check_non_null(data);
             check_non_null(allocator);

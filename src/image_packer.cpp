@@ -182,7 +182,7 @@ namespace tc {
                             }
                             else if (img.get_channels() == 1)
                             {
-                                image::byte col = img.get_gray(xo, yo).brightness;
+                                unsigned char col = img.get_gray(xo, yo).brightness;
                                 m_atlas->get_rgba(xx, yy) = image::rgba(col, col, col, 0xff);
                             }
                             else 
@@ -212,7 +212,7 @@ namespace tc {
                             }
                             else if (img.get_channels() == 1)
                             {
-                                image::byte col     = img.get_gray(xo, yo).brightness;
+                                unsigned char col = img.get_gray(xo, yo).brightness;
                                 m_atlas->get_rgb(xx, yy) = image::rgb(col, col, col);
                             }
                             else
@@ -229,7 +229,7 @@ namespace tc {
                     const float r_gamma = 0.30f;
                     const float g_gamma = 0.59f;
                     const float b_gamma = 0.11f;
-                    image::byte gray    = 0;                            
+                    unsigned char gray    = 0;                            
 
                     for (int yo = 0; yo < h; ++yo)
                     {
@@ -239,16 +239,15 @@ namespace tc {
                             const int xx = xo + x;
                             const int yy = yo + y;
                             
-                            
                             if (img.get_channels() == 4)
                             {
                                 const image::rgba& rgba = img.get_rgba(xo, yo);
-                                gray = (image::byte) ( (rgba.r * r_gamma + rgba.g * g_gamma + rgba.b * b_gamma) / 3.0f );
+                                gray = (unsigned char) ( (rgba.r * r_gamma + rgba.g * g_gamma + rgba.b * b_gamma) / 3.0f );
                             } 
                             else if (img.get_channels() == 3)
                             {
                                 const image::rgb& rgb = img.get_rgb(xo, yo);
-                                gray = (image::byte) ( (rgb.r * r_gamma + rgb.g * g_gamma + rgb.b * b_gamma) / 3.0f );
+                                gray = (unsigned char) ( (rgb.r * r_gamma + rgb.g * g_gamma + rgb.b * b_gamma) / 3.0f );
                             }
                             else if (img.get_channels() == 1)
                             {
