@@ -11,7 +11,6 @@ bin/WINDOWS_X86-64/src/inetaddr.o: src/inetaddr.cpp \
  include/allocators/allocator.hpp include/allocators/base_allocator.hpp \
  include/cpp/lang/math.hpp include/cpp/lang/math/math.hpp \
  include/allocators/inline_linear_allocator.hpp \
- include/allocators/linear_allocator.hpp include/allocators/ArrayList.h \
- include/cpp/lang/array.hpp include/cpp/lang/utils/arrays.hpp \
- include/cpp/lang/traits/cv_traits.hpp include/cpp/lang/numbers.hpp \
- include/internal/inet/ip_parser.h
+ include/allocators/linear_allocator.hpp include/cpp/lang/array.hpp \
+ include/cpp/lang/utils/arrays.hpp include/cpp/lang/traits/cv_traits.hpp \
+ include/cpp/lang/numbers.hpp include/internal/inet/ip_parser.h

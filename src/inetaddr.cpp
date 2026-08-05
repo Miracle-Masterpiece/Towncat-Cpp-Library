@@ -20,7 +20,6 @@
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/string.hpp>
 #include <allocators/inline_linear_allocator.hpp>
-#include <allocators/ArrayList.h>
 #include <cpp/lang/array.hpp>
 #include <cpp/lang/numbers.hpp>
 #include <internal/inet/ip_parser.h>
@@ -344,7 +343,7 @@ namespace tc
         addrInf.ai_flags       |= AI_CANONNAME;
 
         addrinfo* begin = nullptr;
-        int errcode   = getaddrinfo(domain, null, &addrInf, &begin);
+        int errcode   = getaddrinfo(domain, nullptr, &addrInf, &begin);
         
         if (errcode != 0)
             throw_except<illegal_state_exception>(getGaiStringError(errcode));    

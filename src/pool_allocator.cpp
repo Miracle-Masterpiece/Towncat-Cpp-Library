@@ -1,289 +1,165 @@
 #include <allocators/pool_allocator.hpp>
-#include <cstdio>
-#include <cstdlib>
+#include <allocators/helpers.hpp>
+#include <cpp/lang/math.hpp>
 #include <cassert>
-#include <new>
 #include <cstdint>
+#include <utility>
 
-#ifndef NDEBUG
-    #define tca_check_currupt_memblock(block)   if (block->m_magic != memblock::MAGIC) {            \
-                                                    std::printf("pool_allocator currupt!\n");       \
-                                                    abort();                                        \
-                                                }                                                                                 
-#else
-    #define tca_check_currupt_memblock(block)
-#endif
+namespace tca
+{
+    using pa = pool_allocator;
 
-namespace tca {
-
-namespace internal {
-
-
-    /**
-     * 
-     *  base_allocator*         m_allocator;
-     *  void*                   m_data;
-     *  std::size_t             m_byte_size;
-     *  std::size_t             m_bucket_size;
-     *  std::size_t             m_bucket_count;
-     *  memblock*               m_freelist;
-     * 
-     */
-
-    void pool::link(memblock* block) {
-        assert(block != nullptr);
-        block->m_next   = m_freelist;
-        m_freelist      = block;
-    }
-
-    pool::memblock* pool::unlink() {
-        memblock* block = m_freelist;
-        if (block == nullptr)
-            return nullptr;
-        tca_check_currupt_memblock(block);
-        m_freelist      = m_freelist->m_next;
-        return block;
-    }
-
-    pool::pool() : 
-    m_allocator(nullptr), 
-    m_data(nullptr), 
-    m_byte_size(0), 
-    m_bucket_size(0), 
-    m_bucket_count(0), 
-    m_freelist(nullptr),
-    m_allocated(0) {
+    pa:: pool_allocator() : allocator(),
+    pages(nullptr),
+    free_list(nullptr),
+    align(0),
+    bucket_size(0),
+    cnt_buckets_per_page(0) {
 
     }
-    
-    pool::pool(std::size_t blocksize, std::size_t count_blocks, base_allocator* allocator) : pool() {
-        blocksize = align_up(blocksize, alignof(std::max_align_t));
-        void* data = allocator->allocate_align(byte_size_for_pool(blocksize, count_blocks), alignof(std::max_align_t));
-        if (data != nullptr) {
-            m_allocator     = allocator;
-            m_data          = data;
-            m_byte_size     = (blocksize + HEADER_SIZE) * count_blocks;
-            m_bucket_size   = blocksize + HEADER_SIZE;
-            m_bucket_count  = count_blocks;
-            m_freelist      = nullptr;
-            m_allocated     = 0;
 
-            for (std::size_t i = 0; i < count_blocks; ++i) {
-                std::size_t offset = i * m_bucket_size;
-                memblock* block = new(reinterpret_cast<char*>(data) + offset) memblock();
-                link(block);
-            }
-        }
-    }
-    
-    /**
-     * 
-     *  base_allocator*         m_allocator;
-     *  void*                   m_data;
-     *  std::size_t             m_byte_size;
-     *  std::size_t             m_bucket_size;
-     *  std::size_t             m_bucket_count;
-     *  memblock*               m_freelist;
-     * 
-     */
+    pa::pool_allocator(std::size_t bucket_size, std::size_t align, allocator* alloc) :  allocator(alloc),
+    pages(nullptr),
+    free_list(nullptr),
+    align( tc::math::max(align, alignof(internal::bucket)) ),
+    bucket_size( align_up(bucket_size, this->align) ),
+    cnt_buckets_per_page(64) {
 
-    pool::pool(pool&& p) :
-    m_allocator(p.m_allocator),
-    m_data(p.m_data),
-    m_byte_size(p.m_byte_size),
-    m_bucket_size(p.m_bucket_size),
-    m_bucket_count(p.m_bucket_count),
-    m_freelist(p.m_freelist), 
-    m_allocated(p.m_allocated) {
-        p.m_allocator       = nullptr;
-        p.m_data            = nullptr;
-        p.m_byte_size       = 0;
-        p.m_bucket_size     = 0;
-        p.m_bucket_count    = 0;
-        p.m_freelist        = nullptr;
-        p.m_allocated       = 0;
-        update_owner(&p);
     }
 
-    pool& pool::operator= (pool&& p) {
-        if (&p != this) {
-            cleanup();
-            m_allocator     = p.m_allocator;
-            m_data          = p.m_data;
-            m_byte_size     = p.m_byte_size;
-            m_bucket_size   = p.m_bucket_size;
-            m_bucket_count  = p.m_bucket_count;
-            m_freelist      = p.m_freelist;
-            m_allocated     = p.m_allocated;
+    pa:: pool_allocator(pool_allocator&& alloc) : allocator(std::move(alloc)) {
+        std::swap(pages,        alloc.pages);
+        std::swap(free_list,    alloc.free_list);
+        std::swap(align,        alloc.align);
+        std::swap(bucket_size,  alloc.bucket_size);
+        std::swap(cnt_buckets_per_page, alloc.cnt_buckets_per_page);
+    }
 
-            p.m_allocator       = nullptr;
-            p.m_data            = nullptr;
-            p.m_byte_size       = 0;
-            p.m_bucket_size     = 0;
-            p.m_bucket_count    = 0;
-            p.m_freelist        = nullptr;
-            p.m_allocated       = 0;
-
-            update_owner(&p);
+    pool_allocator& pa:: operator=(pool_allocator&& alloc) {
+        if (&alloc != this)
+        {
+            allocator::operator=(std::move(alloc));
+            std::swap(pages,        alloc.pages);
+            std::swap(free_list,    alloc.free_list);
+            std::swap(align,        alloc.align);
+            std::swap(bucket_size,  alloc.bucket_size);
+            std::swap(cnt_buckets_per_page, alloc.cnt_buckets_per_page);
         }
         return *this;
     }
     
-    void pool::cleanup() {
-        if (m_allocator != nullptr && m_data != nullptr) {
-            m_allocator->deallocate(m_data, m_byte_size);
-            m_data      = nullptr;
-            m_allocator = nullptr;
-        }
-    }
+    void pa:: allocate_page() {
+        std::size_t header_sz = align_up(sizeof(internal::page_header), align);
+        std::size_t block_sz  = bucket_size * cnt_buckets_per_page;
+        std::size_t total_page_size = header_sz + block_sz;
+        
+        #if 0
+        unsigned char* tmp = nullptr;
+        std::printf("header     : 0x%p\n", tmp);
+        std::printf("block      : 0x%p\n", tmp + header_sz);
+        std::printf("header_sz  : %zu\n", header_sz);
+        std::printf("block_sz   : %zu\n", block_sz);
+        std::printf("total      : %zu\n", total_page_size);
+        std::printf("bucket_sz  : %zu\n", bucket_size);
+        std::printf("align      : %zu\n", align);
+        #endif
 
-    void pool::update_owner(const pool* old_owner) {
-        assert(old_owner != nullptr);
-        void* data = m_data;
-        for (std::size_t i = 0; i < m_bucket_count; ++i) {
-            std::size_t offset = i * m_bucket_size;
-            memblock* block = reinterpret_cast<memblock*>(reinterpret_cast<char*>(data) + offset);
-            if (block->m_owner == old_owner)
-                block->m_owner = this;
-        }
-    }
-
-    pool::~pool() {
-        cleanup();
-    }
-    
-    void* pool::allocate() {
-        memblock* block = unlink();
-        if (block == nullptr)
-            return nullptr;
-        block->m_owner = this;
-        ++m_allocated;
-        return reinterpret_cast<void*>(reinterpret_cast<char*>(block) + HEADER_SIZE);
-    }
-    
-    void pool::deallocate(void* p) {
-        if (p == nullptr)
+        void* dat = m_parent->allocate_align(
+                        total_page_size, tc::math::max(
+                            align, alignof(internal::page_header) 
+                        )
+                    );
+        
+        if (!dat)
             return;
-        memblock* block = void_to_memblock(p);
-        tca_check_currupt_memblock(block);
-        link(block);
-        --m_allocated;
-    }
 
-}//namespace internal
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    pool_allocator::pool_allocator(std::size_t size, std::size_t buckets_count, base_allocator* allocator) : 
-    m_allocator(allocator), m_pool(allocator), m_count_buckets(buckets_count), m_pool_size(size) {
-
-    }
-    
-    pool_allocator::pool_allocator(pool_allocator&& pa) : 
-    base_allocator(std::move(pa)),
-    m_allocator(pa.m_allocator),
-    m_pool(std::move(pa.m_pool)),
-    m_count_buckets(pa.m_count_buckets),
-    m_pool_size(pa.m_pool_size) {
-        pa.m_allocator      = nullptr;
-        pa.m_pool_size      = 0;
-        pa.m_count_buckets  = 0;
-    }
-
-    pool_allocator& pool_allocator::operator= (pool_allocator&& pa) {
-        if (&pa != this) {
-            base_allocator::operator=(std::move(pa));
-            m_allocator     = pa.m_allocator;
-            m_pool          = std::move(pa.m_pool);
-            m_count_buckets = pa.m_count_buckets;
-            m_pool_size     = pa.m_pool_size;
-            pa.m_allocator      = nullptr;
-            pa.m_pool_size      = 0;
-            pa.m_count_buckets  = 0;
+        #if 1
+        {
+            internal::page_header* hder = static_cast<internal::page_header*>(dat);
             
-        }
-        return *this;
-    }
-    
-    pool_allocator::~pool_allocator() {
+            assert((((std::uintptr_t) &hder->dat) % alignof(void*)) == 0);
+            hder->dat    = static_cast<unsigned char*>(dat) + header_sz;
+            
+            assert((((std::uintptr_t) &hder->next) % alignof(void*)) == 0);
+            hder->next = pages;
+            
+            assert((((std::uintptr_t) &hder->size) % alignof(std::size_t)) == 0);
+            hder->size   = total_page_size;
 
-    }
-
-    void* pool_allocator::allocate() {
-        return allocate(1);
-    }
-    
-    void pool_allocator::deallocate(void* p) {
-        deallocate(p, 0);
-    }
-
-    void* pool_allocator::allocate(std::size_t sz) {
-        return allocate_align(sz, alignof(std::max_align_t));
-    }
-
-    void* pool_allocator::allocate_align(std::size_t sz, std::size_t/*ingnored*/) {
-        assert(sz <= m_pool_size);
-        void* p = nullptr;
-        for (std::size_t i = 0; i < m_pool.size(); ++i) {
-            internal::pool& pool = m_pool.at(i);
-            p = pool.allocate();
-            if (p != nullptr)
-                return p;
+            pages = hder;
         }
 
         {
-            internal::pool pool(m_pool_size, m_count_buckets, m_allocator);
-            p = pool.allocate();
-            if (p != nullptr)
-                m_pool.add(std::move(pool));
+            
+            unsigned char* buckets = static_cast<unsigned char*>(dat) + header_sz;
+            
+            for (std::size_t i = 0; i < cnt_buckets_per_page; ++i)
+            {
+                // What the fuck
+                internal::bucket* bucket = static_cast<internal::bucket*>(
+                    static_cast<void*>(buckets + i * bucket_size)
+                );
+                
+                assert((((std::uintptr_t) bucket) % align) == 0);
+                
+                bucket->next = free_list;
+                free_list = bucket;
+            }
+
+        }
+        #endif
+    }
+
+    void* pa:: allocate() {
+        
+        for (std::size_t i = 0; i < 2; ++i)
+        {
+            if (free_list != nullptr)
+            {
+                
+                internal::bucket* node = free_list;
+                free_list = free_list->next;
+                
+                assert((((std::uintptr_t) node) % align) == 0);
+                
+                return static_cast<void*>(node);
+            }
+    
+            if (i == 0)
+            {
+                allocate_page();
+            }
         }
 
-        return p;
+        return nullptr;
     }
     
-    void pool_allocator::deallocate(void* p, std::size_t) {
+    void* pa:: allocate(std::size_t sz) {
+        if (sz > bucket_size || alignof(std::max_align_t) > align)
+            return nullptr;
+        return allocate();
+    }
+
+    void* pa:: allocate_align(std::size_t sz, std::size_t align_) {
+        if (sz > bucket_size || align_ > align)
+            return nullptr;
+        return allocate();
+    }
+
+    void pa ::deallocate(void* p) {
         if (p == nullptr)
             return;
-        internal::pool::memblock* memblock = internal::pool::void_to_memblock(p);
-        internal::pool* pool = memblock->m_owner;
-        pool->deallocate(p);
+        internal::bucket* node = static_cast<internal::bucket*>(p);
+        node->next = free_list;
+        free_list  = node;
     }
 
-    void pool_allocator::free_unsused_pools() {
-        for (std::size_t i = 0; i < m_pool.size(); ++i) {
-            internal::pool& pool = m_pool.at(i);
-            if (pool.is_free())
-                m_pool.remove_at(i--);
+    pa:: ~pool_allocator() {
+        for (internal::page_header* page = pages; page != nullptr; )
+        {
+            internal::page_header* next = page->next;
+            m_parent->deallocate(static_cast<void*>(page), page->size);
+            page = next;
         }
     }
-
-
-}//namespace tca
+}

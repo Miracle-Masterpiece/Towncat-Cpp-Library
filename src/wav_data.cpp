@@ -6,11 +6,113 @@
 #include <cpp/lang/io/iostream.hpp>
 #include <iostream>
 
+
+#define TC_MAKE_INT(buf) ((static_cast<long>(buf[0]) & 0xFF) | ((static_cast<long>(buf[1]) & 0xFF) << CHAR_BIT) | ((static_cast<long>(buf[2]) & 0xFF) << (CHAR_BIT * 2)) | ((static_cast<long>(buf[3]) & 0xFF) << (CHAR_BIT * 3)));
+#define TC_MAKE_SHORT(buf) ((static_cast<short>(buf[0]) & 0xFF) | ((static_cast<short>(buf[1]) & 0xff) << CHAR_BIT));
+
 namespace tc 
 {
 
     wav_data::wav_data() : m_allocator(nullptr), data(nullptr) {
 
+    }
+
+    wav_data::wav_data(const wav_data& wav) {
+        m_allocator = wav.m_allocator;
+        
+        data = (char*) m_allocator->allocate( static_cast<std::size_t>(wav.subchunk2Size) );
+        
+        if (!data)
+            throw_except<out_of_memory_error>("Out of memory");
+        
+        std::memcpy(data, wav.data, wav.subchunk2Size);
+        
+        chunk_size      = wav.chunk_size;
+        subchunk1Size   = wav.subchunk1Size;
+        sampleRate      = wav.sampleRate;
+        byteRate        = wav.byteRate;
+        subchunk2Size   = wav.subchunk2Size;
+        block_align     = wav.block_align;
+        audioFormat     = wav.audioFormat;
+        numChannels     = wav.numChannels;
+        bits_per_sample = wav.bits_per_sample;
+
+        std::memcpy(chunk_id, wav.chunk_id, sizeof(chunk_id));
+        std::memcpy(format, wav.format, sizeof(format));
+        std::memcpy(subchunk1Id, wav.subchunk1Id, sizeof(subchunk1Id));
+        std::memcpy(subchunk2Id, wav.subchunk2Id, sizeof(subchunk2Id));
+    }
+    
+    wav_data::wav_data(wav_data&& wav) : wav_data() {
+        std::swap(m_allocator, wav.m_allocator);
+        std::swap(data, wav.data);
+        std::swap(chunk_size, wav.chunk_size);
+        std::swap(subchunk1Size, wav.subchunk1Size);
+        std::swap(sampleRate, wav.sampleRate);
+        std::swap(byteRate, wav.byteRate);
+        std::swap(subchunk2Size, wav.subchunk2Size);
+        std::swap(block_align, wav.block_align);
+        std::swap(audioFormat, wav.audioFormat);
+        std::swap(numChannels, wav.numChannels);
+        std::swap(bits_per_sample, wav.bits_per_sample);
+        std::memcpy(chunk_id, wav.chunk_id, sizeof(chunk_id));
+        std::memcpy(format, wav.format, sizeof(format));
+        std::memcpy(subchunk1Id, wav.subchunk1Id, sizeof(subchunk1Id));
+        std::memcpy(subchunk2Id, wav.subchunk2Id, sizeof(subchunk2Id));
+    }
+    
+    wav_data& wav_data::operator=(const wav_data& wav) {
+        if (&wav != this)
+        {
+            char* new_data = (char*) wav.m_allocator->allocate( static_cast<std::size_t>(wav.subchunk2Size) );
+            if (!new_data)
+                throw_except<out_of_memory_error>("Out of memory");
+                
+            std::memcpy(new_data, wav.data, wav.subchunk2Size);
+            
+            if (data && m_allocator)
+                m_allocator->deallocate(data);
+            
+            m_allocator     = wav.m_allocator;
+            data            = new_data;
+            chunk_size      = wav.chunk_size;
+            subchunk1Size   = wav.subchunk1Size;
+            sampleRate      = wav.sampleRate;
+            byteRate        = wav.byteRate;
+            subchunk2Size   = wav.subchunk2Size;
+            block_align     = wav.block_align;
+            audioFormat     = wav.audioFormat;
+            numChannels     = wav.numChannels;
+            bits_per_sample = wav.bits_per_sample;
+    
+            std::memcpy(chunk_id, wav.chunk_id, sizeof(chunk_id));
+            std::memcpy(format, wav.format, sizeof(format));
+            std::memcpy(subchunk1Id, wav.subchunk1Id, sizeof(subchunk1Id));
+            std::memcpy(subchunk2Id, wav.subchunk2Id, sizeof(subchunk2Id));
+        }
+        return *this;
+    }
+    
+    wav_data& wav_data::operator=(wav_data&& wav) {
+        if (&wav != this)
+        {
+            std::swap(m_allocator, wav.m_allocator);
+            std::swap(data, wav.data);
+            std::swap(chunk_size, wav.chunk_size);
+            std::swap(subchunk1Size, wav.subchunk1Size);
+            std::swap(sampleRate, wav.sampleRate);
+            std::swap(byteRate, wav.byteRate);
+            std::swap(subchunk2Size, wav.subchunk2Size);
+            std::swap(block_align, wav.block_align);
+            std::swap(audioFormat, wav.audioFormat);
+            std::swap(numChannels, wav.numChannels);
+            std::swap(bits_per_sample, wav.bits_per_sample);
+            std::memcpy(chunk_id, wav.chunk_id, sizeof(chunk_id));
+            std::memcpy(format, wav.format, sizeof(format));
+            std::memcpy(subchunk1Id, wav.subchunk1Id, sizeof(subchunk1Id));
+            std::memcpy(subchunk2Id, wav.subchunk2Id, sizeof(subchunk2Id));
+        }
+        return *this;
     }
 
     wav_data::wav_data(const file& path, tca::allocator* allocator) {
@@ -46,103 +148,149 @@ namespace tc
         load_from(in);
     }
 
-    void wav_data::load_from(/*!non null!*/istream* in) {
-        const std::size_t HEADER_SIZE = 44;
-        char header[HEADER_SIZE];    
-        
-        std::size_t readed = in->read(header, HEADER_SIZE);
-        if (readed != HEADER_SIZE)
-            throw_except<eof_exception>("Invalid wav data!");
-        
-        byte_buffer header_buffer(header, HEADER_SIZE);
-        header_buffer.order(byte_order::BE);
-        
-        //0…3 (4 байта)	chunkId	Содержит символы "RIFF" в ASCII кодировке 0x52494646. Является началом RIFF-цепочки.
-        chunkId = header_buffer.get<int32_t>();
-        if (chunkId != 0x52494646)
-            throw_except<invalid_data_format_exception>("Invalid chunkId wav data!");
-
-        //4…7 (4 байта)	chunkSize	Это оставшийся размер цепочки, начиная с этой позиции. Иначе говоря, это размер файла минус 8, то есть, исключены поля chunkId и chunkSize.
-        chunkSize = header_buffer.get<uint32_t>();
-
-        //8…11 (4 байта)	format	Содержит символы "WAVE" 0x57415645
-        format = header_buffer.get<int32_t>();
-        if (format != 0x57415645)
-            throw_except<invalid_data_format_exception>("Invalid format wav data!");
-
-        //12…15 (4 байта)	subchunk1Id	Содержит символы "fmt " 0x666d7420
-        subchunk1Id = header_buffer.get<int32_t>();
-        if (subchunk1Id != 0x666d7420)
-            throw_except<invalid_data_format_exception>("Invalid subchunk1Id wav data!");
-
-        header_buffer.order(byte_order::LE);
-        subchunk1Size   = header_buffer.get<uint32_t>();
-        audioFormat     = header_buffer.get<int16_t>();
-        numChannels     = header_buffer.get<int16_t>();
-        sampleRate      = header_buffer.get<int32_t>();
-        byteRate        = header_buffer.get<int32_t>();
-        blockAlign      = header_buffer.get<int16_t>();
-        bitsPerSample   = header_buffer.get<int16_t>();
-        header_buffer.order(byte_order::BE);
-
-        subchunk2Id     = header_buffer.get<int32_t>();
-        if (subchunk2Id != 0x64617461)
-            throw_except<invalid_data_format_exception>("Invalid subchunk2Id wav data!");
-
-        header_buffer.order(byte_order::LE);        
-        subchunk2Size   = header_buffer.get<uint32_t>();
-
-        data = reinterpret_cast<char*>(m_allocator->allocate(subchunk2Size));
-        
-        if (!data)
-            throw_except<out_of_memory_error>("Out of memory");
-        
-        try {
-            readed = in->read(data, subchunk2Size);
-            if (readed != subchunk2Size)
-                throw_except<eof_exception>("EOF wav data!");
-        } catch (...) {
-            m_allocator->deallocate(data, subchunk2Size);
-            throw;
-        }
+    static void fill_buf_or_except(char buf[], std::size_t sz, /*non_null*/ istream* in) {
+        std::size_t readed = in->read(buf, sz);
+        if (readed < sz)
+            throw_except<invalid_data_format_exception>("Invalid wav data!");
     }
 
-    void wav_data::cleanup() {
-        if (m_allocator != nullptr && data != nullptr) {
-            m_allocator->deallocate(data, subchunk2Size);
-            data = nullptr;
+    void wav_data::load_from(/*!non null!*/istream* in) {
+
+        {//read "RIFF"
+            fill_buf_or_except(chunk_id, sizeof(chunk_id), in);
+
+            const char RIFF[] = "RIFF";
+            for (std::size_t i = 0; i < sizeof(chunk_id); ++i)
+                if (chunk_id[i] != RIFF[i])
+                    throw_except<invalid_data_format_exception>("Invalid format 'RIFF' wav");
+        }
+
+        {
+            char buf[4];
+            fill_buf_or_except(buf, sizeof(buf), in);
+            chunk_size = TC_MAKE_INT(buf);
+        }
+
+        {//read "WAVE"
+            fill_buf_or_except(format, sizeof(format), in);
+
+            const char WAVE[] = "WAVE";
+            for (std::size_t i = 0; i < sizeof(format); ++i)
+                if (format[i] != WAVE[i])
+                    throw_except<invalid_data_format_exception>("Invalid format 'WAVE' wav");
+        }
+        
+        {//read "fmt "
+            
+            fill_buf_or_except(subchunk1Id, sizeof(subchunk1Id), in);
+
+            const char FMT[] = "fmt ";
+            for (std::size_t i = 0; i < sizeof(subchunk1Id); ++i)
+                if (subchunk1Id[i] != FMT[i])
+                    throw_except<invalid_data_format_exception>("Invalid format 'fmt ' wav");
+        }
+
+        {
+            char buf[4];
+            fill_buf_or_except(buf, sizeof(buf), in);        
+            subchunk1Size = TC_MAKE_INT(buf);
+        }
+        
+        {
+            char buf[2];
+            fill_buf_or_except(buf, sizeof(buf), in);
+            audioFormat = TC_MAKE_SHORT(buf);
+        }
+        
+        {
+            char buf[2];
+            fill_buf_or_except(buf, sizeof(buf), in);
+            numChannels = TC_MAKE_SHORT(buf);
+        }
+
+        {
+            char buf[4];
+            fill_buf_or_except(buf, sizeof(buf), in);
+            sampleRate = TC_MAKE_INT(buf);
+        }
+        
+        {
+            char buf[4];
+            fill_buf_or_except(buf, sizeof(buf), in);
+            byteRate = TC_MAKE_INT(buf);
+        }
+
+        {
+            char buf[2];
+            fill_buf_or_except(buf, sizeof(buf), in);
+            block_align = TC_MAKE_SHORT(buf);
+        }
+        
+        {
+            char buf[2];
+            fill_buf_or_except(buf, sizeof(buf), in);
+            bits_per_sample = TC_MAKE_SHORT(buf);
+        }
+
+        {
+            fill_buf_or_except(subchunk2Id, sizeof(subchunk2Id), in);
+            const char data[] = "data";
+            for (std::size_t i = 0; i < sizeof(subchunk2Id); ++i)
+                if (subchunk2Id[i] != data[i])
+                    throw_except<invalid_data_format_exception>("Invalid format 'subchunk2Id' wav");
+        }
+
+        {
+            char buf[4];
+            fill_buf_or_except(buf, sizeof(buf), in);
+            subchunk2Size = TC_MAKE_INT(buf);
+        }
+
+        {      
+            data = (char*) m_allocator->allocate(static_cast<std::size_t>(subchunk2Size));
+            if (!data)
+            {
+                throw_except<out_of_memory_error>("Out of memory");
+            }
+
+            try {
+                fill_buf_or_except(data, static_cast<std::size_t>(subchunk2Size), in);
+            } catch (...) {
+                m_allocator->deallocate(data);
+                throw;
+            }
         }
     }
 
     wav_data::~wav_data() {
-        cleanup();
+        if (m_allocator != nullptr && data != nullptr)
+        {
+            m_allocator->deallocate(data, subchunk2Size);
+            data = nullptr;
+        }
     }
 
     const char* wav_data::get_data() const {
         return data;
     }
     
-    int32_t wav_data::get_format() const {
-        return format;
-    }
-    
-    int32_t wav_data::get_sample_rate() const {
+    long wav_data::get_sample_rate() const {
         return sampleRate;
     }
     
-    int32_t wav_data::get_byte_rate() const {
+    long wav_data::get_byte_rate() const {
         return byteRate;
     }
     
-    uint32_t wav_data::get_length() const {
+    long wav_data::get_length() const {
         return subchunk2Size;
     }
     
-    int16_t wav_data::get_num_channels() const {
+    short wav_data::get_num_channels() const {
         return numChannels;
     }
 
-    int16_t wav_data::get_bits_per_sample() const {
-        return bitsPerSample;
+    short wav_data::get_bits_per_sample() const {
+        return bits_per_sample;
     }
 }

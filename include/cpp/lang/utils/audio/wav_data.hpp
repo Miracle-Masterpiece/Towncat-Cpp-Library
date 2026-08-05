@@ -10,160 +10,234 @@ namespace tc
 
 class file;
 
-/**
- * Представляет декодированные заголовки и данные WAV-файла.
- * 
- * Этот класс предоставляет низкоуровневый доступ к структурам WAV-формата,
- * включая заголовочные поля RIFF, формат аудио, частоту дискретизации, 
- * количество каналов, битность, а также сами аудиоданные. 
- * 
- * Загрузка производится вручную из входного потока или по пути к файлу.
- * Все выделения памяти производятся через пользовательский аллокатор.
- */
 class wav_data {
+    
+    // Allocator used for data storage.
     tca::allocator* m_allocator;
-    int32_t     chunkId;
-    uint32_t    chunkSize;
-    int32_t     format;
-    int32_t     subchunk1Id;
-    uint32_t    subchunk1Size;
-    int16_t     audioFormat;
-    int16_t     numChannels;
-    int32_t     sampleRate;
-    int32_t     byteRate;
-    int16_t     blockAlign;
-    int16_t     bitsPerSample;
-    int32_t     subchunk2Id;
-    uint32_t    subchunk2Size;
-    char*       data;
+    
+    // Raw audio data
+    char* data;
+    
+    // Size of the entire file in bytes (minus 8)
+    long chunk_size;
+    
+    // Size of the "fmt " chunk.
+    long subchunk1Size;
+    
+    // Sample rate in Hz (e.g., 44100).
+    long sampleRate;
+    
+    // 
+    long byteRate;
+    
+    // Size of the audio data in bytes.
+    long subchunk2Size;
+    
+    // 
+    short block_align;
+    
+    // Audio format (1 = PCM, others = compressed).
+    short audioFormat;
+    
+    // Number of channels (1 = mono, 2 = stereo).
+    short numChannels;
+    
+    // Bits per sample (8, 16, 24, etc.)
+    short bits_per_sample;
+    
+    // "RIFF"
+    char chunk_id[4];
+    
+    // "WAVE"
+    char format[4];
+
+    // "fmt "
+    char subchunk1Id[4];
+    
+    // "data"
+    char subchunk2Id[4];
 
     /**
-     * Загружает WAV-данные из указанного входного потока.
-     *
-     * @param in
-     *      Указатель на входной поток (например, файл или буфер), содержащий WAV-данные.
-     *      Должен быть валидным и не равным nullptr.
+     * Loads WAV data from the specified input stream.
      * 
-     * @throws std::runtime_error
-     *      Если формат WAV недопустим или при чтении произошла ошибка.
+     * Reads and validates the WAV header, then reads the audio data
+     * into memory. All header fields are populated from the stream.
+     * 
+     * @param in
+     *      Pointer to the input stream containing WAV data.
+     *      Must be valid and not nullptr.
+     * 
+     * @throws invalid_data_format_exception
+     *      If the WAV format is invalid (wrong chunk IDs, incorrect sizes).
+     * 
+     * @throws out_of_memory_error
+     *      If memory allocation for audio data fails.
+     * 
+     * @throws io_exception
+     *      If reading from the stream fails.
+     * 
+     * @note
+     *      The function validates "RIFF", "WAVE", "fmt ", and "data" chunks.
+     * 
+     * @see
+     *      fill_buf_or_except
      */
     void load_from(/*!non null!*/istream* in);
 
-    /**
-     * Освобождает ресурсы, выделенные при загрузке WAV-данных.
-     */
-    void cleanup();
-
 public:
     /**
-     * Создаёт пустой объект wav_data.
+     * Constructs an empty wav_data object.
      * 
-     * После вызова необходимо вручную вызвать метод load_from()
-     * для загрузки данных WAV из потока.
      */
     wav_data();
 
     /**
-     * Загружает WAV-данные из файла.
-     *
+     * Loads WAV data from a file.
+     * 
+     * Opens and reads a WAV file, parsing the header and loading
+     * the audio data into memory.
+     * 
      * @param path
-     *      Путь к .wav-файлу.
+     *      Path to the .wav file to load.
      * 
      * @param allocator
-     *      Пользовательский аллокатор памяти, который будет использоваться для хранения аудиоданных.
-     *
-     * @warning
-     *      Если при загрузки аудио возникло исключение, а после при закрытии потока, то исключение закрытия потока будет проигнорировано!
+     *      Custom memory allocator for storing audio data.
+     *      If nullptr, the default allocator is used.
      * 
      * @throws file_not_found_exception
-     *      Если файла не существует.
+     *      If the file does not exist.
      * 
      * @throws io_exception
-     *      Если произошла ошибка ввода/вывода.
-     * 
-     * @throws eof_exception
-     *      Если данные неожиданно закончились.
+     *      If an I/O error occurs while reading the file.
      * 
      * @throws invalid_data_format_exception
-     *      Если формат WAV недопустим
+     *      If the WAV format is invalid.
      * 
      * @throws out_of_memory_error
-     *      Если памяти не хватило
+     *      If memory allocation for audio data fails.
+     * 
+     * @warning
+     *      If an exception is thrown during loading, the file stream
+     *      is properly closed and any exceptions during closing are
+     *      suppressed to avoid masking the original error.
+     * 
+     * @example
+     *      wav_data wav("audio.wav");
+     *      const char* audio_data = wav.get_data();
      */
-    explicit wav_data(const file& file, tca::allocator* allocator = tca::get_scoped_or_default());
-
+    explicit wav_data(const file& file, tca::allocator* allocator = tca::get_default_allocator());
+    
     /**
-     * Загружает WAV-данные из указанного входного потока.
+     * Loads WAV data from an input stream.
+     * 
+     * Reads WAV data from a pre-opened input stream. This is useful
+     * for loading from memory buffers or network streams.
      * 
      * @param in
-     *      Указатель на поток ввода, содержащий WAV-данные.
-     *      Должен быть валидным и не равным nullptr.
+     *      Pointer to the input stream containing WAV data.
+     *      Must be valid and not nullptr.
      * 
      * @param allocator
-     *      Пользовательский аллокатор памяти, используемый для хранения аудиоданных.
+     *      Custom memory allocator for storing audio data.
+     *      If nullptr, the default allocator is used.
      * 
      * @throws io_exception
-     *      Если произошла ошибка ввода/вывода.
-     * 
-     * @throws eof_exception
-     *      Если данные неожиданно закончились.
+     *      If an I/O error occurs while reading from the stream.
      * 
      * @throws invalid_data_format_exception
-     *      Если формат WAV недопустим
+     *      If the WAV format is invalid.
      * 
      * @throws out_of_memory_error
-     *      Если памяти не хватило
+     *      If memory allocation for audio data fails.
+     * 
+     * @example
+     *      ifstream file("audio.wav");
+     *      wav_data wav(&file);
      */
-    wav_data(istream* in, tca::allocator* allocator = tca::get_scoped_or_default());
+    wav_data(istream* in, tca::allocator* allocator = tca::get_default_allocator());
+
+    wav_data(const wav_data&);
+    wav_data(wav_data&&);
+    wav_data& operator=(const wav_data&);
+    wav_data& operator=(wav_data&&);
 
     /**
-     * Освобождает все ресурсы, связанные с WAV-данными.
+     * 
      */
     ~wav_data();
 
     /**
+     * Returns a pointer to the raw PCM audio data.
+     * 
      * @return
-     *      Указатель на необработанные PCM-данные WAV-файла.
+     *      Pointer to the audio data buffer, or nullptr if no data is loaded.
+     * 
+     * @note
+     *      The data format is determined by the WAV header fields:
+     *      - numChannels: number of interleaved channels
+     *      - bits_per_sample: sample size in bits
+     *      - sampleRate: samples per second
+     * 
+     * @example
+     *      const char* data = wav.get_data();
+     *      // For 16-bit stereo: data[0..1] = left sample 1, data[2..3] = right sample 1
      */
     const char* get_data() const;
 
     /**
+     * Returns the sample rate.
+     * 
      * @return
-     *      Формат WAV-аудио.
+     *      Sample rate in Hertz (e.g., 44100, 48000, 22050).
+     * 
+     * @example
+     *      if (wav.get_sample_rate() == 44100) {
+     *          // 44.1 kHz audio
+     *      }
      */
-    int32_t get_format() const;
+    long get_sample_rate() const;
 
     /**
+     * Returns the byte rate.
+     * 
+     * The byte rate is calculated as sampleRate * numChannels * bitsPerSample/8.
+     * It indicates how many bytes are processed per second.
+     * 
      * @return
-     *      Частота дискретизации (в герцах).
+     *      Byte rate in bytes per second.
      */
-    int32_t get_sample_rate() const;
+    long get_byte_rate() const;
 
     /**
+     * Returns the length of the audio data in bytes.
+     * 
      * @return
-     *      Количество байт, передаваемых в секунду.
+     *      Total number of bytes in the audio data buffer.
+     * 
+     * @note
+     *      To get the number of samples, divide by (numChannels * bitsPerSample/8).
      */
-    int32_t get_byte_rate() const;
+    long get_length() const;
 
     /**
+     * Returns the number of audio channels.
+     * 
      * @return
-     *      Длина аудиоданных в байтах.
+     *      Number of channels (1 = mono, 2 = stereo).
      */
-    uint32_t get_length() const;
+    short get_num_channels() const;
 
     /**
+     * Returns the bits per sample.
+     * 
      * @return
-     *      Количество звуковых каналов (1 — моно, 2 — стерео и т.д.).
+     *      Bits per sample (8, 16, 24, etc.).
+     * 
+     * @note
+     *      Common values: 8 (unsigned), 16 (signed), 24 (signed), 32 (float).
      */
-    int16_t get_num_channels() const;
-
-    /**
-     * @return
-     *      Количество бит на один сэмпл.
-     */
-    int16_t get_bits_per_sample() const;
+    short get_bits_per_sample() const;
 };
-
 
 }
 

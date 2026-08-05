@@ -1,6 +1,7 @@
 #include <cpp/lang/cstr.hpp>
 
-namespace tc {
+namespace tc
+{
 
     cstr::cstr(const char* s) : m_cstr(s), m_length(~(std::size_t) 0) {
         
