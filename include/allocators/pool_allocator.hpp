@@ -3,30 +3,13 @@
 
 #include <allocators/allocator.hpp>
 #include <cstddef>
+#include <internal/memory.hpp>
 
 namespace tca
 {
 
 namespace internal
 {
-
-/**
- * Memory page header.
- * 
- * Each page allocated by the pool allocator contains a header
- * followed by a contiguous array of memory blocks.
- * 
- * The header maintains:
- * - Pointer to the next page (for iteration during cleanup)
- * - Size of the entire page
- * - Pointer to the start of the data blocks
- */
-struct page_header {
-    struct 
-    page_header* next;
-    std::size_t  size;
-    void*        dat;
-};
 
 /**
  * Free list node.
@@ -60,22 +43,22 @@ struct bucket {
  * 
  * Memory layout of a page:
  * 
- * +------------------+
+ * --------------------
  * | page_header      |
  * | - next           |
  * | - size           |
  * | - dat            |
- * +------------------+  <- aligned to max(align, alignof(page_header))
+ * |------------------| <- aligned to max(align, alignof(page_header))
  * | bucket[0]        |
- * +------------------+
+ * |------------------|
  * | bucket[1]        |
- * +------------------+
+ * |------------------|
  * | bucket[2]        |
- * +------------------+
+ * |------------------|
  * | ...              |
- * +------------------+
+ * |------------------|
  * | bucket[N-1]      |
- * +------------------+
+ * |------------------|
  * 
  * @note
  *      This allocator is not thread-safe by default.
@@ -179,6 +162,9 @@ public:
      *      Size of each block in bytes. The actual block size is
      *      aligned up to the specified alignment.
      * 
+     * @param count_buckets
+     *      Count buckets of each block.
+     * 
      * @param align
      *      Alignment requirement for blocks.
      *      Defaults to alignof(std::max_align_t).
@@ -196,7 +182,7 @@ public:
      *      // Pool for 64-byte aligned objects
      *      pool_allocator pool(64, alignof(int));
      */
-    pool_allocator(std::size_t bucket_size, std::size_t align = alignof(std::max_align_t), allocator* alloc = tca::get_default_allocator());
+    pool_allocator(std::size_t bucket_size, std::size_t count_buckets = 64, std::size_t align = alignof(std::max_align_t), allocator* alloc = tca::get_default_allocator());
     
     /**
      * Allocates a single block from the pool.
@@ -276,6 +262,42 @@ public:
      */
     ~pool_allocator();
 };
+
+    /**
+     * Creates a pool allocator for a specific type.
+     * 
+     * Convenience function that creates a pool_allocator configured for
+     * objects of type T. The bucket size is automatically set to sizeof(T)
+     * and alignment to alignof(T).
+     * 
+     * @tparam T
+     *      The type for which the pool allocator is created.
+     * 
+     * @param count
+     *      Number of objects per page. Defaults to 128.
+     *      This determines how many T objects each page will hold.
+     * 
+     * @param alloc
+     *      Parent allocator used for page allocation.
+     *      Defaults to the global default allocator.
+     * 
+     * @return
+     *      A pool_allocator configured for type T.
+     * 
+     * @example
+     *      // Create a pool for 128 MyClass objects per page
+     *      tca::pool_allocator pool = tca::make_pool<MyClass>();
+     *      
+     *      // Allocate a MyClass object
+     *      MyClass* obj = static_cast<MyClass*>(pool.allocate());
+     * 
+     *      // Create a pool with 256 objects per page
+     *      tca::pool_allocator large_pool = make_pool<MyClass>(256);
+     */
+    template<typename T>
+    pool_allocator make_pool(std::size_t count = 128, allocator* alloc = get_default_allocator()) {
+        return pool_allocator(sizeof(T), count, alignof(T), alloc);
+    }
 
 } //namespace tca
 

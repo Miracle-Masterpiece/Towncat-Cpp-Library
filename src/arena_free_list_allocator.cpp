@@ -1,9 +1,8 @@
 #include <allocators/arena_free_list_allocator.hpp>
-#include <allocators/Helpers.hpp>
+#include <allocators/helpers.hpp>
 #include <cpp/lang/system.hpp>
 #include <utility>
 
-#define JSTD_ALIGN_ASSERT(ptr, align) assert(((std::uintptr_t) ptr % align) == 0)
 
 namespace tca
 {
@@ -44,7 +43,7 @@ namespace tca
         {//выравнивание адреса
             std::uintptr_t padding = calc_padding_for((uintptr_t) m_data, (uintptr_t) m_alignas);
             m_start = static_cast<void*>(static_cast<unsigned char*>(m_data) + padding);
-            JSTD_ALIGN_ASSERT(m_start, m_alignas);
+            TC_ALIGN_ASSERT(m_start, m_alignas);
             m_free_size = length - padding;
         }
         memblock* block = reinterpret_cast<memblock*>(m_start);

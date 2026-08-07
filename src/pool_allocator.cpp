@@ -18,12 +18,12 @@ namespace tca
 
     }
 
-    pa::pool_allocator(std::size_t bucket_size, std::size_t align, allocator* alloc) :  allocator(alloc),
+    pa::pool_allocator(std::size_t bucket_size, std::size_t count_buckets, std::size_t align, allocator* alloc) :  allocator(alloc),
     pages(nullptr),
     free_list(nullptr),
     align( tc::math::max(align, alignof(internal::bucket)) ),
     bucket_size( align_up(bucket_size, this->align) ),
-    cnt_buckets_per_page(64) {
+    cnt_buckets_per_page(count_buckets) {
 
     }
 
@@ -47,67 +47,29 @@ namespace tca
         }
         return *this;
     }
-    
-    void pa:: allocate_page() {
-        std::size_t header_sz = align_up(sizeof(internal::page_header), align);
-        std::size_t block_sz  = bucket_size * cnt_buckets_per_page;
-        std::size_t total_page_size = header_sz + block_sz;
-        
-        #if 0
-        unsigned char* tmp = nullptr;
-        std::printf("header     : 0x%p\n", tmp);
-        std::printf("block      : 0x%p\n", tmp + header_sz);
-        std::printf("header_sz  : %zu\n", header_sz);
-        std::printf("block_sz   : %zu\n", block_sz);
-        std::printf("total      : %zu\n", total_page_size);
-        std::printf("bucket_sz  : %zu\n", bucket_size);
-        std::printf("align      : %zu\n", align);
-        #endif
 
-        void* dat = m_parent->allocate_align(
-                        total_page_size, tc::math::max(
-                            align, alignof(internal::page_header) 
-                        )
-                    );
-        
-        if (!dat)
+    void pa:: allocate_page() {
+        if (m_parent == nullptr)
             return;
 
-        #if 1
-        {
-            internal::page_header* hder = static_cast<internal::page_header*>(dat);
-            
-            assert((((std::uintptr_t) &hder->dat) % alignof(void*)) == 0);
-            hder->dat    = static_cast<unsigned char*>(dat) + header_sz;
-            
-            assert((((std::uintptr_t) &hder->next) % alignof(void*)) == 0);
-            hder->next = pages;
-            
-            assert((((std::uintptr_t) &hder->size) % alignof(std::size_t)) == 0);
-            hder->size   = total_page_size;
+        internal::page_header* page = internal::page_new(pages, cnt_buckets_per_page * bucket_size, align, m_parent);
+        if (!page)
+            return;
 
-            pages = hder;
+        unsigned char* buckets = static_cast<unsigned char*>(page->dat);
+        for (std::size_t i = 0; i < cnt_buckets_per_page; ++i)
+        {
+            // What the fuck
+            internal::bucket* bucket = static_cast<internal::bucket*>(
+                static_cast<void*>(buckets + i * bucket_size)
+            );
+            
+            assert((((std::uintptr_t) bucket) % align) == 0);
+            
+            bucket->next = free_list;
+            free_list    = bucket;
         }
 
-        {
-            
-            unsigned char* buckets = static_cast<unsigned char*>(dat) + header_sz;
-            
-            for (std::size_t i = 0; i < cnt_buckets_per_page; ++i)
-            {
-                // What the fuck
-                internal::bucket* bucket = static_cast<internal::bucket*>(
-                    static_cast<void*>(buckets + i * bucket_size)
-                );
-                
-                assert((((std::uintptr_t) bucket) % align) == 0);
-                
-                bucket->next = free_list;
-                free_list = bucket;
-            }
-
-        }
-        #endif
     }
 
     void* pa:: allocate() {
@@ -158,7 +120,7 @@ namespace tca
         for (internal::page_header* page = pages; page != nullptr; )
         {
             internal::page_header* next = page->next;
-            m_parent->deallocate(static_cast<void*>(page), page->size);
+            internal::page_delete(page, m_parent);
             page = next;
         }
     }

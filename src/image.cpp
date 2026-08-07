@@ -229,9 +229,9 @@ namespace tc {
         string result(alloc);
         
         result
-        .append("[w:").append(tc::to_string(m_width)).append(',')
-        .append("h:").append(tc::to_string(m_height)).append(',')
-        .append("c:").append(tc::to_string(m_channels)).append(']');
+        .append("[w:").append(tc::to_string(m_width, alloc)).append(',')
+        .append("h:").append(tc::to_string(m_height, alloc)).append(',')
+        .append("c:").append(tc::to_string(m_channels, alloc)).append(']');
 
         return result;
     }

@@ -26,6 +26,10 @@ namespace tca
     void allocator::deallocate(void* p, std::size_t) {
         deallocate(p);
     }
+
+    allocator::~allocator() {
+
+    }
 }
 
 
