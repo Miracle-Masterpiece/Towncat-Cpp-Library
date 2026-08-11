@@ -6,6 +6,8 @@
 #include <cpp/lang/utils/hash.hpp>
 #include <cpp/lang/utils/comparator.hpp>
 #include <cpp/lang/utils/objects.hpp>
+#include <cpp/lang/utils/arrays.hpp>
+#include <cpp/lang/traits/cv_traits.hpp>
 #include <cstdint>
 #include <utility>
 #include <initializer_list>
@@ -140,22 +142,6 @@ public:
      */
     array_list<E>& operator=(array_list<E>&& list);
 
-    /**
-     * Создаёт копию текущего списка.
-     *
-     * Возвращает новый список, содержащий копии всех элементов текущего списка.
-     * Можно указать пользовательский аллокатор для размещения элементов нового списка.
-     * Если аллокатор не указан (равен nullptr), будет использован аллокатор из клонируемого списка.
-     *
-     * @param allocator 
-     *      Пользовательский аллокатор для нового списка, по умолчанию nullptr.
-     * 
-     * @return 
-     *      Новый список, являющийся клоном текущего.
-     */
-    array_list<E> clone(tca::allocator* allocator = nullptr) const;
-
-    
     /**
      * Удаляет все элементы и освобождает ресурсы.
      */
@@ -369,6 +355,13 @@ public:
     std::size_t hashcode() const;
 
     /**
+     * Возвращает аллокатор, связанный с этим array_list
+     */
+    tca::allocator* get_allocator() const {
+        return m_allocator;
+    }
+
+    /**
      * Возвращает указатель на сырые данные.
      */
     E* data() {
@@ -420,11 +413,10 @@ public:
     
     template<typename DATA_TYPE, typename VALUE_TYPE>
     class iterator {
-        DATA_TYPE*  m_data;
-        std::size_t m_max;
-        std::size_t m_offset;
+        DATA_TYPE*  m_begin;
+        DATA_TYPE*  m_end;
     public:
-        iterator(DATA_TYPE* data, std::size_t idx, std::size_t max);
+        iterator(DATA_TYPE* begin, DATA_TYPE* end);
         iterator(const iterator<DATA_TYPE, VALUE_TYPE>&);
         iterator(iterator<DATA_TYPE, VALUE_TYPE>&&);
         iterator<DATA_TYPE, VALUE_TYPE>& operator= (const iterator<DATA_TYPE, VALUE_TYPE>&);
@@ -434,23 +426,24 @@ public:
         iterator<DATA_TYPE, VALUE_TYPE>& operator++();
         iterator<DATA_TYPE, VALUE_TYPE> operator++(int);
         bool operator!=(const iterator<DATA_TYPE, VALUE_TYPE>& it) const;
+        bool operator==(const iterator<DATA_TYPE, VALUE_TYPE>& it) const;
     };
 
 
     iterator<const E, const E&> begin() const {
-        return iterator<const E, const E&>(m_data, 0, m_size);
+        return iterator<const E, const E&>(m_data, m_data + m_size);
     }
 
     iterator<const E, const E&> end() const {
-        return iterator<const E, const E&>(m_data, m_size, m_size);
+        return iterator<const E, const E&>(m_data + m_size, m_data + m_size);
     }
 
     iterator<E, E&> begin() {
-        return iterator<E, E&>(m_data, 0, m_size);
+        return iterator<E, E&>(m_data, m_data + m_size);
     }
 
     iterator<E, E&> end() {
-        return iterator<E, E&>(m_data, m_size, m_size);
+        return iterator<E, E&>(m_data + m_size, m_data + m_size);
     }
 
 };
@@ -474,14 +467,26 @@ public:
     array_list<E>::array_list(const std::initializer_list<E>& init_list, tca::allocator* allocator) : array_list<E>(0, allocator) {
         if (init_list.size() > 0)
             reserve(init_list.size());
-        for (const E& e : init_list)
-            add(e);
+        try {
+            for (const E& e : init_list)
+                add(e);
+        } catch (...) {
+            clear();
+            throw;
+        }
     }
 
     template<typename E>
     array_list<E>::array_list(const array_list<E>& list) : array_list<E>() {
-        array_list<E> tmp = list.clone();
-        *this = std::move(tmp);
+        m_allocator = list.m_allocator;
+        
+        E* data = allocate_and_copy_n(list.data(), list.size(), m_allocator);
+        if (!data)
+            throw_except<out_of_memory_error>("Out of memory");
+
+        m_data      = data;
+        m_capacity  = list.size();
+        m_size      = list.size();
     }
     
     template<typename E>
@@ -498,9 +503,15 @@ public:
     
     template<typename E>
     array_list<E>& array_list<E>::operator= (const array_list<E>& list) {
-        if (&list != this) {
-            array_list<E> tmp = list.clone();
-            *this = std::move(tmp);
+        if (&list != this)
+        {
+            E* data = allocate_and_copy_n(list.data(), list.size(), m_allocator);
+            if (!data)
+                throw_except<out_of_memory_error>("Out of memory");
+            m_allocator->deallocate(const_cast<typename remove_cv<E>::type*>(m_data));
+            m_data      = data;
+            m_capacity  = list.size();
+            m_size      = list.size();
         }
         return *this;
     }
@@ -508,34 +519,14 @@ public:
     template<typename E>
     array_list<E>& array_list<E>::operator= (array_list<E>&& list) {
         if (&list != this) {
-            cleanup();
-            m_allocator = list.m_allocator;
-            m_data      = list.m_data;
-            m_capacity  = list.m_capacity;
-            m_size      = list.m_size;
-            list.m_allocator    = nullptr;
-            list.m_data         = nullptr;
-            list.m_capacity     = 0;
-            list.m_size         = 0;
+            std::swap(m_allocator,  list.m_allocator);
+            std::swap(m_data,       list.m_data);
+            std::swap(m_capacity,   list.m_capacity);
+            std::swap(m_size,       list.m_size);
         }
         return *this;
     }
     
-    template<typename E>
-    array_list<E> array_list<E>::clone(tca::allocator* allocator) const {
-        if (allocator == nullptr) {
-            if (m_allocator == nullptr)
-                return array_list<E>();
-            allocator = m_allocator;
-        }
-        array_list<E> list(allocator, m_size);
-        
-        for (std::size_t i = 0; i < m_size; ++i) 
-            list.add(m_data[i]);
-        
-        return array_list<E>(std::move(list));
-    }
-
     template<typename E>
     template<typename COMPARATOR_T>
     std::size_t array_list<E>::binary_search(const E& searched) const {
@@ -722,11 +713,15 @@ public:
         if (new_data == nullptr)
             throw_except<out_of_memory_error>("Out of memory!");
         
-        if (m_data != nullptr) {
-            if (new_capacity >= m_size) {
+        if (m_data != nullptr)
+        {
+            if (new_capacity >= m_size)
+            {
                 for (std::size_t i = 0; i < m_size; ++i)
                     new(new_data + i) E(std::move(m_data[i]));
-            } else {
+            }
+            else
+            {
                 for (std::size_t i = 0; i < new_capacity; ++i)
                     new(new_data + i) E(std::move(m_data[i]));
                 call_destructors(new_capacity, m_size);
@@ -749,7 +744,8 @@ public:
 
     template<typename E>
     void array_list<E>::cleanup() {
-        if (m_allocator != nullptr && m_data != nullptr) {
+        if (m_allocator != nullptr && m_data != nullptr)
+        {
             call_destructors(0, m_size);
             m_allocator->deallocate((void*) m_data);
         }   
@@ -762,17 +758,21 @@ public:
     bool array_list<E>::equals(const array_list<E>& other) const {
         if (size() != other.size())
             return false;
-        if (data() != nullptr && other.data() != nullptr)
-            return objects::equals(data(), other.data(), size());
+        if (data() && other.data())
+        {
+            return objects::equals(begin(), end(), other.begin(), other.end(), equal_to<E>());
+        }
         else
+        {
             return data() == other.data();
+        }
     }
 
     template<typename E>
     std::size_t array_list<E>::hashcode() const {
         if (size() == 0)
             return 0;
-        return objects::hashcode(data(), size());
+        return objects::hashcode(begin(), end(), hash_for<E>());
     }
 
     template<typename E>
@@ -785,41 +785,37 @@ public:
      */
     template<typename E>
     template<typename DATA_TYPE, typename VALUE_TYPE>
-    array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::iterator(DATA_TYPE* data, std::size_t idx, std::size_t max) :
-    m_data(data),
-    m_max(max),
-    m_offset(idx) {
+    array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::iterator(DATA_TYPE* begin, DATA_TYPE* end) :
+    m_begin(begin),
+    m_end(end) {
 
     }
 
     template<typename E>
     template<typename DATA_TYPE, typename VALUE_TYPE>
     array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::iterator(const iterator<DATA_TYPE, VALUE_TYPE>& it) :
-    m_data(it.m_data),
-    m_max(it.m_max),
-    m_offset(it.m_offset) {
+    m_begin(it.m_begin),
+    m_end(it.m_end) {
 
     }
     
     template<typename E>
     template<typename DATA_TYPE, typename VALUE_TYPE>
     array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::iterator(iterator<DATA_TYPE, VALUE_TYPE>&& it) :
-    m_data(it.m_data),
-    m_max(it.m_max),
-    m_offset(it.m_offset) {
-        it.m_data   = nullptr;
-        it.m_max    = 0;
-        it.m_offset = 0;
+    m_begin(it.m_begin),
+    m_end(m_end) {
+        it.m_begin  = nullptr;
+        it.m_end    = nullptr;
     }
     
     template<typename E>
     template<typename DATA_TYPE, typename VALUE_TYPE>
     typename array_list<E>:: template iterator<DATA_TYPE, VALUE_TYPE>& 
     array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator= (const iterator<DATA_TYPE, VALUE_TYPE>& it) {
-        if (&it != this) {
-            m_data      = it.m_data;
-            m_max       = it.m_max;
-            m_offset    = it.m_offset;
+        if (&it != this)
+        {
+            m_begin = it.m_begin;
+            m_end   = it.m_end;
         }
         return *this;
     }
@@ -828,13 +824,10 @@ public:
     template<typename DATA_TYPE, typename VALUE_TYPE>
     typename array_list<E>:: template iterator<DATA_TYPE, VALUE_TYPE>& 
     array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator= (iterator<DATA_TYPE, VALUE_TYPE>&& it) {
-        if (&it != this) {
-            m_data      = it.m_data;
-            m_max       = it.m_max;
-            m_offset    = it.m_offset;
-            it.m_data   = nullptr;
-            it.m_max    = 0;
-            it.m_offset = 0;
+        if (&it != this)
+        {
+            std::swap(m_begin, it.m_begin);
+            std::swap(m_end, it.m_end);
         }
         return *this;
     }
@@ -848,18 +841,18 @@ public:
     template<typename E>
     template<typename DATA_TYPE, typename VALUE_TYPE>
     VALUE_TYPE& array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator*() const {
-        check_index(m_offset, m_max);
-#ifndef NDEBUG
-        if (m_data == nullptr)
-            throw_except<null_pointer_exception>("data must be != null");
-#endif
-        return m_data[m_offset];
+        if (m_begin >= m_end)
+            throw_except<index_out_of_bound_exception>("iterator out of bound");
+        
+        JSTD_DEBUG_CODE(check_non_null(m_begin, "data is null"););
+        
+        return *m_begin;
     }
     
     template<typename E>
     template<typename DATA_TYPE, typename VALUE_TYPE>
     typename array_list<E>:: template iterator<DATA_TYPE, VALUE_TYPE>& array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator++() {
-        ++m_offset;
+        ++m_begin;
         return *this;
     }
     
@@ -867,14 +860,20 @@ public:
     template<typename DATA_TYPE, typename VALUE_TYPE>
     typename array_list<E>:: template iterator<DATA_TYPE, VALUE_TYPE> array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator++(int) {
         iterator<DATA_TYPE, VALUE_TYPE> it = *this;
-        ++m_offset;
+        ++m_begin;
         return it;
     }
     
     template<typename E>
     template<typename DATA_TYPE, typename VALUE_TYPE>
     bool array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator!=(const iterator<DATA_TYPE, VALUE_TYPE>& it) const {
-        return m_offset != it.m_offset;
+        return m_begin != it.m_begin || m_end != it.m_end;
+    }
+    
+    template<typename E>
+    template<typename DATA_TYPE, typename VALUE_TYPE>
+    bool array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator==(const iterator<DATA_TYPE, VALUE_TYPE>& it) const {
+        return m_begin == it.m_begin && m_end == it.m_end;
     }
 }
 #endif//JSTD_CPP_LANG_UTILS_ARRAY_LIST_H

@@ -7,8 +7,7 @@ bin/WINDOWS_X86-64/src/img_utils.o: src/img_utils.cpp \
  include/cpp/lang/traits/primitive_traits.hpp \
  include/cpp/lang/utils/utils.hpp include/cpp/lang/utils/comparator.hpp \
  include/cpp/lang/system.hpp include/cpp/lang/types.hpp \
- include/cpp/lang/utils/arrays.hpp include/cpp/lang/utils/objects.hpp \
- include/cpp/lang/utils/hash.hpp \
- include/cpp/lang/traits/pointer_traits.hpp \
- include/cpp/lang/traits/cv_traits.hpp include/cpp/lang/math.hpp \
+ include/cpp/lang/utils/arrays.hpp include/cpp/lang/traits/cv_traits.hpp \
+ include/cpp/lang/utils/objects.hpp include/cpp/lang/utils/hash.hpp \
+ include/cpp/lang/traits/pointer_traits.hpp include/cpp/lang/math.hpp \
  include/cpp/lang/math/math.hpp

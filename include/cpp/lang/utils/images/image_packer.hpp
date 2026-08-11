@@ -3,7 +3,6 @@
 
 #include <allocators/base_allocator.hpp>
 #include <cpp/lang/utils/unique_ptr.hpp>
-#include <cpp/lang/utils/hash_map.hpp>
 #include <cpp/lang/array.hpp>
 #include <cstdint>
 

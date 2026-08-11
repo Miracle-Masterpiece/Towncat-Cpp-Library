@@ -288,7 +288,7 @@
 //         if (!block) 
 //             return tc::shared_ptr<T[]>();
 //         using non_const_T = typename tc::remove_cv<T>::type;
-//         tc::placement_new(reinterpret_cast<non_const_T*>(block->m_object), length);
+//         tc::uninitialized_construct_n(reinterpret_cast<non_const_T*>(block->m_object), length);
 //         return tc::shared_ptr<T[]>(block, length);
 //     }
 // }

@@ -248,7 +248,7 @@ namespace tc
     }
 
     std::size_t file::hashcode() const {
-        return objects::hashcode(_path, std::strlen(_path));
+        return objects::hashcode(_path, _path + std::strlen(_path), hash_for<char>());
     }
 
     file file::plus(const file& f) const {

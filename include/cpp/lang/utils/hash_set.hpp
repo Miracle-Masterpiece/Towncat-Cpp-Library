@@ -71,7 +71,7 @@ public:
      *      Указатель на пользовательский аллокатор.
      * 
      */
-    hash_set(int64_t init_capacity, float load_factor = 0.75f, tca::allocator* allocator = tca::get_default_allocator());
+    hash_set(std::size_t init_capacity, float load_factor = 0.75f, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Конструктор копирования.
@@ -249,7 +249,7 @@ public:
     }
 
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>
-    hash_set<K, KEY_HASH, KEY_EQUAL>::hash_set(int64_t init_capacity, float load_factor, tca::allocator* allocator) :
+    hash_set<K, KEY_HASH, KEY_EQUAL>::hash_set(std::size_t init_capacity, float load_factor, tca::allocator* allocator) :
         m_storage(init_capacity, load_factor, allocator) {
     }
 
@@ -295,7 +295,8 @@ public:
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>
     bool hash_set<K, KEY_HASH, KEY_EQUAL>::remove_all(const hash_set<K>& set) {
         bool changed = false;
-        for (const entry& e : set) {
+        for (const entry& e : set)
+        {
             if (remove(e.get_key()))
                 changed = true;
         }

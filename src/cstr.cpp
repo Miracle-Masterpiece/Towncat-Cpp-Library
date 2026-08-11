@@ -53,7 +53,7 @@ namespace tc
     }
 
     std::size_t cstr::hashcode() const {
-        return objects::hashcode(m_cstr, m_length);
+        return objects::hashcode(m_cstr,  m_cstr + m_length, hash_for<char>());
     }
 
     bool cstr::is_empty() const {

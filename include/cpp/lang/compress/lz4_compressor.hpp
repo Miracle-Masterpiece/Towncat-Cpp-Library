@@ -1,7 +1,6 @@
 #ifndef BA02FACF_D516_4679_8D5D_BDBF01904A8B
 #define BA02FACF_D516_4679_8D5D_BDBF01904A8B
 
-#include <cpp/lang/utils/hash_map.hpp>
 #include <cpp/lang/utils/array_list.hpp>
 #include <cstdint>
 #include <cpp/lang/compress/compressor.hpp>

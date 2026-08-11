@@ -1,43 +1,65 @@
 #ifndef _JSTD_CPP_LANG_UTILS_OPTIONAL_H_
 #define _JSTD_CPP_LANG_UTILS_OPTIONAL_H_
 
-#include <utility>
+#include <new>
 #include <cpp/lang/exceptions.hpp>
+#include <cpp/lang/traits/cv_traits.hpp>
 
 namespace tc {
 
 /**
- * Класс optional<T> предоставляет контейнер для хранения объекта типа T, 
- * который может присутствовать или отсутствовать. Это аналог std::optional, 
- * но реализован вручную.
- *
- * @tparam T Тип хранимого значения.
+ * Optional value container (nullable type).
+ * 
+ * A container that may or may not contain a value of type T.
+ * Similar to std::optional from C++17, but with a different interface.
+ * 
+ * Key features:
+ * - Can be empty (nullopt) or contain a value
+ * - Value is stored in-place (no heap allocation)
+ * - Supports move semantics
+ * - Provides checked access (throws on empty)
+ * - Null-optional construction via null_opt()
+ * 
+ * @tparam T
+ *      The type of the stored value.
+ * 
+ * @note
+ *      The optional uses a union for storage, so T must be
+ *      trivially destructible or properly managed.
+ * 
+ * @example
+ *      optional<int> opt;
+ *      if (!opt.is_value()) {
+ *          // empty
+ *      }
+ *      opt = 42;
+ *      int value = opt.get_value();  // 42
  */
 template<typename T>
 class optional {
-    union {
-        
-        /**
-         * Выравнивание для корректного хранения объекта.
-         */
-        T _align;
-        
-        /**
-         * Буфер для хранения объекта типа T.
-         */
-        char _object[sizeof(T)];
+    union
+    {
+        T obj;
     };
     
-    bool _is_value; ///< Флаг, указывающий, содержит ли optional значение.
-
+    bool _is_value;
+    
     /**
-     * Освобождает хранимое значение, если оно присутствует.
+     * Destroys the stored value if present.
+     * 
+     * Calls the destructor of T if the optional contains a value.
+     * Safe to call even on empty optional.
      */
     void dispose();
-
+    
     /**
-     * Проверяет, возможен ли доступ к значению.
-     * Если this->_is_value == false, то кидает исключение.
+     * Checks if the optional contains a value.
+     * 
+     * @throws illegal_state_exception
+     *      if the optional is empty.
+     * 
+     * @note
+     *      Called by accessors to ensure valid state.
      */
     void check_access() const {
         if (!_is_value)
@@ -45,118 +67,186 @@ class optional {
     }
 
 public:
+    
     /**
-     * Создаёт пустой optional.
+     * Default constructor.
+     * 
+     * Constructs an empty optional (no value).
      */
     optional();
-
+    
     /**
-     * Создаёт optional с копией переданного значения.
-     *
-     * @param value Значение, которое будет скопировано в optional.
+     * Constructs from a const lvalue reference.
+     * 
+     * @param value
+     *      The value to store (copied).
      */
     optional(const T& value);
-
+    
     /**
-     * Создаёт optional с перемещённым значением.
-     *
-     * @param value Значение, которое будет перемещено в optional.
+     * Constructs from an rvalue reference.
+     * 
+     * @param value
+     *      The value to store (moved).
      */
     optional(T&& value);
-
+    
     /**
-     * Конструктор копирования.
-     *
-     * @param other Другой optional, из которого будет скопировано значение.
+     * Copy constructor.
+     * 
+     * @param other
+     *      The optional to copy from.
      */
     optional(const optional<T>& other);
-
+    
     /**
-     * Конструктор перемещения.
-     *
-     * @param other Другой optional, из которого будет перемещено значение.
+     * Move constructor.
+     * 
+     * @param other
+     *      The optional to move from.
      */
     optional(optional<T>&& other);
-
+    
     /**
-     * Оператор копирующего присваивания.
-     *
-     * @param other Другой optional, из которого будет скопировано значение.
-     * @return Ссылка на текущий объект.
+     * Copy assignment operator.
+     * 
+     * @param other
+     *      The optional to copy from.
      */
     optional<T>& operator= (const optional<T>& other);
-
+    
     /**
-     * Оператор перемещающего присваивания.
-     *
-     * @param other Другой optional, из которого будет перемещено значение.
-     * @return Ссылка на текущий объект.
+     * Move assignment operator.
+     * 
+     * @param other
+     *      The optional to move from.
      */
     optional<T>& operator= (optional<T>&& other);
-
+    
     /**
-     * Деструктор. Освобождает хранимое значение, если оно присутствует.
+     * Destructor.
+     * 
+     * Destroys the stored value if present.
      */
     ~optional();
-
+    
     /**
-     * Проверяет, содержит ли optional значение.
-     *
-     * @return true, если значение присутствует, иначе false.
+     * Checks if the optional contains a value.
+     * 
+     * @return
+     *      true if contains a value, false if empty.
      */
     bool is_value() const;
-
+    
     /**
-     * Получает ссылку на хранимое значение.
+     * Returns an lvalue reference to the stored value.
      * 
-     * @throws jstd::illegal_state_exception, если optional пуст.
-     * @return Ссылка на хранимое значение.
+     * @throws illegal_state_exception
+     *      if the optional is empty.
      */
-    T& get_value();
-
+    T& get_value() &;
+    
     /**
-     * Получает константную ссылку на хранимое значение.
+     * Returns a const lvalue reference to the stored value.
      * 
-     * @throws jstd::illegal_state_exception, если optional пуст.
-     * @return Константная ссылка на хранимое значение.
+     * @throws
+     *      illegal_state_exception if the optional is empty.
      */
-    const T& get_value() const;
-
+    const T& get_value() const&;
+    
     /**
-     * Оператор доступа к членам хранимого объекта.
+     * Returns an rvalue reference to the stored value.
      * 
-     * @throws jstd::illegal_state_exception, если optional пуст.
-     * @return Указатель на хранимый объект.
+     * @throws
+     *      illegal_state_exception if the optional is empty.
+     */
+    T&& get_value() &&;
+    
+    /**
+     * Returns a const rvalue reference to the stored value.
+     * 
+     * @throws
+     *      illegal_state_exception if the optional is empty.
+     */
+    const T&& get_value() const&&;
+    
+    /**
+     * Pointer-like access to the stored value.
+     * 
+     * @return
+     *      Pointer to the stored value.
+     * 
+     * @throws illegal_state_exception
+     *      if the optional is empty.
+     * 
+     * @note
+     *      Allows usage like opt->method().
      */
     T* operator->();
-
+    
     /**
-     * Оператор доступа к членам хранимого объекта (константная версия).
+     * Const pointer-like access to the stored value.
      * 
-     * @throws jstd::illegal_state_exception, если optional пуст.
-     * @return Константный указатель на хранимый объект.
+     * @return
+     *      Const pointer to the stored value.
+     * 
+     * @throws illegal_state_exception
+     *      if the optional is empty.
      */
     const T* operator->() const;
-
+    
     /**
-     * Оператор разыменования. Позволяет получить доступ к хранимому значению.
+     * Dereference access to the stored value.
      * 
-     * @throws jstd::illegal_state_exception, если optional пуст.
-     * @return Ссылка на хранимый объект.
-     */
-    T& operator*();
-
-    /**
-     * Оператор разыменования (константная версия).
+     * @return
+     *      Lvalue reference to the stored value.
      * 
-     * @throws jstd::illegal_state_exception, если optional пуст.
-     * @return Константная ссылка на хранимый объект.
+     * @throws
+     *      illegal_state_exception if the optional is empty.
      */
-    const T& operator*() const;
+    T& operator*() &;
 
     /**
-     * @return 
-     *      Возвращает объект, хранящий нулевое значение.
+     * Const dereference access to the stored value.
+     * 
+     * @return
+     *      Const lvalue reference to the stored value.
+     * 
+     * @throws illegal_state_exception
+     *      if the optional is empty.
+     */
+    const T& operator*() const&;
+    
+    /**
+     * Dereference access to the stored value (move).
+     * 
+     * @return
+     *      Rvalue reference to the stored value.
+     * 
+     * @throws illegal_state_exception
+     *      if the optional is empty.
+     */
+    T&& operator*() &&;
+    
+    /**
+     * Const dereference access to the stored value (move).
+     * 
+     * @return
+     *      Const rvalue reference to the stored value.
+     * 
+     * @throws illegal_state_exception
+     *      if the optional is empty.
+     */
+    const T&& operator*() const&&;
+
+    /**
+     * Creates an empty optional.
+     * 
+     * @return
+     *      An empty optional.
+     * 
+     * @note
+     *      Equivalent to optional<T>().
      */
     static optional<T> null_opt() {
         return optional<T>();
@@ -168,28 +258,29 @@ public:
 
     template<typename T>
     optional<T>::optional(const T& value) : _is_value(false) {
-        new(_object) T(value);
+        new(const_cast<remove_cv<T>::type*>(&obj)) T(value);
         _is_value = true;
     }
 
     template<typename T>
     optional<T>::optional(T&& value) : _is_value(false) {
-        new(_object) T(std::move(value));
+        new(const_cast<remove_cv<T>::type*>(&obj)) T(std::move(value));
         _is_value = true;
     }
 
     template<typename T>
     optional<T>::optional(const optional<T>& t) : _is_value(false) {
         if (t._is_value) {
-            new (_object) T(*reinterpret_cast<const T*>(t._object));
+            new(const_cast<remove_cv<T>::type*>(&obj)) T(*reinterpret_cast<const T*>(t.obj));
             _is_value = true;
         }
     }
     
     template<typename T>
     optional<T>::optional(optional<T>&& t) : _is_value(false) {
-        if (t._is_value) {
-            new (_object) T(std::move(*reinterpret_cast<T*>(t._object)));
+        if (t._is_value)
+        {
+            new(const_cast<remove_cv<T>::type*>(&obj)) T(std::move(obj));
             _is_value = true;
         }
     }
@@ -197,8 +288,7 @@ public:
     template<typename T>
     void optional<T>::dispose() {
         if (_is_value) {
-            const T* object = reinterpret_cast<const T*>(_object);
-            object->~T();
+            obj.~T();
             _is_value = false;
         }
     }
@@ -214,38 +304,58 @@ public:
     }
 
     template<typename T>
-    T& optional<T>::get_value() {
+    T& optional<T>::get_value() & {
         check_access();
-        return *reinterpret_cast<T*>(_object);
+        return obj;
     }
     
     template<typename T>
-    const T& optional<T>::get_value() const {
+    const T& optional<T>::get_value() const& {
         check_access();
-        return *reinterpret_cast<const T*>(_object);
+        return obj;
+    }
+    
+    template<typename T>
+    T&& optional<T>::get_value() && {
+        check_access();
+        return std::move(obj);
+    }
+    
+    template<typename T>
+    const T&& optional<T>::get_value() const&& {
+        check_access();
+        return std::move(obj);
     }
 
     template<typename T>
     T* optional<T>::operator->() {
         check_access();
-        return reinterpret_cast<T*>(_object);
+        return &obj;
     }
     
     template<typename T>
     const T* optional<T>::operator->() const {
         check_access();
-        return reinterpret_cast<const T*>(_object);
+        return &obj;
     }
     
     template<typename T>
-    T& optional<T>::operator*() {
-        check_access();
+    T& optional<T>::operator*() & {
         return get_value();
     }
     
     template<typename T>
-    const T& optional<T>::operator*() const {
-        check_access();
+    const T& optional<T>::operator*() const& {
+        return get_value();
+    }
+
+    template<typename T>
+    T&& optional<T>::operator*() && {
+        return get_value();
+    }
+    
+    template<typename T>
+    const T&& optional<T>::operator*() const&& {
         return get_value();
     }
 

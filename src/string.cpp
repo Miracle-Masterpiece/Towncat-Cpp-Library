@@ -408,18 +408,38 @@ namespace tc
     template<typename TCHAR>
     bool tstring<TCHAR>::equals(const tstring<TCHAR>& s) const {
 		if (length() != s.length()) return false;
-        return objects::equals(cstr(), s.cstr(), length());
+        return objects::equals(begin(), end(), s.begin(), s.end());
     }
     
     template<typename TCHAR>
     bool tstring<TCHAR>::equals(const TCHAR* s) const {
 		if (length() != str_len(s)) return false;
-        return objects::equals(cstr(), s, length());
+        return objects::equals(begin(), end(), s, s + length());
+    }
+
+    template<typename TCHAR>
+    TCHAR* tstring<TCHAR>::begin() {
+        return cstr();
+    }
+    
+    template<typename TCHAR>
+    TCHAR* tstring<TCHAR>::end() {
+        return cstr() + length();
+    }
+
+    template<typename TCHAR>
+    const TCHAR* tstring<TCHAR>::begin() const {
+        return cstr();
+    }
+    
+    template<typename TCHAR>
+    const TCHAR* tstring<TCHAR>::end() const {
+        return cstr() + length();
     }
 
     template<typename TCHAR>
     std::size_t tstring<TCHAR>::hashcode() const {
-        return objects::hashcode(cstr(), length());
+        return objects::hashcode(cstr(), cstr() + length(), hash_for<TCHAR>());
     }
     
     template<typename TCHAR>

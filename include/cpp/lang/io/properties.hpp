@@ -34,7 +34,7 @@ public:
     /**
      * 
      */
-    using entry = hash_map<string, string>::entry;
+    using entry = map::entry<string, string>;
 
     /**
      * 

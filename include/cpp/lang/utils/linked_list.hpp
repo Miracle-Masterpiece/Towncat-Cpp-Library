@@ -4,11 +4,13 @@
 #include <allocators/allocator.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/hash.hpp>
+#include <cpp/lang/utils/objects.hpp>
 #include <utility>
 #include <cstdint>
 #include <cassert>
 
-namespace tc {
+namespace tc
+{
 
 template<typename T>
 class list_node {
@@ -208,22 +210,22 @@ class linked_list {
     /**
      * Указатель на аллокатор, используемый для выделения памяти под узлы.
      */
-    tca::base_allocator*    _allocator; 
+    tca::allocator* _allocator; 
     
     /**
      * Указатель на первый элемент списка.
      */
-    list_node<T>*           _head;
+    list_node<T>*  _head;
     
     /**
      * Указатель на последний элемент списка.
      */
-    list_node<T>*           _tail;
+    list_node<T>*  _tail;
     
     /**
      * Количество элементов в списке.
      */
-    std::size_t                 _size;
+    std::size_t _size;
 
     /**
      * Выделяет память и создаёт новый узел списка.
@@ -289,8 +291,19 @@ public:
      * @param allocator 
      *      Указатель на пользовательский аллокатор.
      */
-    linked_list(tca::base_allocator* allocator = tca::get_default_allocator());
+    linked_list(tca::allocator* allocator = tca::get_default_allocator());
 
+    /**
+     * Конструктор с количеством объектов по-умолчанию
+     * 
+     * @param cnt
+     *      Сколько значений по-умолчанию нужно добавить в список.
+     * 
+     * @param allocator 
+     *      Указатель на пользовательский аллокатор.
+     */
+    linked_list(std::size_t cnt, tca::allocator* allocator = tca::get_default_allocator());
+    
     /**
      * Конструктор с инициализирующим листом..
      * 
@@ -300,7 +313,7 @@ public:
      * @param allocator 
      *      Указатель на пользовательский аллокатор.
      */
-    linked_list(const std::initializer_list<T>& init_list, tca::base_allocator* allocator = tca::get_default_allocator());
+    linked_list(const std::initializer_list<T>& init_list, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Копирующий конструктор.
@@ -345,8 +358,7 @@ public:
     ~linked_list();
 
     /**
-     * 
-     *      Удаляет все элементы из списка.
+     * Удаляет все элементы из списка.
      */
     void clear();
 
@@ -459,6 +471,13 @@ public:
     std::size_t size() const;
 
     /**
+     * Возвращает аллокатор для этого объекта.
+     */
+    tca::allocator* get_allocator() const {
+        return _allocator;
+    }
+
+    /**
      * Проверяет, пуст ли список.
      * 
      * @return 
@@ -515,19 +534,14 @@ public:
     std::size_t index_of(const T& value) const;
 
     /**
-     * Создаёт глубокую копию списка.
-     *
-     * Все элементы копируются в новый список. Если передан пользовательский аллокатор,
-     * он будет использован для выделения памяти в новом списке. В противном случае —
-     * используется текущий аллокатор списка.
-     *
-     * @param allocator 
-     *      (опционально) Указатель на пользовательский аллокатор.
      * 
-     * @return 
-     *      Новый список, содержащий копии всех элементов текущего.
      */
-    linked_list<T> clone(tca::base_allocator* allocator = nullptr) const;
+    bool equals(const linked_list<T>& list) const;
+    
+    /**
+     * 
+     */
+    std::size_t hashcode() const;
 
     template<typename NODE_TYPE, typename VALUE_TYPE>
     class iterator {
@@ -540,6 +554,7 @@ public:
         iterator& operator= (const iterator&);
         iterator& operator= (iterator&&);
         bool operator!=(const iterator&) const;
+        bool operator==(const iterator&) const;
         iterator& operator++();
         iterator operator++(int);
         VALUE_TYPE operator*() const;
@@ -586,7 +601,7 @@ public:
     }
 
     template<typename T>
-    linked_list<T>::linked_list(tca::base_allocator* allocator) :
+    linked_list<T>::linked_list(tca::allocator* allocator) :
     _allocator(allocator),
     _head(nullptr),
     _tail(nullptr),
@@ -595,14 +610,60 @@ public:
     }
 
     template<typename T>
-    linked_list<T>::linked_list(const std::initializer_list<T>& init_list, tca::base_allocator* allocator) : linked_list<T>(allocator) {
-        for (const T& value : init_list)
-            add(value);
+    linked_list<T>::linked_list(std::size_t cnt, tca::allocator* allocator) : linked_list<T>(allocator) {
+        if (cnt == 0)
+            return;   
+        try {
+            while (cnt > 0)
+            {
+                add(T());            
+                --cnt;
+            }
+        } catch (...) {
+            for (list_node<T>* n = _tail; n != nullptr;)
+            {
+                list_node<T>* prev = n->get_prev();
+                delete_node(prev);
+                n = prev;
+            }
+            throw;
+        }
     }
 
     template<typename T>
-    linked_list<T>::linked_list(const linked_list<T>& other) : linked_list<T>() {
-        this->operator=(other);
+    linked_list<T>::linked_list(const std::initializer_list<T>& init_list, tca::allocator* allocator) : linked_list<T>(allocator) {
+        try {
+            for (const T& e : init_list)
+            {
+                add(e);
+            }
+        } catch (...) {
+            for (list_node<T>* n = _tail; n != nullptr;)
+            {
+                list_node<T>* prev = n->get_prev();
+                delete_node(prev);
+                n = prev;
+            }
+            throw;
+        }
+    }
+
+    template<typename T>
+    linked_list<T>::linked_list(const linked_list<T>& other) : linked_list<T>(other._allocator) {
+        try {
+            for (const T& e : other)
+            {
+                add(e);
+            }
+        } catch (...) {
+            for (list_node<T>* n = _tail; n != nullptr;)
+            {
+                list_node<T>* prev = n->get_prev();
+                delete_node(prev);
+                n = prev;
+            }
+            throw;
+        }
     }
 
     template<typename T>
@@ -619,25 +680,54 @@ public:
 
     template<typename T>
     linked_list<T>& linked_list<T>::operator=(const linked_list<T>& other) {
-        if (&other != this) {
-            this->operator=(std::move(other.clone(_allocator)));
+        if (&other != this)
+        {
+            list_node<T>* head = nullptr;
+            list_node<T>* tail = nullptr;
+            try {
+
+                for (const T& e : other)
+                {
+                    list_node<T>* new_ = new_node(e);
+                    if (head == nullptr)
+                    {
+                        head = tail = new_;
+                    }
+                    else
+                    {
+                        new_->set_prev(tail);
+                        tail->set_next(new_);
+                        tail = new_;
+                    }
+                }
+
+                clear();
+                
+                _head = head;
+                _tail = tail;
+                _size = other.size();
+
+            } catch (...) {
+                for (list_node<T>* n = tail; n != nullptr; )
+                {
+                    list_node<T>* current = n;
+                    n = n->get_prev();
+                    delete_node(current);
+                }
+                throw;
+            }
         }
         return *this;
     }
 
     template<typename T>
     linked_list<T>& linked_list<T>::operator=(linked_list<T>&& other) {
-        if (&other != this) {
-            clear();
-            _allocator  = other._allocator;
-            _head       = other._head;
-            _tail       = other._tail;
-            _size       = other._size;
-
-            other._allocator    = nullptr;
-            other._head         = nullptr;
-            other._tail         = nullptr;
-            other._size         = 0;
+        if (&other != this) 
+        {
+            std::swap(_allocator,   other._allocator);
+            std::swap(_head,        other._head);
+            std::swap(_tail,        other._tail);
+            std::swap(_size,        other._size);
         }
         return *this;
     }
@@ -649,10 +739,11 @@ public:
 
     template<typename T>
     void linked_list<T>::clear() {
-        if (_allocator != nullptr) {
-            for (list_node<T>* i = _head; i != nullptr; ) {
+        if (_allocator != nullptr)
+        {
+            for (list_node<T>* i = _tail; i != nullptr; ) {
                 list_node<T>* current = i;
-                i = i->get_next();
+                i = i->get_prev();
                 delete_node(current);
             }
             _head = nullptr;
@@ -946,18 +1037,15 @@ public:
     }
 
     template<typename T>
-    linked_list<T> linked_list<T>::clone(tca::base_allocator* allocator) const {
-        if (allocator == nullptr) {
-            if (_allocator == nullptr)
-                return linked_list<T>();
-            allocator = _allocator;
-        }
-        linked_list<T> result(allocator);
-
-        for (const list_node<T>* i = _head; i != nullptr; i = i->get_next())
-            result.add(i->get_value());
-
-        return linked_list<T>(std::move(result));
+    bool linked_list<T>::equals(const linked_list<T>& list) const {
+        if (size() != list.size())
+            return false;
+        return objects::equals(begin(), end(), list.begin(), list.end(), equal_to<T>());
+    }
+    
+    template<typename T>
+    std::size_t linked_list<T>::hashcode() const {
+        return objects::hashcode(begin(), end(), hash_for<T>());
     }
 
 
@@ -1016,8 +1104,14 @@ public:
     
     template<typename T>
     template<typename NODE_TYPE, typename VALUE_TYPE>
-    bool linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator!=(const iterator<NODE_TYPE, VALUE_TYPE>& it) const {
+    bool linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator!= (const iterator<NODE_TYPE, VALUE_TYPE>& it) const {
         return _n != it._n;
+    }
+    
+    template<typename T>
+    template<typename NODE_TYPE, typename VALUE_TYPE>
+    bool linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator== (const iterator<NODE_TYPE, VALUE_TYPE>& it) const {
+        return _n == it._n;
     }
 
     template<typename T>

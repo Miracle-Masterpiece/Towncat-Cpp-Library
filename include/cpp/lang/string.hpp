@@ -360,6 +360,26 @@ public:
      * 
      */
     tstring<TCHAR> sub_string(std::size_t start, std::size_t end, tca::allocator* allocator = tca::get_default_allocator()) const;
+
+    /**
+     * 
+     */
+    TCHAR* begin();
+    
+    /**
+     * 
+     */
+    TCHAR* end();
+    
+    /**
+     * 
+     */
+    const TCHAR* begin() const;
+    
+    /**
+     * 
+     */
+    const TCHAR* end() const;
 };
 
 namespace internal

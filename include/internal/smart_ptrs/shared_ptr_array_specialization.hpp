@@ -361,7 +361,7 @@ public:
         if (m_block->strong_count() == 0) {
             T* obj = reinterpret_cast<T*>(m_block->m_object);
             assert(obj != nullptr);
-            placement_destroy(obj, m_len);
+            destroy_n(obj, m_len);
             if (m_block->weak_count() == 0) {
                 tca::allocator* allocator = m_block->m_allocator;
                 if (allocator != nullptr) //если распределитель равен null, значит за выделение контрол блока отвечает shared_ptr

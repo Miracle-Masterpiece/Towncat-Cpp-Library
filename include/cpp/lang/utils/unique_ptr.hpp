@@ -430,7 +430,7 @@ public:
             throw_except<out_of_memory_error>("Out of memory!");
         try {
             using NON_CONST_T = typename remove_cv<T>::type;
-            placement_new<NON_CONST_T>(const_cast<NON_CONST_T*>(static_cast<T*>(mem)), len);
+            uninitialized_construct_n<NON_CONST_T>(const_cast<NON_CONST_T*>(static_cast<T*>(mem)), len);
             m_array = static_cast<T*>(mem);
         } catch (...) {
             allocator->deallocate(mem, sizeof(T) * len);
@@ -465,7 +465,7 @@ public:
     template<typename T>
     void unique_ptr<T[]>::cleanup() const {
         if (m_allocator != nullptr && m_array != nullptr) {
-            placement_destroy(m_array, m_length);
+            destroy_n(m_array, m_length);
             m_allocator->deallocate(m_array);
         }
     }

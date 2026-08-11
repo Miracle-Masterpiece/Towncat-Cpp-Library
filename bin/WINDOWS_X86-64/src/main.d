@@ -13,4 +13,12 @@ bin/WINDOWS_X86-64/src/main.o: src/main.cpp \
  include/allocators/helpers.hpp \
  include/cpp/lang/utils/raw_binary_tree.hpp \
  include/cpp/lang/utils/random.hpp include/cpp/lang/utils/limits.hpp \
- include/cpp/lang/utils/array_list.hpp
+ include/cpp/lang/utils/array_list.hpp include/cpp/lang/utils/arrays.hpp \
+ include/cpp/lang/traits/cv_traits.hpp include/internal/img_utils.hpp \
+ include/cpp/lang/array.hpp include/cpp/lang/utils/linked_list.hpp \
+ include/cpp/lang/utils/hash_map.hpp \
+ include/internal/shared/map_utils.hpp \
+ include/cpp/lang/utils/map_entry.hpp include/cpp/lang/utils/pair.hpp \
+ include/cpp/lang/traits/type_properties.hpp \
+ include/cpp/lang/utils/linked_hash_map.hpp \
+ include/allocators/malloc_free_allocator.hpp

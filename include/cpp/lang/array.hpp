@@ -137,20 +137,6 @@ public:
     array<T>& operator=(array<T>&& a);
 
     /**
-     * Клонирует массив, используя переданный аллокатор.
-     *
-     * Если аллокатор не указан, используется текущий.  
-     * Создаёт новую копию данных.
-     *
-     * @param allocator
-     *      Аллокатор для нового массива (по умолчанию тот же, что и у исходного).
-     * 
-     * @return
-     *      Новый массив с такими же данными.
-     */
-    array<T> clone(tca::allocator* allocator = nullptr) const;
-
-    /**
      * Деструктор.
      *
      * Освобождает память, уничтожает элементы.
@@ -250,48 +236,27 @@ public:
      *      true - если массивы равны, иначе false.
      */
     bool equals(const array<T>& a) const;
-
-    /**
-     * Минимальный размер буфера для строкового представления объекта.
-     */
-    static const std::size_t TO_STRING_MIN_BUFFER_SIZE = 64;
     
-    /**
-     * Сохраняет строковое представление объекта.
-     * 
-     * @param buf
-     *      Буфер, куда будет сохранено строковое представление объекта.
-     * 
-     * @param bufsize
-     *      Размер буфера, для сохранения строки.
-     * 
-     * @return
-     *      Количество записанных символов. (Не включая нуль-терминатор)
-     */
-    int to_string(char buf[], std::size_t bufsize) const;
-    
-
     /**
      * Возвращает итератор на первый элемент.
      */
-    T* begin() const;
+    const T* begin() const;
     
     /**
      * Возвращает итератор на последний элемент.
      */
-    T* end() const;
+    const T* end() const;
+    
+    /**
+     * Возвращает итератор на первый элемент.
+     */
+    T* begin();
+    
+    /**
+     * Возвращает итератор на последний элемент.
+     */
+    T* end();
 };
-
-    template<typename T>
-    void array<T>::free() {
-        if (_allocator != nullptr && _data != nullptr) {
-            placement_destroy(_data, length);
-            _allocator->deallocate((void*) _data, sizeof(T) * length);
-            _data       = nullptr;
-            _allocator  = nullptr;
-            length      = 0;
-        }
-    }
 
     template<typename T>
     array<T>::array() : _allocator(nullptr), _data(nullptr), length(0) {}
@@ -303,42 +268,56 @@ public:
 
     template<typename T>
     array<T>::array(std::size_t sz, tca::allocator* allocator) : array<T>() {
-        JSTD_DEBUG_CODE(
-            check_non_null(allocator);  
-        );
+        JSTD_DEBUG_CODE(check_non_null(allocator));
+        
+        _allocator = allocator;
+        
         if (sz > 0) {
             T* data = (T*) allocator->allocate_align(sizeof(T) * sz, alignof(T));
             if (data == nullptr)
                 throw_except<out_of_memory_error>("Out of memory!");
-            placement_new(const_cast<typename remove_cv<T>::type*>(data), sz);
-            _allocator  = allocator;
+            uninitialized_construct_n(const_cast<typename remove_cv<T>::type*>(data), sz);
             _data       = data;
             length      = sz;
         }
     }
 
     template<typename T>
-    array<T>::array(const std::initializer_list<T>& init_list, tca::allocator* allocator) : array<T>() {
-        if (init_list.size() > 0) {
-            JSTD_DEBUG_CODE(
-                if (allocator == nullptr)
-                    throw_except<null_pointer_exception>("allocator == null");
-            );
-            T* data = (T*) allocator->allocate_align(sizeof(T) * init_list.size(), alignof(T));
-            if (data == nullptr)
-                throw_except<out_of_memory_error>("Out of memory!");
-                        
-            placement_copy(const_cast<typename remove_cv<T>::type*>(data), init_list);
-            _allocator  = allocator;
-            _data       = data;
-            length      = init_list.size();  
+    array<T>::array(const std::initializer_list<T>& init_list, tca::allocator* allocator) {
+        JSTD_DEBUG_CODE(check_non_null(allocator));
+        
+        _allocator  = allocator;
+        T* data     = nullptr;
+        std::size_t sz = init_list.size();
+
+        if (sz > 0)
+        {
+            data = allocate_and_copy_n(init_list, _allocator);
+            if (!data)
+                throw_except<out_of_memory_error>("Out of memory");
         }
+
+        _data       = data;
+        length      = sz;  
     }
 
     template<typename T>
-    array<T>::array(const array<T>& a) {
-        array<T> tmp_array = a.clone();
-        *this = std::move(tmp_array);
+    array<T>::array(const array<T>& a) : array<T>() {
+        _allocator  = a._allocator;
+        
+        T* data         = nullptr;
+        std::size_t len = a.length;
+
+        if (len > 0)
+        {
+        
+            data = allocate_and_copy_n(a.data(), a.length, _allocator); 
+            if (!data)
+                throw_except<out_of_memory_error>("Out of memory");
+        }
+        
+        _data   = data;
+        length  = len;
     }
     
     template<typename T>
@@ -350,43 +329,46 @@ public:
     
     template<typename T>
     array<T>& array<T>::operator= (const array<T>& a) {
-        if (&a != this) {
-            array<T> tmp_array = a.clone();
-            *this = std::move(tmp_array);
+        if (&a == this)
+            return *this;
+
+        std::size_t new_len = a.length;
+        T* new_data         = nullptr;
+        if (a.length > 0)
+        {
+            new_data = allocate_and_copy_n(a.data(), new_len, _allocator);
+            if (!new_data)
+                throw_except<out_of_memory_error>("Out of memory");
         }
+        
+        if (_data)
+        {
+            deallocate_and_destroy_n(_data, length, _allocator);
+        }
+
+        _data   = new_data;
+        length  = new_len;
+        
         return *this;
     }
     
     template<typename T>
     array<T>& array<T>::operator= (array<T>&& a) {
-        if (&a != this) {
-            free();
-            _allocator  = a._allocator;
-            _data       = a._data;
-            length      = a.length;
-
-            a._allocator    = nullptr;
-            a._data         = nullptr;
-            a.length        = 0;
+        if (&a != this)
+        {
+            std::swap(_allocator,   a._allocator);
+            std::swap(_data,        a._data);
+            std::swap(length,       a.length);
         }
         return *this;
     }
     
     template<typename T>
-    array<T> array<T>::clone(tca::allocator* allocator) const {
-        if (allocator == nullptr) {
-            if (_allocator == nullptr)
-                return array<T>();
-            allocator = _allocator;
-        }
-        array<T> new_array(length, allocator);
-        placement_copy(const_cast<typename remove_cv<T>::type*>(new_array.data()), _data, length);
-        return array<T>( std::move(new_array) );
-    }
-
-    template<typename T>
     array<T>::~array() {
-        free();
+        if (_allocator != nullptr && _data != nullptr)
+        {
+            deallocate_and_destroy_n(_data, length, _allocator);
+        }
     }
 
     template<typename T>
@@ -415,7 +397,7 @@ public:
     template<typename T>
     std::size_t array<T>::hashcode() const {
         return (_data == nullptr || length == 0) ? 
-                                                    0 : objects::hashcode(_data, length);
+                                                    0 : objects::hashcode(begin(), end(), hash_for<T>());
     }
 
     template<typename T>
@@ -424,28 +406,38 @@ public:
     }
 
     template<typename T>
-    int array<T>::to_string(char buf[], std::size_t bufsize) const {
-        return std::snprintf(buf, bufsize, "[data=0x%llx, length=%lli]", (long long) _data, (long long) length);
-    }
-
-    template<typename T>
     bool array<T>::equals(const array<T>& a) const {
         if (length != a.length)
+        {
             return false;
-        if (data() != nullptr && a.data() != nullptr) {
-            return objects::equals(data(), a.data(), length);
-        } else {
+        }
+        if (data() != nullptr && a.data() != nullptr)
+        {
+            return objects::equals(begin(), end(), a.begin(), a.end(), equal_to<T>());
+        }
+        else
+        {
             return data() == a.data();
         }
     }
 
     template<typename T>
-    T* array<T>::begin() const {
+    const T* array<T>::begin() const {
         return _data;
     }
     
     template<typename T>
-    T* array<T>::end() const {
+    const T* array<T>::end() const {
+        return _data + length;
+    }
+    
+    template<typename T>
+    T* array<T>::begin() {
+        return _data;
+    }
+    
+    template<typename T>
+    T* array<T>::end() {
         return _data + length;
     }
 }

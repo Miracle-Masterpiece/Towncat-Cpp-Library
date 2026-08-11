@@ -2,9 +2,7 @@
 #include <cpp/lang/exceptions.hpp>
 #include <utility>
 #include <cpp/lang/utils/unique_ptr.hpp>
-
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include <cpp/lang/utils/images/stb_image_resize.h>
+#include <internal/img_utils.hpp>
 
 namespace tc {
 
@@ -201,15 +199,39 @@ namespace tc {
     image image::resize(int neww, int newh, tca::allocator* allocator) const {
         if (neww <= 0 || newh <= 0)
             throw_except<illegal_argument_exception>("Invalid width or height");
-        if (allocator == nullptr) {
+        if (allocator == nullptr)
+        {
             if (m_allocator == nullptr)
                 return image();
             allocator = m_allocator;
         }
+        
         image resized_image(neww, newh, m_channels, allocator);
-        int error = stbir_resize_uint8(reinterpret_cast<const unsigned char*>(m_pixels), m_width, m_height, 0, resized_image.pixels(), neww, newh, 0, m_channels);
-        if (error == 0)
-            throw_except<illegal_state_exception>("stbi_resize error: %i", error);
+        
+        int error;
+        if (m_channels == 4)
+        {
+            error = internal::resize_image_alpha(
+                m_pixels, m_width, m_height,
+                resized_image.pixels(), neww, newh, 
+                m_channels,
+                3, /*alpha index*/
+                allocator
+            );
+        }
+        else
+        {
+            error = internal::resize_image(
+                m_pixels, m_width, m_height,
+                resized_image.pixels(), neww, newh, 
+                m_channels, 
+                allocator
+            );
+        }
+
+        if (error != 0)
+            throw_except<illegal_state_exception>("resize error: %i", error);
+
         return image(std::move(resized_image));
     }
 

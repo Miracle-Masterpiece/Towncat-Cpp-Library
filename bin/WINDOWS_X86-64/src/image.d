@@ -9,7 +9,7 @@ bin/WINDOWS_X86-64/src/image.o: src/image.cpp \
  include/cpp/lang/types.hpp include/cpp/lang/exceptions.hpp \
  include/cpp/lang/stacktrace/stacktrace.hpp include/cpp/lang/math.hpp \
  include/cpp/lang/math/math.hpp include/cpp/lang/utils/unique_ptr.hpp \
- include/cpp/lang/utils/arrays.hpp include/cpp/lang/traits/SFINAE.hpp \
+ include/cpp/lang/utils/arrays.hpp include/cpp/lang/traits/cv_traits.hpp \
+ include/cpp/lang/traits/SFINAE.hpp \
  include/cpp/lang/traits/relatoship_traits.hpp \
- include/cpp/lang/traits/cv_traits.hpp \
- include/cpp/lang/utils/images/stb_image_resize.h
+ include/internal/img_utils.hpp

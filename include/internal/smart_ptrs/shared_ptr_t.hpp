@@ -177,7 +177,7 @@ namespace sptr
         try {
             assert((std::intptr_t) ctrl_block->m_object % alignof(T) == 0);
             using non_const_T = typename remove_cv<T>::type;
-            placement_new<non_const_T>(reinterpret_cast<non_const_T*>(ctrl_block->m_object), length);
+            uninitialized_construct_n<non_const_T>(reinterpret_cast<non_const_T*>(ctrl_block->m_object), length);
         } catch (...) {
             allocator->deallocate(ctrl_block);
             throw;

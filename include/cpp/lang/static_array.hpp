@@ -4,7 +4,6 @@
 #include <initializer_list>
 #include <cstdint>
 #include <cpp/lang/utils/arrays.hpp>
-#include <cpp/lang/utils/traits.hpp>
 #include <cpp/lang/utils/cond_compile.hpp>
 #include <cpp/lang/exceptions.hpp>
 
@@ -112,7 +111,7 @@ public:
     template<typename T, std::size_t LENGTH>
     static_array<T, LENGTH>::static_array(const static_array<T, LENGTH>& array) {
         using NON_CONST_T = typename tc::remove_cv<T>::type;
-        placement_copy(const_cast<NON_CONST_T*>(m_data), array.m_data, LENGTH);
+        uninitialized_copy_n(const_cast<NON_CONST_T*>(m_data), array.m_data, LENGTH);
     }
     
     template<typename T, std::size_t LENGTH>
@@ -137,7 +136,7 @@ public:
     static_array<T, LENGTH>& static_array<T, LENGTH>::operator= (const static_array<T, LENGTH>& array) {
         if (&array != this) {
             using NON_CONST_T = typename tc::remove_cv<T>::type;
-            placement_copy(const_cast<NON_CONST_T*>(m_data), array.m_data, LENGTH);
+            uninitialized_copy_n(const_cast<NON_CONST_T*>(m_data), array.m_data, LENGTH);
         }
         return *this;
     }

@@ -5,5 +5,6 @@ bin/WINDOWS_X86-64/src/thread.o: src/thread.cpp \
  include/cpp/lang/traits/primitive_traits.hpp \
  include/cpp/lang/concurrency/mutex.hpp \
  include/cpp/lang/concurrency/runnable.hpp \
- include/cpp/lang/utils/arrays.hpp include/cpp/lang/system.hpp \
- include/cpp/lang/types.hpp
+ include/cpp/lang/utils/arrays.hpp include/cpp/lang/traits/cv_traits.hpp \
+ include/allocators/allocator.hpp include/allocators/base_allocator.hpp \
+ include/cpp/lang/system.hpp include/cpp/lang/types.hpp

@@ -1,127 +1,93 @@
 #ifndef DFFD7E3E_2691_41B5_B59C_0AB637563A13
 #define DFFD7E3E_2691_41B5_B59C_0AB637563A13
 
+#include <internal/shared/map_utils.hpp>
+#include <cpp/lang/utils/map_entry.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/hash.hpp>
+#include <cpp/lang/utils/pair.hpp>
 #include <cpp/lang/array.hpp>
+#include <initializer_list>
 #include <cassert>
 
 namespace tc
 {
 
+namespace map
+{
+namespace internal
+{
+
+template<typename K, typename V>
+class linked_entry : public map::entry<K, V> {
+    /**
+     * 
+     */
+    linked_entry<K, V>* m_list_next;
+    
+    /**
+     * 
+     */
+    linked_entry<K, V>* m_list_prev;
+public:
+    /**
+     * 
+     */
+    template<typename K_, typename V_>
+    linked_entry(K_&&, V_&&, std::size_t hashcode);
+
+    /**
+     * 
+     */
+    linked_entry<K, V>* get_next();
+    
+    /**
+     * 
+     */
+    const linked_entry<K, V>* get_next() const;
+    
+    /**
+     * 
+     */
+    void set_next(linked_entry<K, V>* e);
+
+    /**
+     * 
+     */
+    linked_entry<K, V>* get_list_next();
+    
+    /**
+     * 
+     */
+    linked_entry<K, V>* get_list_prev();
+
+    /**
+     * 
+     */
+    const linked_entry<K, V>* get_list_next() const;
+    
+    /**
+     * 
+     */
+    const linked_entry<K, V>* get_list_prev() const;
+    
+    /**
+     * 
+     */
+    void set_list_next(linked_entry<K, V>* e);
+    
+    /**
+     * 
+     */
+    void set_list_prev(linked_entry<K, V>* e);
+};
+
+} //namespace map
+} //namespace map
+
 template<typename TKEY, typename TVALUE, typename THASHER = hash_for<TKEY>, typename TEQUALER = equal_to<TKEY>>
 class linked_hash_map {
-public:
-    class entry {
-        /**
-         * 
-         */
-        entry* m_next;
-        
-        /**
-         * 
-         */
-        entry* m_list_next;
-        
-        /**
-         * 
-         */
-        entry* m_list_prev;
-        
-        /**
-         * 
-         */
-        std::size_t m_hash;
-
-        /**
-         * 
-         */
-        TKEY m_key;
-        
-        /**
-         * 
-         */
-        TVALUE m_value;
-    
-    public:
-        /**
-         * 
-         */
-        template<typename TKEY_, typename TVALUE_>
-        entry(TKEY_&&, TVALUE_&&, std::size_t hashcode);
-
-        /**
-         * 
-         */
-        entry* get_next();
-        
-        /**
-         * 
-         */
-        const entry* get_next() const;
-        
-        /**
-         * 
-         */
-        void set_next(entry* e);
-
-        /**
-         * 
-         */
-        TKEY& get_key();
-        
-        /**
-         * 
-         */
-        TVALUE& get_value();
-        
-        /**
-         * 
-         */
-        const TKEY& get_key() const;
-        
-        /**
-         * 
-         */
-        const TVALUE& get_value() const;
-
-        /**
-         * 
-         */
-        entry* get_list_next();
-        
-        /**
-         * 
-         */
-        entry* get_list_prev();
-
-        /**
-         * 
-         */
-        const entry* get_list_next() const;
-        
-        /**
-         * 
-         */
-        const entry* get_list_prev() const;
-        
-        /**
-         * 
-         */
-        void set_list_next(entry* e);
-        
-        /**
-         * 
-         */
-        void set_list_prev(entry* e);
-
-        /**
-         * 
-         */
-        template<typename TVALUE_>
-        void set_value(TVALUE_&&);
-    };
-
+    using entry = map::internal::linked_entry<TKEY, TVALUE>;
 private:
     /**
      * 
@@ -199,26 +165,21 @@ private:
      */
     float get_load_factor() const;
 
-    /**
-     * 
-     */
-    TVALUE* get0(const TKEY& key);
-    
-    /**
-     * 
-     */
-    const TVALUE* get0(const TKEY& key) const;
-
 public:
     /**
      * 
      */
-    linked_hash_map(tca::allocator* allocator = tca::get_scoped_or_default());
+    linked_hash_map(tca::allocator* allocator = tca::get_default_allocator());
     
     /**
      * 
      */
-    linked_hash_map(std::size_t initial_capacity, float load_factor = 0.75f, bool access_order = false, tca::allocator* allocator = tca::get_scoped_or_default());
+    linked_hash_map(std::size_t initial_capacity, float load_factor = 0.75f, bool access_order = false, tca::allocator* allocator = tca::get_default_allocator());
+    
+    /**
+     * 
+     */
+    linked_hash_map(const std::initializer_list<pair<TKEY, TVALUE>>& init_list, float load_factor = 0.75f, bool access_order = false, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * 
@@ -310,6 +271,17 @@ public:
     /**
      * 
      */
+    std::size_t hashcode() const;
+
+    /**
+     * 
+     */
+    template<typename THasher>
+    bool equals(const linked_hash_map<TKEY, TVALUE, THasher, TEQUALER>& map) const;
+
+    /**
+     * 
+     */
     void clear();
 
     /**
@@ -383,6 +355,11 @@ public:
         /**
          * 
          */
+        bool operator==(const iterator<TENTRY>&) const;
+        
+        /**
+         * 
+         */
         iterator<TENTRY>& operator++ ();
         
         /**
@@ -450,6 +427,25 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::linked_hash_map(
+        const std::initializer_list<pair<TKEY, TVALUE>>& init_list,
+        float load_factor,
+        bool access_order,
+        tca::allocator* allocator
+    ) : m_allocator(allocator), m_buckets(), m_head(nullptr), m_tail(nullptr), m_size(0), m_load_factor(load_factor), m_access_order(access_order) {
+        m_buckets.set(nullptr);
+        try {
+            for (const pair<TKEY, TVALUE>& p : init_list)
+            {
+                put(p.first(), p.second());
+            }
+        } catch (...) {
+            clear();
+            throw;
+        }
+    }
+
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::linked_hash_map(const linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>& map) :
         linked_hash_map() {
         (*this) = std::move(map.clone());
@@ -483,6 +479,7 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::operator= (linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>&& map) {
         if (&map != this) {
+            
             clear();
             m_allocator = map.m_allocator;
             m_buckets   = std::move(map.m_buckets);
@@ -575,44 +572,27 @@ public:
         if (get_load_factor() > m_load_factor) 
             rehash();
 
-        THASHER hashcode;
-        std::size_t hash   = hashcode(key);
-        std::size_t idx    = hash % m_buckets.length;
-
-        if (!m_buckets[idx])
+        entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
+        if (finded)
         {
-            m_buckets[idx] = alloc_entry(std::forward<TKEY_>(key), std::forward<TVALUE_>(value), hash);
-            
-            link_last(m_buckets[idx]);
-            ++m_size;
-            
-            assert(m_head != nullptr);
-            if (remove_eldest_entry(m_head))
-                remove(m_head->get_key());
-
+            finded->set_value(std::forward<TVALUE_>(value));
+            link_last(finded);
             return true;
         }
         else
         {
-            TEQUALER equals;
-            entry* prev = nullptr;
-            for (entry* i = m_buckets[idx]; i != nullptr; prev = i, i = i->get_next()) {
-                if (equals(i->get_key(), key)) {
-                    i->set_value(std::forward<TVALUE_>(value));
-                    return false;
-                }
-            }
-            assert(prev != nullptr);
+            entry* e = alloc_entry(std::forward<TKEY_>(key), std::forward<TVALUE_>(value), internal::map::hash_key<THASHER>(key));
             
-            entry* _new = alloc_entry(std::forward<TKEY_>(key), std::forward<TVALUE_>(value), hash);
-            prev->set_next(_new);
+            std::size_t idx = internal::map::bucket_index<THASHER>(key, m_buckets);
+            internal::map::append_entry(idx, e, m_buckets);
             
-            link_last(_new);
             ++m_size;
-
-            assert(m_head != nullptr);
+            link_last(e);
+            
             if (remove_eldest_entry(m_head))
+            {
                 remove(m_head->get_key());
+            }
 
             return true;
         }
@@ -648,94 +628,72 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    TVALUE* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get0(const TKEY& key) {
-        THASHER hashcode;
-        std::size_t hash   = hashcode(key);
-        std::size_t idx    = hash % m_buckets.length;
-        TEQUALER equals;
-        for (entry* i = m_buckets[idx]; i != nullptr; i = i->get_next()) {
-            if (equals(i->get_key(), key)) {
-                if (m_access_order) {
-                    unlink(i);
-                    link_last(i);
-                }
-                return &i->get_value();
-            }
-        }
-        return nullptr;
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    const TVALUE* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get0(const TKEY& key) const {
-        THASHER hashcode;
-        std::size_t hash   = hashcode(key);
-        std::size_t idx    = hash % m_buckets.length;
-        TEQUALER equals;
-        for (entry* i = m_buckets[idx]; i != nullptr; i = i->get_next()) {
-            if (equals(i->get_key(), key)) {
-                return &i->get_value();
-            }
-        }
-        return nullptr;
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename TVALUE_>
     bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::replace(const TKEY& key, TVALUE_&& value) {
-        THASHER hashcode;
-        std::size_t hash   = hashcode(key);
-        std::size_t idx    = hash % m_buckets.length;
-        TEQUALER equals;
-        for (entry* i = m_buckets[idx]; i != nullptr; i = i->get_next()) {
-            if (equals(i->get_key(), key)) {
-                i->set_value(std::forward<TVALUE_>(value));
-                return true;
-            }
+        entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
+        if (finded)
+        {
+            finded->set_value(std::forward<TVALUE_>(value));
         }
         return false;
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     TVALUE& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get(const TKEY& key) {
-        TVALUE* val = get0(key);
-        if (val)
-            return *val;
-        else
-            throw_except<no_such_element_exception>("No such element in map"); 
-        throw 0; //[-Wreturn-type]
+        
+        entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
+        if (!finded)
+           throw make_except<no_such_element_exception>("No such element in map"); 
+        
+        if (m_access_order)
+        {
+            unlink(finded);
+            link_last(finded);
+        }
+
+        return finded->get_value();
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     const TVALUE& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get(const TKEY& key) const {
-        const TVALUE* val = get0(key);
-        if (val)
-            return *val;
-        else
-            throw_except<no_such_element_exception>("No such element in map"); 
-        throw 0; //[-Wreturn-type]
+
+        entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
+        if (!finded)
+           throw make_except<no_such_element_exception>("No such element in map"); 
+        
+        return finded->get_value();
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     TVALUE& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_or_default(const TKEY& key, TVALUE& value) {
-        TVALUE* val = get0(key);
-        if (val)
-            return *val;
-        else
-            return value;
+        entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
+        
+        if (finded)
+        {
+            if (m_access_order)
+            {
+                unlink(finded);
+                link_last(finded);
+            }
+            return finded->get_value();
+        }
+        
+        return value;
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     const TVALUE& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_or_default(const TKEY& key, const TVALUE& value) const {
-        const TVALUE* val = get0(key);
-        if (val)
-            return *val;
-        else
-            return value;
+        entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
+        
+        if (finded)
+            return finded->get_value();
+        
+        return value;
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::contains_key(const TKEY& key) const {
-        return get0(key) != nullptr;
+        return internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -754,9 +712,12 @@ public:
         assert(e != nullptr);
         e->set_list_next(nullptr);
         e->set_list_prev(nullptr);
-        if (m_tail == nullptr) {
+        if (m_tail == nullptr)
+        {
             m_head = m_tail = e;
-        } else {
+        }
+        else
+        {
             m_tail->set_list_next(e);
             e->set_list_prev(m_tail);
             m_tail = e;
@@ -768,9 +729,12 @@ public:
         assert(e != nullptr);
         e->set_list_next(nullptr);
         e->set_list_prev(nullptr);
-        if (m_head == nullptr) {
+        if (m_head == nullptr)
+        {
             m_head = m_tail = e;
-        } else {
+        }
+        else
+        {
             e->set_list_next(m_head);
             m_head->set_list_prev(e);
             m_head = e;
@@ -819,7 +783,7 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     float linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_load_factor() const {
-        return m_size / (float) m_buckets.length;
+        return static_cast<float>(m_size) / static_cast<float>(m_buckets.length);
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -830,6 +794,20 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     tca::allocator* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_allocator() const {
         return m_allocator;
+    }
+
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    std::size_t linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::hashcode() const {
+        if (size() > 0)
+            return objects::hashcode(begin(), end(), hash_for<map::entry<TKEY, TVALUE>>());
+        else
+            return 0;
+    }
+
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    template<typename THasher>
+    bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::equals(const linked_hash_map<TKEY, TVALUE, THasher, TEQUALER>& map) const {
+        return objects::equals(begin(), end(), map.begin(), map.end(), equal_to<map::entry<TKEY, TVALUE>>());
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -869,7 +847,7 @@ public:
     template<typename THASHER_, typename TEQUALER_>
     bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::contains_all(const linked_hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map) const {
         for (const entry& e : map)
-            if (!get0(e.get_key()))
+            if (!internal::map::find_entry<THASHER, TEQUALER>(e.get_key(), m_buckets))
                 return false;
         return true;
     }
@@ -877,89 +855,6 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::remove_eldest_entry(entry* eldest) {
         return false;
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TKEY_, typename TVALUE_>
-    linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::entry(TKEY_&& key, TVALUE_&& value, std::size_t hashcode) :
-        m_next(nullptr),
-        m_list_next(nullptr),
-        m_list_prev(nullptr),
-        m_hash(hashcode),
-        m_key(std::forward<TKEY_>(key)),
-        m_value(std::forward<TVALUE_>(value)) {
-
-    }
-    
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::get_next() {
-        return m_next;
-    }
-    
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    const typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::get_next() const {
-        return m_next;
-    }
-        
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    void linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::set_next(entry* e) {
-        m_next = e;
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    TKEY& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::get_key() {
-        return m_key;
-    }
-    
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    TVALUE& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::get_value() {
-        return m_value;
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    const TKEY& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::get_key() const {
-        return m_key;
-    }
-    
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    const TVALUE& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::get_value() const {
-        return m_value;
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TVALUE_>
-    void linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::set_value(TVALUE_&& value) {
-        m_value = std::forward<TVALUE_>(value);
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::get_list_next() {
-        return m_list_next;
-    }
-    
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::get_list_prev() {
-        return m_list_prev;
-    }
-    
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    const typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::get_list_next() const {
-        return m_list_next;
-    }
-    
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    const typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry* linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::get_list_prev() const {
-        return m_list_prev;
-    }
-    
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    void linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::set_list_next(entry* e) {
-        m_list_next = e;
-    }
-    
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    void linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry::set_list_prev(entry* e) {
-        m_list_prev = e;
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -984,6 +879,12 @@ public:
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename TENTRY>
+    bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator==(const iterator<TENTRY>& it) const {
+        return m_entry == it.m_entry;
+    }
+    
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    template<typename TENTRY>
     typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::template iterator<TENTRY>& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator++ () {
         JSTD_DEBUG_CODE(check_non_null(m_entry));
         m_entry = m_entry->get_list_next();
@@ -998,6 +899,70 @@ public:
         m_entry = m_entry->get_list_next();
         return it;
     }
-}
+
+
+
+namespace map
+{
+namespace internal
+{
+
+    template<typename K, typename V>
+    template<typename K_, typename V_>
+    linked_entry<K, V>::linked_entry(K_&& key, V_&& value, std::size_t hashcode) :
+    entry<K, V>(std::forward<K_>(key), std::forward<V_>(value), hashcode) {
+        m_list_next = nullptr;
+        m_list_prev = nullptr;
+    }
+    
+    template<typename K, typename V>
+    linked_entry<K, V>* linked_entry<K, V>::get_next() {
+        return static_cast<linked_entry<K, V>*>(entry<K, V>::get_next());
+    }
+    
+    template<typename K, typename V>
+    const linked_entry<K, V>* linked_entry<K, V>::get_next() const {
+        return static_cast<linked_entry<K, V>*>(entry<K, V>::get_next());
+    }
+        
+    template<typename K, typename V>
+    void linked_entry<K, V>::set_next(linked_entry<K, V>* e) {
+        entry<K, V>::set_next(e);
+    }
+
+    template<typename K, typename V>
+    linked_entry<K, V>* linked_entry<K, V>::get_list_next() {
+        return m_list_next;
+    }
+    
+    template<typename K, typename V>
+    linked_entry<K, V>* linked_entry<K, V>::get_list_prev() {
+        return m_list_prev;
+    }
+    
+    template<typename K, typename V>
+    const linked_entry<K, V>* linked_entry<K, V>::get_list_next() const {
+        return m_list_next;
+    }
+    
+    template<typename K, typename V>
+    const linked_entry<K, V>* linked_entry<K, V>::get_list_prev() const {
+        return m_list_prev;
+    }
+    
+    template<typename K, typename V>
+    void linked_entry<K, V>::set_list_next(linked_entry<K, V>* e) {
+        m_list_next = e;
+    }
+    
+    template<typename K, typename V>
+    void linked_entry<K, V>::set_list_prev(linked_entry<K, V>* e) {
+        m_list_prev = e;
+    }
+
+} //namespace internal
+} //namespace map
+
+} //namespace tc
 
 #endif /* DFFD7E3E_2691_41B5_B59C_0AB637563A13 */

@@ -40,10 +40,22 @@ namespace internal
 {
     thread_local allocator* scoped_allocator;
 }
+    
+    static malloc_free_allocator malloc_allocator;
+    
+    allocator* default_alloc = &malloc_allocator;
 
     allocator* get_default_allocator() {
-        static malloc_free_allocator s_malloc_allocator;
-        return &s_malloc_allocator;
+        return default_alloc;
+    }
+
+    void set_default_allocator(allocator* allocator) {
+        default_alloc = 
+                        (allocator != nullptr) ? allocator : &malloc_allocator;
+    }
+
+    allocator* get_scoped_or_default() {
+        return internal::scoped_allocator ? internal::scoped_allocator : get_default_allocator();
     }
 
     allocator* get_exception_allocator() {

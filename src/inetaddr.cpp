@@ -213,11 +213,15 @@ namespace tc
     std::size_t inet_address::hashcode() const {
         if (family == inet_family::IPV4)
         {
-            return objects::hashcode<char>(reinterpret_cast<const char*>(&IPv4), sizeof(IPv4));
+            const uint8_t* b = IPv4.m_byte_view;
+            const uint8_t* e = IPv4.m_byte_view + sizeof(IPv4.m_byte_view) / sizeof(*IPv4.m_byte_view);
+            return objects::hashcode(b, e, hash_for<uint8_t>());
         } 
         else if (family == inet_family::IPV6)
         {
-            return objects::hashcode<char>(reinterpret_cast<const char*>(&IPv6), sizeof(IPv6));
+            const uint8_t* b = IPv4.m_byte_view;
+            const uint8_t* e = IPv4.m_byte_view + sizeof(IPv4.m_byte_view) / sizeof(*IPv4.m_byte_view);
+            return objects::hashcode(b, e, hash_for<uint8_t>());
         }
         return 0;
     }
@@ -228,18 +232,24 @@ namespace tc
         
         if (family == inet_family::IPV4 && addr.family == inet_family::IPV4)
         {
-            return 
-                    objects::equals<char>(reinterpret_cast<const char*>(&IPv4), reinterpret_cast<const char*>(&addr.IPv4), sizeof(IPv4)) 
-                    &&
-                    family == addr.family;
+            
+            const uint8_t* b0 = IPv4.m_byte_view;
+            const uint8_t* e0 = IPv4.m_byte_view + sizeof(IPv4.m_byte_view) / sizeof(*IPv4.m_byte_view);
+            const uint8_t* b1 = addr.IPv4.m_byte_view;
+            const uint8_t* e1 = addr.IPv4.m_byte_view + sizeof(addr.IPv4.m_byte_view) / sizeof(*addr.IPv4.m_byte_view);
+
+            return  objects::equals(b0, e0, b1, e1) && family == addr.family;
         } 
         
         else if (family == inet_family::IPV6 && addr.family == inet_family::IPV6)
         {
-            return 
-                    objects::equals<char>(reinterpret_cast<const char*>(&IPv6), reinterpret_cast<const char*>(&addr.IPv6), sizeof(IPv6))
-                    &&
-                    family == addr.family;
+            
+            const uint8_t* b0 = IPv6.m_byte_view;
+            const uint8_t* e0 = IPv6.m_byte_view + sizeof(IPv6.m_byte_view) / sizeof(*IPv6.m_byte_view);
+            const uint8_t* b1 = addr.IPv6.m_byte_view;
+            const uint8_t* e1 = addr.IPv6.m_byte_view + sizeof(addr.IPv6.m_byte_view) / sizeof(*addr.IPv6.m_byte_view);
+            
+            return  objects::equals(b0, e0, b1, e1) && family == addr.family;
         }
 
         return false;

@@ -1,11 +1,13 @@
 #ifndef JSTD_CPP_LANG_UTILS_ARRAYS_H
 #define JSTD_CPP_LANG_UTILS_ARRAYS_H
 
+#include <cpp/lang/traits/cv_traits.hpp>
 #include <cctype>
 #include <type_traits>
 #include <cstring>
 #include <initializer_list>
 #include <cstdint>
+#include <allocators/allocator.hpp>
 
 #ifndef NDEBUG
     #include <cpp/lang/exceptions.hpp>
@@ -13,7 +15,8 @@
 
 #define JSTD_TRIVIAL_COPY_CHECK 
 
-namespace tc {
+namespace tc
+{
 
     /**
      * Конструирует массив объектов типа T в заранее выделенной области памяти с использованием placement new.
@@ -43,11 +46,14 @@ namespace tc {
      *       функция завершает выполнение без создания объектов.
      */
     template<typename T>
-    void placement_new(T* array, std::size_t length) {
+    void uninitialized_construct_n(T* array, std::size_t length) {
         JSTD_DEBUG_CODE(
-        if (array == nullptr)
-            throw_except<null_pointer_exception>("array is null");
+            if (array == nullptr)
+            {
+                throw_except<null_pointer_exception>("array is null");
+            }
         );
+
 #ifdef JSTD_TRIVIAL_COPY_CHECK
         if (std::is_trivially_copyable<T>::value)
             return;
@@ -85,20 +91,21 @@ namespace tc {
      *       функция завершает выполнение без вызова деструкторов.
      */
     template<typename T>
-    void placement_destroy(const T* array, std::size_t length) {
-        JSTD_DEBUG_CODE(
-            if (array == nullptr)
-                throw_except<null_pointer_exception>("array is null");
-        );
+    void destroy_n(const T* array, std::size_t length) {
+        JSTD_DEBUG_CODE(check_non_null(array, "array is null"));
         
 #ifdef JSTD_TRIVIAL_COPY_CHECK
         if (std::is_trivially_destructible<T>::value)
+        {
             return;
+        }
 #endif//JSTD_TRIVIAL_COPY_CHECK
         
         std::size_t destructs = length;
         while (destructs > 0)
+        {
             array[--destructs].~T();
+        }
     }
 
     /**
@@ -129,11 +136,12 @@ namespace tc {
      *       используется std::memcpy вместо конструктора копирования.
      */
     template<typename T>
-    void placement_copy(T* dst, const T* src, std::size_t length) {
+    void uninitialized_copy_n(T* dst, const T* src, std::size_t length) {
         JSTD_DEBUG_CODE(
-            if (dst == nullptr) throw_except<null_pointer_exception>("dst is null");
-            if (src == nullptr) throw_except<null_pointer_exception>("src is null");
-        );
+            check_non_null(dst, "dst is null");
+            check_non_null(src, "src is null");
+        )
+
 #ifdef JSTD_TRIVIAL_COPY_CHECK
         if (std::is_trivially_copyable<T>::value) {
             std::memcpy((void*) dst, (const void*) src, sizeof(T) * length);
@@ -152,30 +160,77 @@ namespace tc {
         }
     }
 
+    template<typename T>
+    T* allocate_and_copy_n(const T* src, std::size_t len, tca::allocator* alloc) {
+        T* data = (T*) alloc->allocate_align(sizeof(T) * len, alignof(T));
+        if (!data)
+        {
+            return nullptr;
+        }
+
+        try {
+            uninitialized_copy_n(const_cast<typename remove_cv<T>::type*>(data), src, len);
+        } catch (...) {
+            alloc->deallocate(const_cast<typename remove_cv<T>::type*>(data));
+            throw;
+        }
+        
+        return data;
+    }
+    
+    template<typename T>
+    void deallocate_and_destroy_n(const T* src, std::size_t len, tca::allocator* alloc) {
+        JSTD_DEBUG_CODE(check_non_null(src, "src is null"));
+        JSTD_DEBUG_CODE(check_non_null(alloc, "alloc is null"));
+
+        while (len > 0)
+        {
+            src[--len].~T();
+        }
+        
+        alloc->deallocate(const_cast<typename remove_cv<T>::type*>(src));
+    }
+
     template<typename T, typename E>
-    void placement_copy(T* array, const std::initializer_list<E>& init_list) {
-        JSTD_DEBUG_CODE(
-            if (array == nullptr)
-                throw_except<null_pointer_exception>("array is null");
-        );
+    void uninitialized_copy_n(T* array, const std::initializer_list<E>& init_list) {
+        JSTD_DEBUG_CODE(check_non_null(array, "array is null"));
         std::size_t copied = 0;
         try {
-            for (const E& e : init_list) {
+            for (const E& e : init_list)
+            {
                 new(array + copied) T(e); 
                 ++copied;
             }
         } catch (...) {
             std::size_t i = copied;
-            while (i-- != 0)
-                array[i].~T();
+            while (i > 0)
+                array[--i].~T();
             throw;
         }
+    }
+
+    template<typename T>
+    T* allocate_and_copy_n(const std::initializer_list<T>& init_list, tca::allocator* alloc) {
+        T* data = (T*) alloc->allocate_align(sizeof(T) * init_list.size(), alignof(T));
+        if (!data)
+        {
+            return nullptr;
+        }
+
+        try {
+            uninitialized_copy_n(const_cast<typename remove_cv<T>::type*>(data), init_list);
+        } catch (...) {
+            alloc->deallocate(const_cast<typename remove_cv<T>::type*>(data));
+            throw;
+        }
+        
+        return data;
     }
 
     /**
      * Копирует элементы одного массива в другой, используя оператор присваивания.
      *
-     * В отличие от placement_copy, эта функция предполагает, что объекты уже были сконструированы.
+     * В отличие от uninitialized_copy_n, эта функция предполагает, что объекты уже были сконструированы.
      * Копирование производится при помощи оператора присваивания operator=.
      *
      * @tparam T 
@@ -195,14 +250,14 @@ namespace tc {
      *      Если src == nullptr.
      *
      * @note Если включён JSTD_TRIVIAL_COPY_CHECK и тип T тривиально копируемый,
-     *       используется std::memcpy вместо вызова `operator=`.
+     *       используется std::memcpy вместо вызова operator=.
      */
     template<typename T>
     void copy(T* dst, const T* src, std::size_t length) {
         JSTD_DEBUG_CODE(
-            if (dst == nullptr) throw_except<null_pointer_exception>("dst is null");
-            if (src == nullptr) throw_except<null_pointer_exception>("src is null");
-        );
+            check_non_null(dst, "dst is null");
+            check_non_null(src, "src is null");
+        )
 #ifdef JSTD_TRIVIAL_COPY_CHECK
         if (std::is_trivially_copyable<T>::value) {
             std::memcpy(dst, src, sizeof(T) * length);
@@ -254,37 +309,38 @@ namespace tc {
      *      Eсли указанные диапазоны копирования выходят за пределы исходного или целевого массива.
      */
     template<typename T>
-    void arraycopy(T* src, int64_t src_pos, 
-                    T* dest, int64_t dst_pos, int64_t length, int64_t dst_length, int64_t src_length) {
-    #ifndef NDEBUG
-        check_non_null(src, "src must be != null");
+    void arraycopy(
+        T* src,  std::size_t src_pos, 
+        T* dest, std::size_t dst_pos, 
+        std::size_t length, 
+        std::size_t dst_length, 
+        std::size_t src_length) 
+    {
+    JSTD_DEBUG_CODE(
+        check_non_null(src,  "src must be != null");
         check_non_null(dest, "dest must be != null");
-        check_index(src_pos,  src_length);
-        check_index(dst_pos,  dst_length);
-        if (src_length - length < src_pos)
+        if (src_pos > src_length || length > src_length - src_pos)
+        {
             throw_except<index_out_of_bound_exception>("src range out of bounds");
-        if (dst_length - length < dst_pos)
-            throw_except<index_out_of_bound_exception>("dest range out of bounds");
-    #endif//NDEBUG
-        if (src == dest) {
-            if (dst_pos > src_pos) {
-                const int64_t off = dst_pos - src_pos;
-                for (int64_t i = dst_pos + length; i >= src_pos + off; --i) {
-                    dest[i] = src[i - off];
-                }
-            } 
-            
-            else if (dst_pos < src_pos){
-                const int64_t off = src_pos - dst_pos;
-                for (int64_t i = dst_pos; i < dst_pos + length; ++i) {
-                    dest[i] = src[i + off];
-                } 
-            }
         }
-    
-        else {
-            for (int64_t i = 0; i < length; ++i)
-                dest[i + dst_pos] = src[i + src_pos];
+        if (dst_pos > dst_length || length > dst_length - dst_pos)
+        {
+            throw_except<index_out_of_bound_exception>("dest range out of bounds");
+        }
+    )
+        if (src == dest && dst_pos > src_pos) 
+        {
+            for (std::size_t i = length; i > 0; --i) 
+            {
+                dest[dst_pos + i - 1] = src[src_pos + i - 1];
+            }
+        } 
+        else 
+        {
+            for (std::size_t i = 0; i < length; ++i) 
+            {
+                dest[dst_pos + i] = src[src_pos + i];
+            }
         }
     }
 
@@ -330,9 +386,10 @@ namespace tc {
         JSTD_DEBUG_CODE(
             check_non_null(src, "src must be != null");
             check_non_null(dst, "dst must be != null");
-            if (dst_max == 0)
-                return 0;
         )
+        
+        if (dst_max == 0)
+            return 0;
         
         std::size_t i;
         for (i = 0; i < dst_max; ++i)
