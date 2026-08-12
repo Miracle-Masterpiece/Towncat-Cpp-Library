@@ -238,7 +238,6 @@ namespace array_test
 {
     void copy_construct_test() {
         try {
-            tca::malloc_free_allocator a0;
             tca::malloc_free_allocator a1;
             
             tc::array<test> arr1(45, &a1);
@@ -255,12 +254,12 @@ namespace array_test
     void move_construct_test() {
         try {
             tca::malloc_free_allocator a0;
-            tca::malloc_free_allocator a1;
             
-            tc::array<test> arr1(45, &a1);
-            tc::array<test> arr0 = std::move(arr1);
+            tc::array<test> arr0(45, &a0);
+            tc::array<test> arr1 = std::move(arr0);
             
-            assert_(arr0.get_allocator() == &a1);
+            assert_(arr0.get_allocator() == &a0);
+            assert_(arr1.get_allocator() == &a0);
         } catch (const tc::throwable& e) {
             std::cout << e.cause() << std::endl;
         }
@@ -331,6 +330,7 @@ namespace array_list_test
             tc::array_list<test> arr0 = std::move(arr1);
             
             assert_(arr0.get_allocator() == &a1);
+            assert_(arr1.get_allocator() == &a1);
         } catch (const tc::throwable& e) {
             std::cout << e.cause() << std::endl;
         }
@@ -368,6 +368,7 @@ namespace array_list_test
             arr1 = std::move(arr0);
     
             assert_(arr1.get_allocator() == &a0);
+            assert_(arr0.get_allocator() == &a0);
         } catch (const tc::throwable& e) {
             std::cout << e.cause() << std::endl;
         }
@@ -617,11 +618,16 @@ struct tc::hash_for<test> {
     }
 };
 
+template class tc::array<const int>;
+template class tc::array<int>;
+
+template class tc::array_list<const int>;
+template class tc::array_list<int>;
+
+template class tc::linked_list<const int>;
+template class tc::linked_list<int>;
+
 int main(int argc, char const *argv[]) {
-    // while(1)
-    
-    // tc::map::entry<int, tc::string> entry(45, tc::string("hello"), 453543);
-    // std::cout << tc::hash_for<tc::map::entry<int, tc::string>>()(entry) << std::endl;
 
     {
 

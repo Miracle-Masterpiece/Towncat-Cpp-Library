@@ -5,4 +5,4 @@ bin/WINDOWS_X86-64/src/idstream.o: src/idstream.cpp \
  include/cpp/lang/stacktrace/stacktrace.hpp \
  include/cpp/lang/utils/cond_compile.hpp \
  include/cpp/lang/traits/primitive_traits.hpp \
- include/cpp/lang/utils/utils.hpp include/cpp/lang/utils/comparator.hpp
+ include/cpp/lang/utils/utils.hpp

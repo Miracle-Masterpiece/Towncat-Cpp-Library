@@ -8,6 +8,7 @@
 #include <cpp/lang/utils/objects.hpp>
 #include <cpp/lang/utils/arrays.hpp>
 #include <cpp/lang/traits/cv_traits.hpp>
+#include <cpp/lang/common.hpp>
 #include <cstdint>
 #include <utility>
 #include <initializer_list>
@@ -16,434 +17,914 @@
 namespace tc
 {
 
+namespace list
+{
+
 /**
- * Динамический массив с возможностью управления аллокатором.
+ * Bounds-checked pointer iterator wrapper.
  * 
- * Класс представляет собой обобщённую реализацию списка на основе массива, аналогичную {@code std::vector}. 
- * Поддерживает автоматическое расширение, вставку, удаление, доступ по индексу, а также сортировку.
- *
- * @tparam E 
- *      Тип элементов, хранящихся в списке.
+ * A lightweight iterator class that wraps a raw pointer with bounds checking
+ * in debug builds. Provides iterator semantics for pointer-based ranges
+ * with additional safety checks.
+ * 
+ * @tparam E
+ *      The element type pointed to by the iterator.
+ * 
+ * @note
+ *      In debug builds, dereferencing or incrementing past the end
+ *      throws index_out_of_bound_exception.
+ *      In release builds, these checks are omitted for performance.
+ * 
+ * @note
+ *      The iterator stores both the current pointer and the end pointer
+ *      for bounds checking in debug builds.
+ * 
+ * @example
+ *      int arr[] = {1, 2, 3, 4, 5};
+ *      ptr_iterator<int> begin(arr, arr + 5);
+ *      ptr_iterator<int> end(arr + 5, arr + 5);
+ *      
+ *      for (auto it = begin; it != end; ++it) {
+ *          std::cout << *it << " ";  // 1 2 3 4 5
+ *      }
+ *      // In debug builds, *end would throw an exception
+ * 
+ * @warning
+ *      In release builds, no bounds checking is performed.
+ *      Dereferencing past-the-end is undefined behavior.
+ * 
+ * @see
+ *      array::begin()
+ *      array::end()
+ */
+template<typename E>
+class ptr_iterator {
+    E* ptr;
+    
+    JSTD_DEBUG_CODE(
+        E* end;
+        /**
+         * Checks if dereference is valid.
+         * 
+         * @throws index_out_of_bound_exception
+         *      if ptr is null or out of bounds.
+         */
+        void check_deref() {
+            check_non_null(ptr, "Iterator is null");
+            if (ptr >= end)
+                throw_except<index_out_of_bound_exception>("Iterator out of bound");
+        }
+
+        /**
+         * Checks if increment is valid.
+         * 
+         * @throws index_out_of_bound_exception
+         *      if increment would go past end.
+         */
+        void can_increment() {    
+            if (ptr >= end)
+                throw_except<index_out_of_bound_exception>("Iterator out of bound");
+        }
+    );
+    
+public:
+    /**
+     * Constructs an iterator from a pointer with bounds.
+     * 
+     * @param ptr
+     *      Current pointer.
+     * 
+     * @param end
+     *      End pointer (one past the last valid element).
+     * 
+     * @example
+     *      int arr[] = {1, 2, 3};
+     *      ptr_iterator<int> it(arr, arr + 3);
+     */
+    ptr_iterator(E* ptr, E* end) : ptr(ptr)
+#ifdef JSTD_DEBUG_CODE
+    , end(end)
+#endif
+    {}
+
+    /**
+     * Dereferences the iterator.
+     * 
+     * @return
+     *      Reference to the pointed-to element.
+     * 
+     * @throws index_out_of_bound_exception in debug builds 
+     *      If ptr is nullptr
+     *      If ptr is out of bounds (ptr >= end)
+     * 
+     * @warning
+     *      In release builds, no bounds checking is performed.
+     *      Dereferencing an invalid iterator is undefined behavior.
+     * 
+     * @example
+     *      ptr_iterator<int> it(arr, arr + 3);
+     *      int x = *it;  // arr[0]
+     */
+    E& operator* () {
+        JSTD_DEBUG_CODE(check_deref());
+        return *ptr;
+    }
+    
+    /**
+     * Compares two iterators for equality.
+     * 
+     * @param it
+     *      The other iterator to compare with.
+     * 
+     * @return
+     *      true if both iterators point to the same address.
+     */
+    bool operator== (const ptr_iterator<E>& it) {
+        return ptr == it.ptr;
+    }
+    
+    /**
+     * Compares two iterators for inequality.
+     * 
+     * @param it
+     *      The other iterator to compare with.
+     * 
+     * @return
+     *      true if iterators point to different addresses.
+     */
+    bool operator!= (const ptr_iterator<E>& it) {
+        return ptr != it.ptr;
+    }
+    
+    /**
+     * Pre-increment operator.
+     * 
+     * Advances the iterator to the next element.
+     * 
+     * @return
+     *      Reference to this iterator after increment.
+     * 
+     * @throws index_out_of_bound_exception in debug builds
+     *      If ptr is out of bounds (ptr >= end)
+     */
+    ptr_iterator<E>& operator++ () {
+        JSTD_DEBUG_CODE(can_increment());
+        ++ptr;
+        return *this;
+    }
+    
+    /**
+     * Post-increment operator.
+     * 
+     * Advances the iterator to the next element and returns
+     * the previous value.
+     * 
+     * @return
+     *      A copy of the iterator before increment.
+     * 
+     * @throws index_out_of_bound_exception in debug builds:
+     *      If ptr is out of bounds (ptr >= end)
+     */
+    ptr_iterator<E> operator++ (int) {
+        JSTD_DEBUG_CODE(can_increment());
+        ptr_iterator<E> tmp = *this;
+        ++ptr;
+        return tmp;
+    }
+};
+
+};
+
+/**
+ * Dynamic array-based list container with allocator support.
+ * 
+ * A dynamically resizable array list that provides O(1) random access,
+ * O(n) insertion/removal at arbitrary positions, and O(1) amortized
+ * insertion at the end.
+ * 
+ * @tparam E
+ *      The type of elements stored in the list.
+ * 
+ * @note
+ *      The list grows automatically when capacity is exceeded.
+ *      Growth factor is 1.5x (capacity + capacity/2).
+ * 
+ * @warning
+ *      Iterator invalidation: any modification to the list
+ *      invalidates all iterators.
+ * 
+ * @example
+ *      // Create list and add elements
+ *      array_list<int> list;
+ *      list.add(10);
+ *      list.add(20);
+ *      list.add(5);
+ *      
+ *      // Access elements
+ *      int first = list.at(0);  // 10
+ *      list[0] = 100;
+ *      
+ *      // Iterate
+ *      for (int& i : list) {
+ *          std::cout << i << " ";
+ *      }
  */
 template<typename E>
 class array_list {
+    
     /**
-     * Значение по умолчанию для начальной вместимости массива.
+     * Iterator type alias.
      */
-    static const int DEFAULT_CAPACITY = 10;
+    typedef list::ptr_iterator<E> iterator;
 
     /**
-     * Указатель на пользовательский аллокатор памяти.
+     * Underlying type without cv-qualifiers.
+     */
+    typedef typename remove_cv<E>::type Evalue;
+    
+    /**
+     * Default initial capacity.
+     */
+    static const int DEFAULT_CAPACITY = 10;    
+
+    /**
+     *  Allocator used for memory management.
      */
     tca::allocator* m_allocator;
-
+    
     /**
-     * Указатель на массив элементов.
+     * Pointer to element storage.
      */
-    E* m_data;
-
+    Evalue* m_data;
+    
     /**
-     * Текущая вместимость массива (сколько элементов может быть размещено без перераспределения).
+     * Current allocated capacity.
      */
     std::size_t m_capacity;
-
+    
     /**
-     * Текущее количество элементов в списке.
+     * Current number of elements.
      */
     std::size_t m_size;
-
+    
     /**
-     * Вызывает деструкторы для элементов в диапазоне [start, end).
-     *
-     * @param start Начальный индекс (включительно).
-     * @param end Конечный индекс (не включительно).
-     */
-    void call_destructors(std::size_t start, std::size_t end);
-
-    /**
-     * Освобождает память и сбрасывает внутреннее состояние.
+     * Frees all resources.
+     * 
+     * Destroys all elements and deallocates memory.
      */
     void cleanup();
-
+    
     /**
-     * Увеличивает вместимость массива, обычно с коэффициентом роста 1.5x.
+     * Grows the capacity.
+     * 
+     * Increases capacity by 1.5x (capacity + capacity/2).
+     * If capacity is 0, sets to DEFAULT_CAPACITY.
+     * 
+     * @throws out_of_memory_error
+     *      if allocation fails.
      */
     void grow();
 
 public:
 
     /**
+     * Default constructor.
      * 
-     */
-    static const std::size_t null_val = ~((std::size_t) 0);
-
-    /**
-     * Создаёт пустой список без аллокатора.
+     * @param allocator
+     *      Allocator to use. Uses default if not provided.
      */
     array_list(tca::allocator* allocator = tca::get_default_allocator());
-
+    
     /**
-     * Создаёт список с заданным аллокатором и начальной вместимостью.
-     *
-     * @param allocator 
-     *      Указатель на пользовательский аллокатор.
+     * Constructs with initial capacity.
      * 
-     * @param init_capacity 
-     *      Начальная вместимость (по умолчанию — 10).
+     * @param init_capacity
+     *      Initial capacity.
+     * 
+     * @param allocator
+     *      Allocator to use.
+     * 
+     * @throws out_of_memory_error
+     *      if allocation fails.
      */
     explicit array_list(std::size_t init_capacity, tca::allocator* allocator = tca::get_default_allocator());
-
+    
     /**
-     * Создаёт список с заданным аллокатором и инициализирующим листом.
-     *
-     * @param allocator 
-     *      Указатель на пользовательский аллокатор.
+     * Constructs an array list from an initializer list.
+     * 
+     * Creates a new array list containing the elements from the initializer list.
+     * The capacity is pre-allocated to exactly match the number of elements.
      * 
      * @param init_list
-     *      Инициилизирующий список из которого будут добавлены элементы в этот список.
+     *      Initializer list of elements to populate the list with.
+     * 
+     * @param allocator
+     *      Allocator to use for memory management.
+     *      If not provided, uses the global default allocator.
+     * 
+     * @throws out_of_memory_error
+     *      If memory allocation fails.
+     * 
+     * @throws
+     *      Any exception thrown by E's copy constructor.
+     * 
+     * @note
+     *      The list reserves exactly init_list.size() capacity upfront,
+     *      avoiding reallocations during construction.
+     * 
+     * @note
+     *      Elements are copied from the initializer list into the list.
+     *      The initializer list remains unchanged.
+     * 
+     * @warning
+     *      If an exception is thrown during construction, all resources
+     *      are properly cleaned up (strong exception guarantee).
+     * 
+     * @example
+     *      // Create list with integers
+     *      array_list<int> list = {1, 2, 3, 4, 5};
+     *      assert(list.size() == 5);
+     *      assert(list[0] == 1);
+     *      assert(list[4] == 5);
+     * 
+     *      // Create list with strings using custom allocator
+     *      tca::allocator* custom = get_custom_allocator();
+     *      array_list<std::string> names = {"Alice", "Bob", "Charlie", custom};
+     * 
+     *      // Empty initializer list creates an empty list
+     *      array_list<double> empty = {};
+     *      assert(empty.is_empty());
      */
-    array_list(const std::initializer_list<E>& init_list, tca::allocator* allocator = tca::get_default_allocator());
-
+    array_list(std::initializer_list<E> init_list, tca::allocator* allocator = tca::get_default_allocator());
+    
     /**
-     * Создаёт новый список, копируя содержимое из переданного списка.
-     *
-     * @param list 
-     *      Список, содержимое которого будет скопировано.
+     * Copy constructor.
+     * 
+     * Creates a deep copy of the source list. The allocator is copied from
+     * the source list.
+     * 
+     * @param list
+     *      The list to copy from.
+     * 
+     * @throws out_of_memory_error
+     *      If memory allocation fails.
+     * 
+     * @throws
+     *      Any exception thrown by E's copy constructor.
+     * 
+     * @note
+     *      The new list has the same size and capacity as the source.
+     *      All elements are copied using copy construction.
+     * 
+     * @example
+     *      array_list<int> original = {1, 2, 3};
+     *      array_list<int> copy(original);  // deep copy
+     *      copy[0] = 100;  // original[0] remains 1
      */
     array_list(const array_list<E>& list);
-
+    
     /**
-     * Создаёт новый список, перемещая содержимое из переданного списка.
+     * Move constructor.
      * 
-     * @param list 
-     *      Список, содержимое которого будет перемещено.
+     * Transfers ownership of the source list's data. The source is left in
+     * a valid empty state.
+     * 
+     * @param list
+     *      The list to move from.
+     * 
+     * @note
+     *      No memory allocation occurs during move construction.
+     *      After the move, list.size() == 0 and list.data() == nullptr.
+     * 
+     * @example
+     *      array_list<int> source = {1, 2, 3};
+     *      array_list<int> dest(std::move(source));  // move
+     *      // source is now empty
      */
     array_list(array_list<E>&& list);
-
+    
     /**
-     * Копирует содержимое из другого списка в текущий.
+     * Copy assignment operator.
      * 
-     * @param list 
-     *      Список, содержимое которого будет скопировано.
+     * Replaces the contents of this list with a deep copy of the source list.
      * 
-     * @return 
-     *      Ссылка на текущий объект после копирования.
+     * @param list
+     *      The list to copy from.
+     * 
+     * @return
+     *      Reference to this list.
+     * 
+     * @throws out_of_memory_error
+     *      If memory allocation fails.
+     * 
+     * @throws
+     *      Any exception thrown by E's copy constructor.
+     * 
+     * @note
+     *      Self-assignment is handled safely.
+     *      Existing data is destroyed before assigning new data.
+     *      The allocator is NOT changed during assignment.
+     * 
+     * @example
+     *      array_list<int> list1 = {1, 2, 3};
+     *      array_list<int> list2;
+     *      list2 = list1;  // copy assignment
      */
     array_list<E>& operator=(const array_list<E>& list);
-
+    
     /**
-     * Перемещает содержимое из другого списка в текущий.
-     *
-     * @param list 
-     *      Список, содержимое которого будет перемещено.
+     * Move assignment operator.
      * 
-     * @return 
-     *      Ссылка на текущий объект после перемещения.
+     * Transfers ownership of the source list's data. The source is left in
+     * a valid empty state.
+     * 
+     * @param list
+     *      The list to move from.
+     * 
+     * @return
+     *      Reference to this list.
+     * 
+     * @note
+     *      No memory allocation occurs during move assignment.
+     *      Self-assignment is handled safely.
+     *      The allocator is swapped with the source.
+     * 
+     * @example
+     *      array_list<int> list1 = {1, 2, 3};
+     *      array_list<int> list2 = {4, 5, 6};
+     *      list1 = std::move(list2);  // list1 now has {4,5,6}, list2 is empty
      */
     array_list<E>& operator=(array_list<E>&& list);
-
+    
     /**
-     * Удаляет все элементы и освобождает ресурсы.
+     * 
+     * Destroys all elements and deallocates memory.
      */
     ~array_list();
-
+    
     /**
-     * Добавляет элемент в конец списка.
-     *
-     * @tparam _E 
-     *      Тип добавляемого объекта (может быть rvalue).
+     * Adds an element to the end of the list.
      * 
-     * @param e 
-     *      Элемент для добавления.
+     * @tparam _E
+     *      Element type (deduced from argument).
+     * 
+     * @param e
+     *      Element to add (forwarded to preserve value category).
+     * 
+     * @throws out_of_memory_error
+     *      If reallocation fails.
+     * 
+     * @throws
+     *      Any exception thrown by E's move/copy constructor.
+     * 
+     * @note
+     *      If capacity is insufficient, the list grows automatically
+     *      using grow() which increases capacity by 1.5x.
+     * 
+     * @note
+     *      Amortized O(1) time complexity.
+     * 
+     * @example
+     *      array_list<int> list;
+     *      list.add(10);
+     *      list.add(20);
+     *      list.add(30);  // list = {10, 20, 30}
      */
     template<typename _E>
     void add(_E&& e);
-
+    
     /**
-     * Вставляет элемент по заданному индексу.
-     *
-     * @tparam _E 
-     *      Тип добавляемого объекта (может быть rvalue).
+     * Inserts an element at the specified position.
      * 
-     * @param idx 
-     *      Индекс, по которому нужно вставить.
+     * @tparam _E
+     *      Element type (deduced from argument).
      * 
-     * @param e 
-     *      Элемент для вставки.
+     * @param idx
+     *      Position to insert at (0-based).
+     * 
+     * @param e
+     *      Element to insert (forwarded to preserve value category).
+     * 
+     * @throws index_out_of_bound_exception 
+     *      If idx > size().
+     * 
+     * @throws out_of_memory_error
+     *      If reallocation fails.
+     * 
+     * @throws
+     *      Any exception thrown by E's move/copy constructor.
+     * 
+     * @note
+     *      All elements from idx to end are shifted right by one position.
+     *      O(n) time complexity.
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3};
+     *      list.add(1, 99);  // list = {1, 99, 2, 3}
      */
     template<typename _E>
     void add(std::size_t idx, _E&& e);
-
+    
     /**
-     * Возвращает последний индекс указанного элемента, 
-     * используя компаратор jstd::equal_to<E> для проверки равенства.
+     * Finds the last occurrence of an element.
      * 
-     * @param e 
-     *      Элемент для поиска.
+     * @param e
+     *      Element to search for.
      * 
-     * @return 
-     *      Индекс, если найден; иначе array_list<E>::null_val.
+     * @return
+     *      Index of the last occurrence, or npos() if not found.
+     * 
+     * @note
+     *      O(n) time complexity.
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3, 2, 1};
+     *      size_t pos = list.last_index_of(2);  // pos = 3
      */
     std::size_t last_index_of(const E& e) const;
-
+    
     /**
-     * Возвращает первый индекс указанного элемента, 
-     * используя компаратор jstd::equal_to<E> для проверки равенства.
-     *
-     * @param e 
-     *      Элемент для поиска.
+     * Finds the first occurrence of an element.
      * 
-     * @return 
-     *      Индекс, если найден; иначе array_list<T>::null_val.
+     * @param e
+     *      Element to search for.
+     * 
+     * @return
+     *      Index of the first occurrence, or npos() if not found.
+     * 
+     * @note
+     *      O(n) time complexity.
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3, 2, 1};
+     *      size_t pos = list.index_of(2);  // pos = 1
      */
     std::size_t index_of(const E& e) const;
-
+    
     /**
-     * Проверяет, содержится ли указанный элемент в списке, 
-     * используя компаратор jstd::equal_to<E> для проверки равенства.
+     * Checks if the list contains an element.
      * 
-     * @param e 
-     *      Элемент, наличие которого нужно проверить.
+     * @param e
+     *      Element to search for.
      * 
-     * @return 
-     *      true, если элемент присутствует в спискe, иначе false.
+     * @return
+     *      true if found, false otherwise.
+     * 
+     * @note
+     *      O(n) time complexity.
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3};
+     *      bool has = list.contains(2);  // true
+     *      bool has2 = list.contains(5); // false
      */
     bool contains(const E& e) const {
-        return index_of(e) != null_val;
+        return index_of(e) != npos();
     }
-
+    
     /**
-     * Удаляет первое вхождение указанного элемента.
-     *
-     * @param e 
-     *      Элемент для удаления.
+     * Removes the first occurrence of an element.
      * 
-     * @return 
-     *      true, если удаление произошло.
+     * @param e
+     *      Element to remove.
+     * 
+     * @return
+     *      true if removed, false if not found.
+     * 
+     * @note
+     *      O(n) time complexity due to shifting elements.
+     *      If you need fast removal, use fast_remove_at().
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3, 2, 1};
+     *      bool removed = list.remove(2);  // true, list = {1, 3, 2, 1}
+     *      bool removed2 = list.remove(5); // false
      */
     bool remove(const E& e);
-
+    
     /**
-     * Удаляет элемент по индексу, с возможностью сохранить удалённое значение.
-     *
-     * @param idx 
-     *      Индекс для удаления.
+     * Removes the element at the specified position.
      * 
-     * @param ret 
-     *      (Необязательно) указатель, куда сохранить удалённый элемент.
+     * @param idx
+     *      Position of the element to remove.
      * 
-     * @return 
-     *      true, если удаление прошло успешно.
+     * @param ret
+     *      Pointer to store the removed value (optional, can be nullptr).
+     * 
+     * @return
+     *      true on success.
+     * 
+     * @throws index_out_of_bound_exception
+     *      If idx >= size().
+     * 
+     * @note
+     *      All elements after idx are shifted left by one position.
+     *      O(n) time complexity.
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3, 4, 5};
+     *      int old_value;
+     *      list.remove_at(2, &old_value);  // old_value = 3, list = {1, 2, 4, 5}
      */
-    bool remove_at(std::size_t idx, E* ret = nullptr);
-
+    bool remove_at(std::size_t idx, Evalue* ret = nullptr);
+    
     /**
-     * Быстрое удаление по индексу без сдвига элементов, может нарушить порядок.
-     *
-     * @param idx 
-     *      Индекс для удаления.
+     * Removes at position by swapping with the last element.
      * 
-     * @param ret 
-     *      (Необязательно) указатель, куда сохранить удалённый элемент.
+     * Faster than remove_at as it swaps the element with the last
+     * element and removes the last. Order of elements is not preserved.
      * 
-     * @return 
-     *      true, если удаление прошло успешно.
+     * @param idx
+     *      Position of the element to remove.
+     * @param ret
+     *      Pointer to store the removed value (optional, can be nullptr).
      * 
-     * @throws index_out_of_bound_exception 
-     *      Если индекс не допустим.
+     * @return
+     *      true on success.
+     * 
+     * @throws index_out_of_bound_exception
+     *      If idx >= size().
+     * 
+     * @note
+     *      O(1) time complexity.
+     *      Does not preserve the order of remaining elements.
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3, 4, 5};
+     *      int old_value;
+     *      list.fast_remove_at(1, &old_value);  // old_value = 2, list = {1, 5, 3, 4}
      */
-    bool fast_remove_at(std::size_t idx, E* ret = nullptr);
-
+    bool fast_remove_at(std::size_t idx, Evalue* ret = nullptr);
+    
     /**
-     * Заменяет элемент по указанному индексу новым значением.
+     * Sets the element at the specified position.
      * 
-     * @tparam _E 
-     *      Тип присваиваемого значения, допускающий как rvalue-, так и lvalue-ссылки.
+     * @tparam _E
+     *      Element type (deduced from argument).
      * 
-     * @param idx 
-     *      Индекс заменяемого элемента (должен находиться в диапазоне от 0 до {@code size()}).
+     * @param idx
+     *      Position to set.
      * 
-     * @param e 
-     *      Новое значение, которое будет присвоено элементу.
+     * @param e
+     *      New element value.
      * 
-     * @param ret_old_value 
-     *      (Необязательно) Указатель, по которому сохраняется старое значение, если не {@code nullptr}.
+     * @param ret_old_value
+     *      Pointer to store the old value (optional, can be nullptr).
      * 
-     * @return 
-     *      true, если элемент был успешно заменён, иначе false.
+     * @return
+     *      true on success.
      * 
-     * @throws index_out_of_bound_exception 
-     *      Если индекс не допустим.
+     * @throws index_out_of_bound_exception
+     *      If idx >= size().
+     * 
+     * @note
+     *      The old value is moved out if ret_old_value is provided.
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3};
+     *      int old;
+     *      list.set(1, 99, &old);  // old = 2, list = {1, 99, 3}
      */
     template<typename _E>
-    bool set(std::size_t idx, _E&& e, E* ret_old_value = nullptr);
-
+    bool set(std::size_t idx, _E&& e, Evalue* ret_old_value = nullptr);
+    
     /**
-     * Возвращает ссылку на элемент по индексу.
-     *
-     * @param idx 
-     *      Индекс элемента.
+     * Accesses element at index (const).
      * 
-     * @return 
-     *      Ссылка на элемент.
+     * @param idx
+     *      Position to access.
      * 
-     * @throws index_out_of_bound_exception 
-     *      Если индекс не допустим.
+     * @return
+     *      Reference to the element.
+     * 
+     * @throws index_out_of_bound_exception
+     *      If idx >= size().
+     * 
+     * @example
+     *      const array_list<int>& list = get_list();
+     *      int value = list.at(0);
      */
     E& at(std::size_t idx) const;
-
+    
     /**
-     * Возвращает количество элементов в списке.
-     *
-     * @return 
-     *      Размер списка.
+     * Returns the current size.
+     * 
+     * @return
+     *      Number of elements in the list.
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3};
+     *      size_t sz = list.size();  // 3
      */
     std::size_t size() const;
-
+    
     /**
-     * Гарантирует, что список может вместить не менее {@code new_capacity} элементов без перераспределения.
-     *
-     * @param new_capacity 
-     *      Желаемая вместимость.
+     * Reserves capacity for future growth.
      * 
-     * @throws illegal_state_exception 
-     *      Eсли аллокатор не задан.
+     * @param new_capacity
+     *      New capacity.
      * 
-     * @throws illegal_argument_exception 
-     *      Eсли вместимость отрицательная.
+     * @throws out_of_memory_error
+     *      If allocation fails.
      * 
-     * @throws out_of_memory_error 
-     *      Eсли не удалось выделить память.
+     * @note
+     *      If new_capacity <= current capacity, no action is taken.
+     *      Existing elements are moved to the new buffer.
+     * 
+     * @example
+     *      array_list<int> list;
+     *      list.reserve(100);  // pre-allocate space for 100 elements
+     *      for (int i = 0; i < 100; ++i) {
+     *          list.add(i);  // no reallocations
+     *      }
      */
     void reserve(std::size_t new_capacity);
-
+    
     /**
-     * Удаляет все элементы, но не освобождает память.
+     * Clears all elements.
+     * 
+     * Destroys all elements but keeps capacity.
+     * 
+     * @note
+     *      O(n) time complexity where n is the number of elements.
+     *      Memory is not deallocated, allowing efficient reuse.
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3};
+     *      list.clear();  // list is empty, capacity remains
+     *      assert(list.is_empty());
      */
     void clear();
-
+    
     /**
-     * Проверяет, пустой ли контейнер.
-     * true - если список пуст, иначе - false.
+     * Trims capacity to fit the current size.
+     * 
+     * Reduces memory usage by reallocating to exactly fit size.
+     * 
+     * @throws out_of_memory_error
+     *      If allocation fails.
+     * 
+     * @note
+     *      If size == capacity, no action is taken.
+     *      Elements are moved to the new buffer.
+     * 
+     * @example
+     *      array_list<int> list;
+     *      list.reserve(100);
+     *      // Add 10 elements...
+     *      list.trim_to_size();  // capacity becomes 10
+     */
+    void trim_to_size();
+    
+    /**
+     * Checks if the list is empty.
+     * 
+     * @return
+     *      true if empty, false otherwise.
+     * 
+     * @example
+     *      array_list<int> list;
+     *      bool empty = list.is_empty();  // true
+     *      list.add(1);
+     *      empty = list.is_empty();  // false
      */
     bool is_empty() const;
-
+    
     /**
-     * Проверяет, являются ли элементы внутри списка равны.
+     * Compares this list with another for equality.
      * 
      * @param other
-     *      Список, с которым будет производиться сравнение.
+     *      The list to compare with.
+     * 
+     * @return
+     *      true if equal, false otherwise.
+     * 
+     * @note
+     *      Two lists are equal if they have the same size and
+     *      all corresponding elements are equal (using equal_to<E>).
+     *      The allocator is not considered in the comparison.
+     * 
+     * @example
+     *      array_list<int> a = {1, 2, 3};
+     *      array_list<int> b = {1, 2, 3};
+     *      array_list<int> c = {3, 2, 1};
+     *      a.equals(b);  // true
+     *      a.equals(c);  // false
      */
     bool equals(const array_list<E>& other) const;
     
     /**
-     * Возвращает хеш-код списка.
-     * 
-     * @note
-     *      Для вычесления хеш-кода необходимо, чтобы объекты, которые хранятся внутри списка,
-     *      определяли специализацию структуры jstd::hash_for;
-     * 
-     * Прототип:
-     *      template<>
-     *      struct jstd::hash_for<T> {
-     *          std::size_t operator() (const T& obj) const;
-     *      };
+     * Computes a hash code for the list.
      * 
      * @return
-     *      Хеш-код всех элементов.
+     *      Hash code of all elements.
+     * 
+     * @note
+     *      Uses hash_for<E> for each element.
+     *      Empty lists return 0.
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3};
+     *      size_t h = list.hashcode();
      */
     std::size_t hashcode() const;
-
+    
     /**
-     * Возвращает аллокатор, связанный с этим array_list
+     * Returns the allocator used by this list.
+     * 
+     * @return
+     *      Pointer to the allocator.
+     * 
+     * @example
+     *      tca::allocator* alloc = list.get_allocator();
      */
     tca::allocator* get_allocator() const {
         return m_allocator;
     }
 
     /**
-     * Возвращает указатель на сырые данные.
+     * Returns pointer to the underlying data.
+     * 
+     * @return
+     *      Pointer to the first element, or nullptr if empty.
+     * 
+     * @note
+     *      The pointer is valid for the lifetime of the list.
+     *      Modifying the data through this pointer is allowed.
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3};
+     *      int* ptr = list.data();
+     *      ptr[1] = 100;  // modifies list[1]
      */
     E* data() {
         return m_data;
     }
 
     /**
-     * Возвращает указатель на сырые данные. (Константная версия)
+     * Returns const pointer to the underlying data.
+     * 
+     * @return
+     *      Const pointer to the first element, or nullptr if empty.
+     * 
+     * @example
+     *      const array_list<int>& list = get_list();
+     *      const int* ptr = list.data();
      */
     const E* data() const {
         return m_data;   
     }
 
     /**
-     * Сортирует элементы списка с помощью простого алгоритма вставки.
+     * Returns a const iterator to the beginning.
      * 
-     * По умолчанию используется компаратор {@code compare_to<E>}, но может быть передан и пользовательский.
-     *
-     * @tparam COMPARATOR_T 
-     *      Тип компаратора, реализующего оператор {@code ()(const E&, const E&)}.
+     * @return
+     *      Const iterator pointing to the first element.
+     * 
+     * @example
+     *      const array_list<int>& list = get_list();
+     *      for (auto it = list.begin(); it != list.end(); ++it) {
+     *          std::cout << *it << " ";
+     *      }
      */
-    template<typename COMPARATOR_T = compare_to<E>>
-    void intersect_sort();
+    list::ptr_iterator<const E> begin() const {
+        return list::ptr_iterator<const E>(m_data, m_data + m_size);
+    }
 
     /**
-     * Выполняет бинарный поиск заданного элемента в отсортированном списке.
-     *
-     * Метод предполагает, что список отсортирован в порядке, определённом компаратором {@code COMPARATOR_T},
-     * который по умолчанию равен {@code compare_to<E>}.
-     * Поиск осуществляется методом деления пополам. Возвращает индекс найденного элемента
-     * или array_list<E>::null_val, если элемент не найден.
-     *
-     * Требование: список должен быть предварительно отсортирован тем же компаратором,
-     * иначе результат будет неопределён.
-     *
-     * @tparam COMPARATOR_T 
-     *      Тип компаратора, поддерживающего вызов {@code compare(a, b)}, 
-     *      возвращающий отрицательное значение, если {@code a < b}, 
-     *      ноль — если {@code a == b}, и положительное — если {@code a > b}.
+     * Returns a const iterator to the end.
      * 
-     * @param searched 
-     *      Элемент, который необходимо найти.
-     * 
-     * @return 
-     *      Индекс найденного элемента, или array_list<T>::null_val, если элемент не найден.
+     * @return
+     *      Const iterator pointing to one past the last element.
      */
-    template<typename COMPARATOR_T = compare_to<E>>
-    std::size_t binary_search(const E& searched) const;
-    
-    template<typename DATA_TYPE, typename VALUE_TYPE>
-    class iterator {
-        DATA_TYPE*  m_begin;
-        DATA_TYPE*  m_end;
-    public:
-        iterator(DATA_TYPE* begin, DATA_TYPE* end);
-        iterator(const iterator<DATA_TYPE, VALUE_TYPE>&);
-        iterator(iterator<DATA_TYPE, VALUE_TYPE>&&);
-        iterator<DATA_TYPE, VALUE_TYPE>& operator= (const iterator<DATA_TYPE, VALUE_TYPE>&);
-        iterator<DATA_TYPE, VALUE_TYPE>& operator= (iterator<DATA_TYPE, VALUE_TYPE>&&);
-        ~iterator();
-        VALUE_TYPE& operator*() const;
-        iterator<DATA_TYPE, VALUE_TYPE>& operator++();
-        iterator<DATA_TYPE, VALUE_TYPE> operator++(int);
-        bool operator!=(const iterator<DATA_TYPE, VALUE_TYPE>& it) const;
-        bool operator==(const iterator<DATA_TYPE, VALUE_TYPE>& it) const;
-    };
-
-
-    iterator<const E, const E&> begin() const {
-        return iterator<const E, const E&>(m_data, m_data + m_size);
+    list::ptr_iterator<const E> end() const {
+        return list::ptr_iterator<const E>(m_data + m_size, m_data + m_size);
     }
 
-    iterator<const E, const E&> end() const {
-        return iterator<const E, const E&>(m_data + m_size, m_data + m_size);
+    /**
+     * Returns an iterator to the beginning.
+     * 
+     * @return
+     *      Iterator pointing to the first element.
+     * 
+     * @example
+     *      array_list<int> list = {1, 2, 3};
+     *      for (auto it = list.begin(); it != list.end(); ++it) {
+     *          *it *= 2;  // doubles all elements
+     *      }
+     */
+    list::ptr_iterator<E> begin() {
+        return list::ptr_iterator<E>(m_data, m_data + m_size);
     }
 
-    iterator<E, E&> begin() {
-        return iterator<E, E&>(m_data, m_data + m_size);
-    }
-
-    iterator<E, E&> end() {
-        return iterator<E, E&>(m_data + m_size, m_data + m_size);
+    /**
+     * Returns an iterator to the end.
+     * 
+     * @return
+     *      Iterator pointing to one past the last element.
+     */
+    list::ptr_iterator<E> end() {
+        return list::ptr_iterator<E>(m_data + m_size, m_data + m_size);
     }
 
 };
@@ -464,23 +945,27 @@ public:
     }
 
     template<typename E>
-    array_list<E>::array_list(const std::initializer_list<E>& init_list, tca::allocator* allocator) : array_list<E>(0, allocator) {
-        if (init_list.size() > 0)
+    array_list<E>::array_list(std::initializer_list<E> init_list, tca::allocator* allocator) : array_list<E>(allocator) {
+        
+        if (init_list.size() > 0) {
             reserve(init_list.size());
+        }
+
         try {
             for (const E& e : init_list)
                 add(e);
         } catch (...) {
-            clear();
+            cleanup();
             throw;
         }
+
     }
 
     template<typename E>
     array_list<E>::array_list(const array_list<E>& list) : array_list<E>() {
         m_allocator = list.m_allocator;
         
-        E* data = allocate_and_copy_n(list.data(), list.size(), m_allocator);
+        Evalue* data = allocate_and_copy_n<Evalue>(list.data(), list.size(), m_allocator);
         if (!data)
             throw_except<out_of_memory_error>("Out of memory");
 
@@ -495,7 +980,6 @@ public:
     m_data(list.m_data),
     m_capacity(list.m_capacity),
     m_size(list.m_size) {
-        list.m_allocator    = nullptr;
         list.m_data         = nullptr;
         list.m_capacity     = 0;
         list.m_size         = 0;
@@ -505,10 +989,13 @@ public:
     array_list<E>& array_list<E>::operator= (const array_list<E>& list) {
         if (&list != this)
         {
-            E* data = allocate_and_copy_n(list.data(), list.size(), m_allocator);
+            Evalue* data = allocate_and_copy_n<Evalue>(list.data(), list.size(), m_allocator);
             if (!data)
                 throw_except<out_of_memory_error>("Out of memory");
-            m_allocator->deallocate(const_cast<typename remove_cv<E>::type*>(m_data));
+            
+            assert(m_allocator != nullptr);
+            deallocate_and_destroy_n(m_data, m_size, m_allocator);
+            
             m_data      = data;
             m_capacity  = list.size();
             m_size      = list.size();
@@ -519,62 +1006,17 @@ public:
     template<typename E>
     array_list<E>& array_list<E>::operator= (array_list<E>&& list) {
         if (&list != this) {
-            std::swap(m_allocator,  list.m_allocator);
+            m_allocator = list.m_allocator;
             std::swap(m_data,       list.m_data);
             std::swap(m_capacity,   list.m_capacity);
             std::swap(m_size,       list.m_size);
         }
         return *this;
     }
-    
-    template<typename E>
-    template<typename COMPARATOR_T>
-    std::size_t array_list<E>::binary_search(const E& searched) const {
-        if (is_empty())
-            return array_list<E>::null_val;
-        
-        COMPARATOR_T compare_to;
-        std::size_t start   = 0;
-        std::size_t end     = m_size - 1;
-        while (start <= end) {
-            
-            const std::size_t mid       = (end - start) / 2 + start;
-            const E& mid_value          = at(mid);
-            const int compare_result    = compare_to(searched, mid_value);
-            
-            if (compare_result == 0)
-                return mid;
-            else if (compare_result < 0)
-                end     = mid - 1;
-            else
-                start   = mid + 1;
-        }
-        
-        return array_list<E>::null_val;
-    }
-
-    template<typename E>
-    template<typename SORT_TYPE>
-    void array_list<E>::intersect_sort() {
-        SORT_TYPE compare_to;
-        for (std::size_t i = 1; i < m_size; ++i) {
-            std::size_t j = i;
-            while (j > 0) {
-                E& a = m_data[j - 1];
-                E& b = m_data[j - 0];
-                if (compare_to(a, b) > 0) {
-                    std::swap(a, b);
-                    --j;
-                    continue;
-                }
-                break;
-            }
-        }
-    }
 
     template<typename E>
     template<typename _E>
-    bool array_list<E>::set(std::size_t idx, _E&& e, E* ret_old_value) {
+    bool array_list<E>::set(std::size_t idx, _E&& e, Evalue* ret_old_value) {
         check_index(idx, m_size);
         if (ret_old_value != nullptr)
             *ret_old_value = std::move(m_data[idx]);
@@ -594,6 +1036,19 @@ public:
     }
 
     template<typename E>
+    void array_list<E>::trim_to_size() {
+        assert(m_allocator != nullptr);
+        if (m_capacity == m_size)
+            return;
+        Evalue* new_data = allocate_and_move_n(m_data, m_size, m_allocator);
+        if (!new_data)
+            throw_except<out_of_memory_error>("Out of memory");
+        deallocate_and_destroy_n(m_data, m_size, m_allocator);
+        m_data      = new_data;
+        m_capacity  = m_size;
+    }
+
+    template<typename E>
     E& array_list<E>::at(std::size_t idx) const {
         check_index(idx, m_size);
         return m_data[idx];
@@ -601,7 +1056,7 @@ public:
     
     template<typename E>
     void array_list<E>::clear() {
-        call_destructors(0, m_size);
+        destroy_n(m_data, m_size);
         m_size = 0;
     }
 
@@ -611,7 +1066,7 @@ public:
         for (std::size_t i = m_size; i > 0; --i)
             if (equals(e, m_data[i - 1]))
                 return i - 1;
-        return array_list<E>::null_val;
+        return npos();
     }
 
     template<typename E>
@@ -620,19 +1075,19 @@ public:
         for (std::size_t i = 0; i < m_size; ++i)
             if (equals(e, m_data[i]))
                 return i;
-        return array_list<E>::null_val;
+        return npos();
     }
     
     template<typename E>
     bool array_list<E>::remove(const E& e) {
         std::size_t finded_index = index_of(e);
-        if (finded_index == array_list<E>::null_val)
+        if (finded_index == npos())
             return false;
         return remove_at(finded_index, nullptr);
     }
     
     template<typename E>
-    bool array_list<E>::remove_at(std::size_t idx, E* ret) {
+    bool array_list<E>::remove_at(std::size_t idx, Evalue* ret) {
         check_index(idx, m_size);
 
         if (ret != nullptr)
@@ -649,7 +1104,7 @@ public:
     }
     
     template<typename E>
-    bool array_list<E>::fast_remove_at(std::size_t idx, E* ret) {
+    bool array_list<E>::fast_remove_at(std::size_t idx, Evalue* ret) {
         check_index(idx, m_size);
         if (idx == m_size - 1)
             return remove_at(idx, ret);
@@ -697,58 +1152,32 @@ public:
 
     template<typename E>
     void array_list<E>::reserve(std::size_t new_capacity) {
-        JSTD_DEBUG_CODE(
-            if (m_allocator == nullptr)
-                throw_except<illegal_state_exception>("allocator is null");
-        )
+        assert(m_allocator != nullptr);
 
-        if (new_capacity == 0) {
-            cleanup();
+        if (new_capacity <= m_capacity)
             return;
-        }
-
-        E* new_data = reinterpret_cast<E*>(
-                                            m_allocator->allocate_align(sizeof(E) * new_capacity, alignof(E)) 
-                                                                                                            );
-        if (new_data == nullptr)
-            throw_except<out_of_memory_error>("Out of memory!");
         
-        if (m_data != nullptr)
-        {
-            if (new_capacity >= m_size)
-            {
-                for (std::size_t i = 0; i < m_size; ++i)
-                    new(new_data + i) E(std::move(m_data[i]));
-            }
-            else
-            {
-                for (std::size_t i = 0; i < new_capacity; ++i)
-                    new(new_data + i) E(std::move(m_data[i]));
-                call_destructors(new_capacity, m_size);
-                m_size = new_capacity;
-            }
+        Evalue* new_data = (Evalue*) m_allocator->allocate_align(sizeof(E) * new_capacity, alignof(E));
+        if(!new_data)
+            throw_except<out_of_memory_error>("Out of memory");
+
+        try {
+            uninitialized_move_n(new_data, m_data, m_size);
+        } catch (...) {
+            m_allocator->deallocate(new_data);
+            throw;
         }
-    
-        m_allocator->deallocate(m_data);
-        m_capacity  = new_capacity;
-        m_data      = new_data;
-    }
-    
-    template<typename E>
-    void array_list<E>::call_destructors(std::size_t start, std::size_t end) {
-        assert(start <= end);
-        assert(end >= start);
-        while (end > start)
-            m_data[--end].~E();
+        deallocate_and_destroy_n(m_data, m_size, m_allocator);
+
+        m_data     = new_data;
+        m_capacity = new_capacity;
     }
 
     template<typename E>
     void array_list<E>::cleanup() {
-        if (m_allocator != nullptr && m_data != nullptr)
-        {
-            call_destructors(0, m_size);
-            m_allocator->deallocate((void*) m_data);
-        }   
+        assert(m_allocator != nullptr);
+        deallocate_and_destroy_n(m_data, m_size, m_allocator);
+        
         m_data      = nullptr;
         m_capacity  = 0;
         m_size      = 0;
@@ -778,102 +1207,6 @@ public:
     template<typename E>
     array_list<E>::~array_list() {
         cleanup();
-    }
-
-    /**
-     * ==========================================================================================================================================
-     */
-    template<typename E>
-    template<typename DATA_TYPE, typename VALUE_TYPE>
-    array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::iterator(DATA_TYPE* begin, DATA_TYPE* end) :
-    m_begin(begin),
-    m_end(end) {
-
-    }
-
-    template<typename E>
-    template<typename DATA_TYPE, typename VALUE_TYPE>
-    array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::iterator(const iterator<DATA_TYPE, VALUE_TYPE>& it) :
-    m_begin(it.m_begin),
-    m_end(it.m_end) {
-
-    }
-    
-    template<typename E>
-    template<typename DATA_TYPE, typename VALUE_TYPE>
-    array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::iterator(iterator<DATA_TYPE, VALUE_TYPE>&& it) :
-    m_begin(it.m_begin),
-    m_end(m_end) {
-        it.m_begin  = nullptr;
-        it.m_end    = nullptr;
-    }
-    
-    template<typename E>
-    template<typename DATA_TYPE, typename VALUE_TYPE>
-    typename array_list<E>:: template iterator<DATA_TYPE, VALUE_TYPE>& 
-    array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator= (const iterator<DATA_TYPE, VALUE_TYPE>& it) {
-        if (&it != this)
-        {
-            m_begin = it.m_begin;
-            m_end   = it.m_end;
-        }
-        return *this;
-    }
-    
-    template<typename E>
-    template<typename DATA_TYPE, typename VALUE_TYPE>
-    typename array_list<E>:: template iterator<DATA_TYPE, VALUE_TYPE>& 
-    array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator= (iterator<DATA_TYPE, VALUE_TYPE>&& it) {
-        if (&it != this)
-        {
-            std::swap(m_begin, it.m_begin);
-            std::swap(m_end, it.m_end);
-        }
-        return *this;
-    }
-    
-    template<typename E>
-    template<typename DATA_TYPE, typename VALUE_TYPE>
-    array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::~iterator() {
-        
-    }
-    
-    template<typename E>
-    template<typename DATA_TYPE, typename VALUE_TYPE>
-    VALUE_TYPE& array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator*() const {
-        if (m_begin >= m_end)
-            throw_except<index_out_of_bound_exception>("iterator out of bound");
-        
-        JSTD_DEBUG_CODE(check_non_null(m_begin, "data is null"););
-        
-        return *m_begin;
-    }
-    
-    template<typename E>
-    template<typename DATA_TYPE, typename VALUE_TYPE>
-    typename array_list<E>:: template iterator<DATA_TYPE, VALUE_TYPE>& array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator++() {
-        ++m_begin;
-        return *this;
-    }
-    
-    template<typename E>
-    template<typename DATA_TYPE, typename VALUE_TYPE>
-    typename array_list<E>:: template iterator<DATA_TYPE, VALUE_TYPE> array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator++(int) {
-        iterator<DATA_TYPE, VALUE_TYPE> it = *this;
-        ++m_begin;
-        return it;
-    }
-    
-    template<typename E>
-    template<typename DATA_TYPE, typename VALUE_TYPE>
-    bool array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator!=(const iterator<DATA_TYPE, VALUE_TYPE>& it) const {
-        return m_begin != it.m_begin || m_end != it.m_end;
-    }
-    
-    template<typename E>
-    template<typename DATA_TYPE, typename VALUE_TYPE>
-    bool array_list<E>::iterator<DATA_TYPE, VALUE_TYPE>::operator==(const iterator<DATA_TYPE, VALUE_TYPE>& it) const {
-        return m_begin == it.m_begin && m_end == it.m_end;
     }
 }
 #endif//JSTD_CPP_LANG_UTILS_ARRAY_LIST_H

@@ -2,8 +2,10 @@
 #define D6E2F691_D7BE_47D6_87D8_510CCCFAB1ED
 
 #include <cstdint>
+#include <cpp/lang/utils/utils.hpp>
 #include <allocators/allocator.hpp>
 #include <cpp/lang/string.hpp>
+#include <cpp/lang/system.hpp>
 
 namespace tc
 {

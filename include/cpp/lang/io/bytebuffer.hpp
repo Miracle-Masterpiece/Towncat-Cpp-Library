@@ -5,16 +5,13 @@
 #include <cpp/lang/system.hpp>
 #include <cpp/lang/utils/utils.hpp>
 #include <cpp/lang/utils/cond_compile.hpp>
+#include <cpp/lang/exceptions.hpp>
 #include <cstdint>
 #include <cstring>
 #include <climits>
 
 namespace tc {
 
-JSTD_DEBUG_CODE(
-    class index_out_of_bound_exception;
-    class readonly_exception;
-);
 
 class byte_buffer {
 protected:

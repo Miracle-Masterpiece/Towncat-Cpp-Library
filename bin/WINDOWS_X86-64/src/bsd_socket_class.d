@@ -8,8 +8,8 @@ bin/WINDOWS_X86-64/src/bsd_socket_class.o: src/bsd_socket_class.cpp \
  include/cpp/lang/traits/cv_traits.hpp include/cpp/lang/string.hpp \
  include/cpp/lang/utils/objects.hpp include/cpp/lang/utils/hash.hpp \
  include/cpp/lang/traits/pointer_traits.hpp \
- include/cpp/lang/utils/utils.hpp include/cpp/lang/utils/comparator.hpp \
- include/cpp/lang/system.hpp include/cpp/lang/types.hpp \
- include/allocators/allocator.hpp include/allocators/base_allocator.hpp \
- include/cpp/lang/math.hpp include/cpp/lang/math/math.hpp \
- include/cpp/lang/net/socket_option.hpp include/internal/bsd_socket.hpp
+ include/cpp/lang/utils/comparator.hpp include/allocators/allocator.hpp \
+ include/allocators/base_allocator.hpp include/cpp/lang/math.hpp \
+ include/cpp/lang/math/math.hpp include/cpp/lang/net/socket_option.hpp \
+ include/cpp/lang/types.hpp include/internal/bsd_socket.hpp \
+ include/cpp/lang/utils/utils.hpp include/cpp/lang/system.hpp

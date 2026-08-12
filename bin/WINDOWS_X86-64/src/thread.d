@@ -7,4 +7,5 @@ bin/WINDOWS_X86-64/src/thread.o: src/thread.cpp \
  include/cpp/lang/concurrency/runnable.hpp \
  include/cpp/lang/utils/arrays.hpp include/cpp/lang/traits/cv_traits.hpp \
  include/allocators/allocator.hpp include/allocators/base_allocator.hpp \
+ include/cpp/lang/utils/comparator.hpp include/cpp/lang/common.hpp \
  include/cpp/lang/system.hpp include/cpp/lang/types.hpp

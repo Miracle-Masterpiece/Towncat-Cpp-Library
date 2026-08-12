@@ -19,7 +19,8 @@ namespace tc {
     image_packer::image_packer(const image* img_array, std::size_t count_images, int w, int h, tca::allocator* allocator) :
     m_allocator(allocator),
     m_root(),
-    m_images(img_array, count_images),
+    m_images(img_array),
+    m_cnt_imgs(count_images),
     m_width(w),
     m_height(h) {
         
@@ -28,25 +29,27 @@ namespace tc {
     image_packer::image_packer(image_packer&& packer) : 
     m_allocator(packer.m_allocator),
     m_root(std::move(packer.m_root)),
-    m_images(std::move(packer.m_images)),
+    m_images(packer.m_images),
     m_width(packer.m_width),
     m_height(packer.m_height) {
-        packer.m_allocator      = nullptr;
+        packer.m_images         = nullptr;
+        packer.m_cnt_imgs       = 0;
         packer.m_width          = 0;
         packer.m_height         = 0;
     }
     
     image_packer& image_packer::operator=(image_packer&& packer) {
-        if (&packer != this) {
+        if (&packer != this) 
+        {
             m_allocator         = packer.m_allocator;
             m_root              = std::move(packer.m_root);
-            m_images            = std::move(packer.m_images);
+            m_images            = packer.m_images;
             m_width             = packer.m_width;
             m_height            = packer.m_height;
 
-            packer.m_allocator      = nullptr;
-            packer.m_width          = 0;
-            packer.m_height         = 0;
+            packer.m_images = nullptr;
+            packer.m_width  = 0;
+            packer.m_height = 0;
         }
         return *this;
     }
@@ -55,9 +58,9 @@ namespace tc {
 
     }
 
-    std::size_t get_max_mem_size_for_max_image(array<const image>& images) {
+    std::size_t get_max_mem_size_for_max_image(const image* images, std::size_t len) {
         std::size_t mem_size    = 0;
-        for (std::size_t i = 0; i < images.length; ++i)
+        for (std::size_t i = 0; i < len; ++i)
         {
             const image& img = images[i];
             mem_size = std::max<std::size_t>(mem_size, (std::size_t) (img.get_width() * img.get_height() * img.get_channels()));
@@ -72,7 +75,7 @@ namespace tc {
                                         m_allocator
                                     );
         BEGIN: 
-        for (std::size_t i = 0; i < m_images.length; ++i)
+        for (std::size_t i = 0; i < m_cnt_imgs; ++i)
         {
             const image& img = m_images[i];
             node* n = m_root->put_image(img.get_width(), img.get_height(), i);
@@ -105,7 +108,7 @@ namespace tc {
          * Размер временного буфера, куда будет сохранено масштабированное изображение.
          * Буфер делится на rescale, так как если изначальное изображение весит килобайт, то масштабированный на 2, размер будет в два раза меньше и так далее.
          */
-        std::size_t buffer_size_for_resized_image = get_max_mem_size_for_max_image(m_images) / scale_factor;
+        std::size_t buffer_size_for_resized_image = get_max_mem_size_for_max_image(m_images, m_cnt_imgs) / scale_factor;
 
         /**
          * Линейный аллокатор, который нужен, чтобы выделять память под хранения временного масштабированного изображения
@@ -120,7 +123,7 @@ namespace tc {
             /**
              * Массив оригинальных изображений.
              */
-            array<const image>* m_array_of_image;
+            const image* m_array_of_image;
             
             /**
              * Указатель на результирующее изображение (атлас).
@@ -145,7 +148,7 @@ namespace tc {
             void operator()(const node* n) {
                 std::size_t image_index = n->get_id();
 
-                const image& img_original = (*m_array_of_image)[image_index];
+                const image& img_original = m_array_of_image[image_index];
                 int w_image = img_original.get_width();
                 int h_image = img_original.get_height();
 
@@ -273,7 +276,7 @@ namespace tc {
         };
 
         callback_image callback;
-        callback.m_array_of_image   = &m_images;
+        callback.m_array_of_image   = m_images;
         callback.m_atlas            = &result;
         callback.m_rescale          = scale_factor;
         callback.m_allocator_for_tmp_resized_image = scale_factor > 1 ? &allocator_for_rescaled_image : nullptr;
@@ -284,7 +287,7 @@ namespace tc {
     }
 
     array<image_packer::uv> image_packer::get_uv() const {
-        array<image_packer::uv> uvs(m_images.length, m_allocator);
+        array<image_packer::uv> uvs(m_cnt_imgs, m_allocator);
         
         struct node_visitor {
             array<image_packer::uv>* m_array;

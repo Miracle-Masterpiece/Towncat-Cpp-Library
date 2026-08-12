@@ -1,10 +1,12 @@
 #ifndef _JSTD_CPP_LANG_UTIL_LINKED_LIST_H
 #define _JSTD_CPP_LANG_UTIL_LINKED_LIST_H
 
+#include <cpp/lang/traits/cv_traits.hpp>
+#include <cpp/lang/utils/objects.hpp>
 #include <allocators/allocator.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/hash.hpp>
-#include <cpp/lang/utils/objects.hpp>
+#include <cpp/lang/common.hpp>
 #include <utility>
 #include <cstdint>
 #include <cassert>
@@ -12,6 +14,74 @@
 namespace tc
 {
 
+namespace list
+{
+
+/**
+ * @brief Iterator for linked list nodes
+ * 
+ * @tparam NODE_TYPE
+ *      Type of node (const or non-const)
+ * 
+ * @tparam VALUE_TYPE
+ *      Type of value (const or non-const)
+ * 
+ * Provides forward iteration over list elements with pointer-like syntax.
+ * Supports pre-increment, post-increment, and dereference operators.
+ * 
+ * @example
+ * for (auto it = list.begin(); it != list.end(); ++it) {
+ *     std::cout << *it << std::endl;
+ * }
+ */
+template<typename NODE_TYPE, typename VALUE_TYPE>
+class node_iterator {
+    NODE_TYPE* _n;
+public:
+    node_iterator() : _n(nullptr) {
+
+    }
+    
+    node_iterator(NODE_TYPE* n) : _n(n) {
+
+    }
+
+    bool operator!= (const node_iterator<NODE_TYPE, VALUE_TYPE>& it) const {
+        return _n != it._n;
+    }
+    
+    bool operator== (const node_iterator<NODE_TYPE, VALUE_TYPE>& it) const {
+        return _n == it._n;
+    }
+
+    node_iterator<NODE_TYPE, VALUE_TYPE>& operator++() {
+        JSTD_DEBUG_CODE(check_non_null(_n, "Iterator out of bound"));
+        _n = _n->get_next();
+        return *this;
+    }
+
+    node_iterator<NODE_TYPE, VALUE_TYPE> operator++(int) {
+        JSTD_DEBUG_CODE(check_non_null(_n, "Iterator out of bound"));
+        node_iterator<NODE_TYPE, VALUE_TYPE> tmp(*this);
+        _n = _n->get_next();
+        return tmp;
+    }
+
+    VALUE_TYPE& operator*() const {
+        JSTD_DEBUG_CODE(check_non_null(_n, "Iterator out of bound"));
+        return _n->get_value();
+    }
+};
+}
+
+
+/**
+ * Internal node structure for doubly-linked list
+ * 
+ * @tparam T
+ *      Type of stored value
+ * 
+ */
 template<typename T>
 class list_node {
     
@@ -43,71 +113,117 @@ class list_node {
 public:
     
     /**
-     * 
+     * @brief Default constructor value-initializes stored object
      */
     list_node();
     
     /**
+     * @brief Constructs node with forwarded value
      * 
+     * @tparam _T
+     *      Type of value (deduced from argument)
+     * 
+     * @param t
+     *      Value to store (forwarded perfectly)
      */
     template<typename _T>
     list_node(_T&&);
 
     /**
+     * @brief Move constructor transfers ownership of node content
      * 
+     * @param n
+     *      Source node to move from
      */
     list_node(list_node<T>&&);
     
     /**
+     * @brief Move assignment operator
      * 
+     * @param n
+     *      Source node to move from
+     * 
+     * @return
+     *      Reference to this node
      */
     list_node<T>& operator= (list_node<T>&&);
     
     /**
+     * @brief Sets value using perfect forwarding
      * 
+     * @tparam _T
+     *      Type of value (deduced from argument)
+     * 
+     * @param v
+     *      Value to store
      */
     template<typename _T>
     void set_value(_T&& v);
 
     /**
+     * @brief Returns reference to stored value (non-const)
      * 
+     * @return
+     *      T& Reference to value
      */
     T& get_value();
     
     /**
+     * @brief Returns const reference to stored value
      * 
+     * @return
+     *      const T& Const reference to value
      */
     const T& get_value() const;
 
     /**
+     * @brief Sets pointer to next node
      * 
+     * @param
+     *      next Pointer to next node
      */
     void set_next(list_node<T>* next);
     
     /**
+     * @brief Sets pointer to previous node
      * 
+     * @param prev
+     *      Pointer to previous node
      */
     void set_prev(list_node<T>* prev);
 
     /**
+     * @brief Returns pointer to next node (non-const)
      * 
+     * @return
+     *      list_node<T>* Next node pointer
      */
     list_node<T>* get_next();
     
     /**
+     * @brief Returns pointer to previous node (non-const)
      * 
+     * @return
+     *      list_node<T>* Previous node pointer
      */
     list_node<T>* get_prev();
 
     /**
+     * @brief Returns const pointer to next node
      * 
+     * @return
+     *      const list_node<T>* Const next node pointer
      */
     const list_node<T>* get_next() const;
     
     /**
+     * @brief Returns const pointer to previous node
      * 
+     * @return
+     *      const list_node<T>* Const previous node pointer
      */
     const list_node<T>* get_prev() const;
+    
 };
 
     template<typename T>
@@ -195,409 +311,118 @@ public:
         return _prev;
     }
 
-/**
- * @class linked_list
- * Шаблонный класс двусвязного списка с поддержкой пользовательского аллокатора.
- * 
- * Предоставляет функциональность стандартного двусвязного списка, включая вставку, удаление,
- * доступ по индексу, а также стековые операции. Поддерживает выделение памяти через внешний аллокатор.
- * 
- * @tparam T Тип элементов, хранящихся в списке.
- */
 template<typename T>
 class linked_list {
     
-    /**
-     * Указатель на аллокатор, используемый для выделения памяти под узлы.
-     */
+    typedef typename remove_cv<T>::type         Tvalue;
+    typedef list_node<Tvalue>                   Node;
+    typedef list::node_iterator<Node, T>        Iterator;
+    typedef list::node_iterator<Node, const T>  ConstIterator;
+
     tca::allocator* _allocator; 
-    
-    /**
-     * Указатель на первый элемент списка.
-     */
-    list_node<T>*  _head;
-    
-    /**
-     * Указатель на последний элемент списка.
-     */
-    list_node<T>*  _tail;
-    
-    /**
-     * Количество элементов в списке.
-     */
+    Node* _head;
+    Node* _tail;
     std::size_t _size;
 
-    /**
-     * Выделяет память и создаёт новый узел списка.
-     * 
-     * @tparam _T 
-     *      Тип значения (поддерживает perfect forwarding).
-     * 
-     * @param value 
-     *      Значение, которое будет помещено в новый узел.
-     * 
-     * @return 
-     *      Указатель на созданный узел.
-     */
     template<typename _T>
-    list_node<T>* new_node(_T&& value);
+    Node* new_node(_T&& value);
 
-    /**
-     * Удаляет узел и освобождает память.
-     * 
-     * @param node 
-     *      Узел, который следует удалить.
-     */
-    void delete_node(list_node<T>* node);
-
-    /**
-     * Возвращает указатель на узел по индексу.
-     * 
-     * @param idx 
-     *      Индекс (0-based).
-     * @return 
-     *      Указатель на найденный узел.
-     */
-    list_node<T>* node_at(std::size_t idx);
-
-    /**
-     * Константная версия node_at.
-     * 
-     * @param idx 
-     *      Индекс (0-based).
-     * @return 
-     *      Константный указатель на найденный узел.
-     */
-    const list_node<T>* node_at(std::size_t idx) const;
-
-    /**
-     * Удаляет узел из связей (не освобождает память).
-     * 
-     * @param node 
-     *      Узел, который необходимо удалить из списка.
-     */
-    void unlink(list_node<T>* node);
+    void delete_node(Node* node);
+    Node* node_at(std::size_t idx) const;
+    void unlink(Node* node);
 
 public:
 
-    /**
-     * 
-     */
-    static const std::size_t null_val = ~((std::size_t) 0);
-
-    /**
-     * Конструктор с пользовательским аллокатором.
-     * 
-     * @param allocator 
-     *      Указатель на пользовательский аллокатор.
-     */
     linked_list(tca::allocator* allocator = tca::get_default_allocator());
-
-    /**
-     * Конструктор с количеством объектов по-умолчанию
-     * 
-     * @param cnt
-     *      Сколько значений по-умолчанию нужно добавить в список.
-     * 
-     * @param allocator 
-     *      Указатель на пользовательский аллокатор.
-     */
     linked_list(std::size_t cnt, tca::allocator* allocator = tca::get_default_allocator());
-    
-    /**
-     * Конструктор с инициализирующим листом..
-     * 
-     * @param init_list
-     *      Ссылка на инициализирующий список для заполнения этого связного списка.
-     * 
-     * @param allocator 
-     *      Указатель на пользовательский аллокатор.
-     */
-    linked_list(const std::initializer_list<T>& init_list, tca::allocator* allocator = tca::get_default_allocator());
-
-    /**
-     * Копирующий конструктор.
-     * 
-     * @param other 
-     *      Список для копирования.
-     */
+    linked_list(std::initializer_list<T> init_list, tca::allocator* allocator = tca::get_default_allocator());
     linked_list(const linked_list<T>& other);
-
-    /**
-     * Перемещающий конструктор.
-     * @param other 
-     *      Список, ресурсы которого будут перемещены.
-     */
     linked_list(linked_list<T>&& other);
-
-    /**
-     * Копирующее присваивание.
-     * 
-     * @param other 
-     *      Список для копирования.
-     * 
-     * @return 
-     *      Ссылка на текущий объект.
-     */
     linked_list<T>& operator=(const linked_list<T>& other);
-
-    /**
-     * Перемещающее присваивание.
-     * 
-     * @param other 
-     *      Список, ресурсы которого будут перемещены.
-     * 
-     * @return 
-     *      Ссылка на текущий объект.
-     */
     linked_list& operator=(linked_list<T>&& other);
-
-    /**
-     * Деструктор. Очищает список и освобождает память.
-     */
     ~linked_list();
-
-    /**
-     * Удаляет все элементы из списка.
-     */
     void clear();
+    
+    template<typename _T>
+    void add(_T&& value);
 
-    /**
-     * Добавляет элемент в конец списка.
-     * 
-     * @tparam _T 
-     *      Тип передаваемого значения.
-     * @param value 
-     *      Значение, которое нужно добавить.
-     */
-    template<typename _T> void add(_T&& value);
+    template<typename _T>
+    void add_first(_T&& value);
 
-    /**
-     * Добавляет элемент в начало списка.
-     * 
-     * @tparam _T 
-     *      Тип передаваемого значения.
-     * 
-     * @param value 
-     *      Значение, которое нужно добавить.
-     */
-    template<typename _T> void add_first(_T&& value);
+    template<typename _T>
+    void add_last(_T&& value);
 
-    /**
-     * Добавляет элемент в конец списка (эквивалент add()).
-     * 
-     * @tparam _T 
-     *      Тип передаваемого значения.
-     * 
-     * @param value 
-     *      Значение, которое нужно добавить.
-     */
-    template<typename _T> void add_last(_T&& value);
+    template<typename _T>
+    void add(std::size_t idx, _T&& value);
 
-    /**
-     * Добавляет элемент по указанному индексу.
-     * 
-     * @tparam _T 
-     *      Тип передаваемого значения.
-     * 
-     * @param idx 
-     *      Индекс, по которому нужно вставить значение.
-     * 
-     * @param value 
-     *      Значение для вставки.
-     */
-    template<typename _T> void add(std::size_t idx, _T&& value);
-
-    /**
-     * Удаляет элемент по индексу.
-     * 
-     * @param idx 
-     *      Индекс элемента.
-     * @param _return 
-     *      [optional] Указатель, куда будет записано удалённое значение.
-     */
-    void remove_at(std::size_t idx, T* _return = nullptr);
-
-    /**
-     * Удаляет первый элемент.
-     * 
-     * @param _return 
-     *      [optional] Указатель, куда будет записано удалённое значение.
-     */
-    void remove_first(T* _return = nullptr);
-
-    /**
-     * Удаляет последний элемент.
-     * 
-     * @param _return 
-     *      [optional] Указатель, куда будет записано удалённое значение.
-     */
-    void remove_last(T* _return = nullptr);
-
-    /**
-     * Удаляет первое вхождение значения из списка.
-     * 
-     * @param v Значение для удаления.
-     * 
-     * @param _return 
-     *      [optional] Указатель, куда будет записано удалённое значение.
-     */
-    void remove(const T& v, T* _return = nullptr);
-
-    /**
-     * Добавляет элемент в конец (аналог push_back).
-     * 
-     * @tparam _T 
-     *      Тип передаваемого значения.
-     * @param value 
-     *      Значение для добавления.
-     */
-    template<typename _T> void push(_T&& value);
-
-    /**
-     * Удаляет последний элемент (аналог pop_back).
-     * 
-     * @param _return 
-     *      [optional] Указатель, куда будет записано удалённое значение.
-     */
-    void pop(T* _return = nullptr);
-
-    /**
-     * Возвращает количество элементов в списке.
-     * 
-     * @return 
-     *      Размер списка.
-     */
+    void remove_at(std::size_t idx, Tvalue* _return = nullptr);
+    void remove_first(Tvalue* _return = nullptr);
+    void remove_last(Tvalue* _return = nullptr);
+    void remove(const T& v, Tvalue* _return = nullptr);
+    
+    template<typename _T>
+    void push(_T&& value);
+    
+    void pop(Tvalue* _return = nullptr);
     std::size_t size() const;
 
-    /**
-     * Возвращает аллокатор для этого объекта.
-     */
     tca::allocator* get_allocator() const {
         return _allocator;
     }
 
-    /**
-     * Проверяет, пуст ли список.
-     * 
-     * @return 
-     *      true, если список пуст.
-     */
     bool is_empty() const;
 
-    /**
-     * Возвращает ссылку на элемент по индексу.
-     * 
-     * @param idx 
-     *      Индекс (0-based).
-     * @return 
-     *      Ссылка на элемент.
-     */
     T& at(std::size_t idx);
 
-    /**
-     * Константная версия at().
-     * 
-     * @param idx 
-     *      Индекс (0-based).
-     * @return 
-     *      Константная ссылка на элемент.
-     */
     const T& at(std::size_t idx) const;
 
-    /**
-     * Проверяет, содержится ли значение в списке.
-     *
-     * Для сравнения используется структура jstd::equal_to<T>. 
-     * Чтобы метод работал корректно для пользовательских типов, 
-     * необходимо специализировать jstd::equal_to<T>.
-     *
-     * @param value 
-     *      Значение для поиска.
-     * 
-     * @return 
-     *      true, если элемент найден, иначе false.
-     */
     bool contains(const T& value) const;
-
-    /**
-     * Возвращает индекс первого вхождения элемента в списке.
-     *
-     * Для сравнения используется jstd::equal_to<T>. Если элемент не найден, возвращается linked_list<T>::null_val.
-     *
-     * @param value 
-     *      Значение для поиска.
-     * 
-     * @return 
-     *      Индекс (0-based), либо linked_list<T>::null_val, если элемент не найден.
-     */
+    
     std::size_t index_of(const T& value) const;
-
-    /**
-     * 
-     */
+    
     bool equals(const linked_list<T>& list) const;
     
-    /**
-     * 
-     */
     std::size_t hashcode() const;
 
-    template<typename NODE_TYPE, typename VALUE_TYPE>
-    class iterator {
-        NODE_TYPE* _n;
-    public:
-        iterator();
-        iterator(NODE_TYPE* n);
-        iterator(const iterator&);
-        iterator(iterator&&);
-        iterator& operator= (const iterator&);
-        iterator& operator= (iterator&&);
-        bool operator!=(const iterator&) const;
-        bool operator==(const iterator&) const;
-        iterator& operator++();
-        iterator operator++(int);
-        VALUE_TYPE operator*() const;
-    };
-    
-    iterator<const list_node<T>, const T&> begin() const {
-        return iterator<const list_node<T>, const T&>(_head);
+    ConstIterator begin() const {
+        return ConstIterator(_head);
     }
 
-    iterator<const list_node<T>, const T&> end() const {
-        return iterator<const list_node<T>, const T&>(nullptr);
+    ConstIterator end() const {
+        return ConstIterator(nullptr);
     }
 
-    iterator<list_node<T>, T&> begin() {
-        return iterator<list_node<T>, T&>(_head);
+    Iterator begin() {
+        return Iterator(_head);
     }
 
-    iterator<list_node<T>, T&> end() {
-        return iterator<list_node<T>, T&>(nullptr);
+    Iterator end() {
+        return Iterator(nullptr);
     }
 };
 
     template<typename T>
     template<typename _T>
-    list_node<T>* linked_list<T>::new_node(_T&& t) {
-#ifndef NDEBUG
-        if (_allocator == nullptr)
-            throw_except<illegal_state_exception>("allocator must be != null");
-#endif//NDEBUG
-        void* mem = _allocator->allocate_align(sizeof(list_node<T>), alignof(list_node<T>));
-        if (mem == nullptr)
+    typename linked_list<T>::Node* linked_list<T>::new_node(_T&& t) {
+        
+        Node* node = (Node*) _allocator->allocate_align(sizeof(Node), alignof(Node));
+        if (!node)
             throw_except<out_of_memory_error>("Out of memory");
-        return new (mem) list_node<T>(std::forward<_T>(t));
+        
+        try {
+            new (node) Node(std::forward<_T>(t));
+        } catch (...) {
+            _allocator->deallocate(node);
+            throw;
+        }
+        
+        return node;
     }
     
     template<typename T>
-    void linked_list<T>::delete_node(list_node<T>* n) {
-#ifndef NDEBUG
-        if (_allocator == nullptr)
-            throw_except<illegal_state_exception>("allocator must be != null");
-#endif//NDEBUG
+    void linked_list<T>::delete_node(Node* n) {
         n->~list_node();
-        _allocator->deallocate(n, sizeof(list_node<T>));
+        _allocator->deallocate(n);
     }
 
     template<typename T>
@@ -620,9 +445,9 @@ public:
                 --cnt;
             }
         } catch (...) {
-            for (list_node<T>* n = _tail; n != nullptr;)
+            for (Node* n = _tail; n != nullptr;)
             {
-                list_node<T>* prev = n->get_prev();
+                Node* prev = n->get_prev();
                 delete_node(prev);
                 n = prev;
             }
@@ -631,19 +456,14 @@ public:
     }
 
     template<typename T>
-    linked_list<T>::linked_list(const std::initializer_list<T>& init_list, tca::allocator* allocator) : linked_list<T>(allocator) {
+    linked_list<T>::linked_list(std::initializer_list<T> init_list, tca::allocator* allocator) : linked_list<T>(allocator) {
         try {
             for (const T& e : init_list)
             {
                 add(e);
             }
         } catch (...) {
-            for (list_node<T>* n = _tail; n != nullptr;)
-            {
-                list_node<T>* prev = n->get_prev();
-                delete_node(prev);
-                n = prev;
-            }
+            clear();
             throw;
         }
     }
@@ -656,12 +476,7 @@ public:
                 add(e);
             }
         } catch (...) {
-            for (list_node<T>* n = _tail; n != nullptr;)
-            {
-                list_node<T>* prev = n->get_prev();
-                delete_node(prev);
-                n = prev;
-            }
+            clear();
             throw;
         }
     }
@@ -672,7 +487,6 @@ public:
     _head(other._head),
     _tail(other._tail),
     _size(other._size) {
-        other._allocator    = nullptr;
         other._head         = nullptr;
         other._tail         = nullptr;
         other._size         = 0;
@@ -682,13 +496,13 @@ public:
     linked_list<T>& linked_list<T>::operator=(const linked_list<T>& other) {
         if (&other != this)
         {
-            list_node<T>* head = nullptr;
-            list_node<T>* tail = nullptr;
+            Node* head = nullptr;
+            Node* tail = nullptr;
             try {
 
                 for (const T& e : other)
                 {
-                    list_node<T>* new_ = new_node(e);
+                    Node* new_ = new_node(e);
                     if (head == nullptr)
                     {
                         head = tail = new_;
@@ -708,9 +522,9 @@ public:
                 _size = other.size();
 
             } catch (...) {
-                for (list_node<T>* n = tail; n != nullptr; )
+                for (Node* n = tail; n != nullptr; )
                 {
-                    list_node<T>* current = n;
+                    Node* current = n;
                     n = n->get_prev();
                     delete_node(current);
                 }
@@ -724,7 +538,7 @@ public:
     linked_list<T>& linked_list<T>::operator=(linked_list<T>&& other) {
         if (&other != this) 
         {
-            std::swap(_allocator,   other._allocator);
+            _allocator = other._allocator;
             std::swap(_head,        other._head);
             std::swap(_tail,        other._tail);
             std::swap(_size,        other._size);
@@ -739,24 +553,22 @@ public:
 
     template<typename T>
     void linked_list<T>::clear() {
-        if (_allocator != nullptr)
-        {
-            for (list_node<T>* i = _tail; i != nullptr; ) {
-                list_node<T>* current = i;
-                i = i->get_prev();
-                delete_node(current);
-            }
-            _head = nullptr;
-            _tail = nullptr;
-            _size = 0;
+        for (Node* i = _tail; i != nullptr; ) {
+            Node* current = i;
+            i = i->get_prev();
+            delete_node(current);
         }
+        _head = nullptr;
+        _tail = nullptr;
+        _size = 0;
     }
 
     template<typename T>
     template<typename _T>
     void linked_list<T>::add_last(_T&& t) {
-        list_node<T>* node = new_node(std::forward<_T>(t)); 
-        if (_tail == nullptr) {
+        Node* node = new_node(std::forward<_T>(t)); 
+        if (_tail == nullptr)
+        {
             _head = _tail = node;
         } 
 
@@ -771,12 +583,13 @@ public:
     template<typename T>
     template<typename _T>
     void linked_list<T>::add_first(_T&& t) {
-        list_node<T>* node = new_node(std::forward<_T>(t)); 
-        if (_head == nullptr) {
+        Node* node = new_node(std::forward<_T>(t)); 
+        if (_head == nullptr)
+        {
             _head = _tail = node;
         }
-
-        else {
+        else
+        {
             node->set_next(_head);
             _head->set_prev(node);
             _head = node;
@@ -803,11 +616,11 @@ public:
         } 
         
         else {
-            list_node<T>* node = new_node(std::forward<_T>(t));
-            list_node<T>* current = node_at(idx);
+            Node* node = new_node(std::forward<_T>(t));
+            Node* current = node_at(idx);
             assert(current != nullptr);
 
-            list_node<T>* prev = current->get_prev();
+            Node* prev = current->get_prev();
             assert(prev != nullptr);
             
             // prev node next
@@ -820,20 +633,23 @@ public:
     }
 
     template<typename T>
-    list_node<T>* linked_list<T>::node_at(std::size_t idx) {
-        assert(idx >= 0 && idx < _size);
-        if (idx < _size >> 1) {
+    typename linked_list<T>::Node* linked_list<T>::node_at(std::size_t idx) const {
+        assert(idx < size());
+        if (idx < size() >> 1)
+        {
             std::size_t i = 0;
-            for (list_node<T>* n = _head; n != nullptr; n = n->get_next()) {
+            for (Node* n = _head; n != nullptr; n = n->get_next())
+            {
                 if (i == idx)
                     return n;
                 ++i;
             }
         } 
-        
-        else {
-            std::size_t i = _size - 1;
-            for (list_node<T>* n = _tail; n != nullptr; n = n->get_prev()) {
+        else
+        {
+            std::size_t i = size() - 1;
+            for (Node* n = _tail; n != nullptr; n = n->get_prev())
+            {
                 if (i == idx)
                     return n;
                 --i;
@@ -844,19 +660,20 @@ public:
     }
     
     template<typename T>
-    void linked_list<T>::remove_first(T* _return) {
+    void linked_list<T>::remove_first(Tvalue* _return) {
         if (_size == 0)
             throw_except<no_such_element_exception>();
-        list_node<T>* n = _head;
+        Node* n = _head;
         assert(n != nullptr);
         
         _head = n->get_next();
         
-        if (_head != nullptr) {
+        if (_head != nullptr)
+        {
             _head->set_prev(nullptr);
         } 
-        
-        else {
+        else
+        {
             _head = _tail = nullptr;
         }
         
@@ -868,22 +685,22 @@ public:
     }
 
     template<typename T>
-    void linked_list<T>::remove_last(T* _return) {
+    void linked_list<T>::remove_last(Tvalue* _return) {
         if (_size == 0)
             throw_except<no_such_element_exception>();
-        list_node<T>* n = _tail;
+        Node* n = _tail;
         assert(n != nullptr);
         
         _tail = n->get_prev();
         
-        if (_tail != nullptr) {
+        if (_tail != nullptr)
+        {
             _tail->set_next(nullptr);
         } 
-
-        else {
+        else 
+        {
             _head = _tail = nullptr;
         }
-
 
         if (_return != nullptr)
             *_return = std::move(n->get_value());
@@ -893,20 +710,21 @@ public:
     }
 
     template<typename T>
-    void linked_list<T>::unlink(list_node<T>* node) {
+    void linked_list<T>::unlink(Node* node) {
         assert(node != nullptr);
         
-        list_node<T>* prev = node->get_prev();
-        list_node<T>* next = node->get_next();
+        Node* prev = node->get_prev();
+        Node* next = node->get_next();
         
         if (prev == nullptr)
         {
             _head = node->get_next();
-            if (_head == nullptr) {
+            if (_head == nullptr)
+            {
                 _head = _tail = nullptr;
             } 
-            
-            else {
+            else
+            {
                 _head->set_prev(nullptr);
             }
         } 
@@ -935,23 +753,24 @@ public:
     }
 
     template<typename T>
-    void linked_list<T>::remove_at(std::size_t idx, T* _return) {
-#ifndef NDEBUG
-        if (idx < 0 || idx > _size)
-            throw_except<index_out_of_bound_exception>("Index %li out of bound for length %li", (long int) idx, (long int) _size);
-#endif//NDEBUG
-        
-        if (idx == 0) {
+    void linked_list<T>::remove_at(std::size_t idx, Tvalue* _return) {
+        JSTD_DEBUG_CODE(
+            if (idx > _size)
+                throw_except<index_out_of_bound_exception>("Index %li out of bound for length %li", (long int) idx, (long int) _size);
+        )
+
+        if (idx == 0)
+        {
             remove_first(_return);
             return;
         }
-
-        else if (idx == _size) {
+        else if (idx == _size)
+        {
             remove_last(_return);
             return;
         }
 
-        list_node<T>* current = node_at(idx);
+        Node* current = node_at(idx);
         
         if (_return != nullptr)
             *_return = std::move(current->get_value());
@@ -962,9 +781,9 @@ public:
     }
 
     template<typename T>
-    void linked_list<T>::remove(const T& v, T* _return) {
+    void linked_list<T>::remove(const T& v, Tvalue* _return) {
         equal_to<T> equals;
-        for (list_node<T>* i = _head; i != nullptr; i = i->get_next()) {
+        for (Node* i = _head; i != nullptr; i = i->get_next()) {
             if (equals(v, i->get_value())) {
                 if (_return != nullptr){
                     *_return = std::move(i->get_value());
@@ -973,12 +792,6 @@ public:
                 }
             }
         }
-    }
-
-    template<typename T>
-    const list_node<T>* linked_list<T>::node_at(std::size_t idx) const {
-        linked_list<T>* _this = const_cast<linked_list<T>*>(this);
-        return _this->node_at(idx);
     }
 
     template<typename T>
@@ -996,14 +809,14 @@ public:
     }
     
     template<typename T>
-    void linked_list<T>::pop(T* _return) {
+    void linked_list<T>::pop(Tvalue* _return) {
         remove_last(_return);
     }
 
     template<typename T>
     T& linked_list<T>::at(std::size_t idx) {
         check_index(idx, _size);
-        list_node<T>* node = node_at(idx);
+        Node* node = node_at(idx);
         assert(node != nullptr);
         return node->get_value();
     }
@@ -1011,7 +824,7 @@ public:
     template<typename T>
     const T& linked_list<T>::at(std::size_t idx) const {
         check_index(idx, _size);
-        const list_node<T>* node = node_at(idx);
+        const Node* node = node_at(idx);
         assert(node != nullptr);
         return node->get_value();
     }
@@ -1019,7 +832,7 @@ public:
     template<typename T>
     bool linked_list<T>::contains(const T& t) const {
         equal_to<T> equals;
-        for (const list_node<T>* i = _head; i != nullptr; i = i->get_next())
+        for (const Node* i = _head; i != nullptr; i = i->get_next())
             if (equals(t, i->get_value()))
                 return true;
         return false;
@@ -1029,11 +842,11 @@ public:
     std::size_t linked_list<T>::index_of(const T& t) const {
         std::size_t idx = 0;
         equal_to<T> equals;
-        for (const list_node<T>* i = _head; i != nullptr; i = i->get_next(), ++idx) {
+        for (const Node* i = _head; i != nullptr; i = i->get_next(), ++idx) {
             if (equals(t, i->get_value()))
                 return idx;
         }
-        return linked_list<T>::null_val;
+        return npos();
     }
 
     template<typename T>
@@ -1046,105 +859,6 @@ public:
     template<typename T>
     std::size_t linked_list<T>::hashcode() const {
         return objects::hashcode(begin(), end(), hash_for<T>());
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-    template<typename T>
-    template<typename NODE_TYPE, typename VALUE_TYPE>
-    linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::iterator() : _n(nullptr) {
-
-    }
-
-    template<typename T>
-    template<typename NODE_TYPE, typename VALUE_TYPE>
-    linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::iterator(NODE_TYPE* n) : _n(n) {
-
-    }
-
-    template<typename T>
-    template<typename NODE_TYPE, typename VALUE_TYPE>
-    linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::iterator(const iterator<NODE_TYPE, VALUE_TYPE>& it) : _n(it._n) {
-
-    }
-    
-    template<typename T>
-    template<typename NODE_TYPE, typename VALUE_TYPE>
-    linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::iterator(iterator<NODE_TYPE, VALUE_TYPE>&& it) : _n(it._n) {
-        it._n = nullptr;
-    }
-
-    template<typename T>
-    template<typename NODE_TYPE, typename VALUE_TYPE>
-    typename linked_list<T>:: template iterator<NODE_TYPE, VALUE_TYPE>& linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator= (const iterator<NODE_TYPE, VALUE_TYPE>& it) {
-        if (&it != this) {
-            _n = it._n;
-        }
-        return *this;
-    }
-
-    template<typename T>
-    template<typename NODE_TYPE, typename VALUE_TYPE>
-    typename linked_list<T>:: template iterator<NODE_TYPE, VALUE_TYPE>& linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator= (iterator<NODE_TYPE, VALUE_TYPE>&& it) {
-        if (&it != this) {
-            _n = it._n;
-            it._n = nullptr;
-        }
-        return *this;
-    }
-    
-    template<typename T>
-    template<typename NODE_TYPE, typename VALUE_TYPE>
-    bool linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator!= (const iterator<NODE_TYPE, VALUE_TYPE>& it) const {
-        return _n != it._n;
-    }
-    
-    template<typename T>
-    template<typename NODE_TYPE, typename VALUE_TYPE>
-    bool linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator== (const iterator<NODE_TYPE, VALUE_TYPE>& it) const {
-        return _n == it._n;
-    }
-
-    template<typename T>
-    template<typename NODE_TYPE, typename VALUE_TYPE>
-    typename linked_list<T>:: template iterator<NODE_TYPE, VALUE_TYPE>& linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator++() {
-#ifndef NDEBUG
-        if (_n == nullptr) 
-            throw_except<null_pointer_exception>("_n must be != null");
-#endif//NDEBUG
-        _n = _n->get_next();
-        return *this;
-    }
-    
-    template<typename T>
-    template<typename NODE_TYPE, typename VALUE_TYPE>
-    typename linked_list<T>:: template iterator<NODE_TYPE, VALUE_TYPE> linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator++(int) {
-#ifndef NDEBUG
-        if (_n == nullptr) 
-            throw_except<null_pointer_exception>("_n must be != null");
-#endif//NDEBUG
-        iterator<NODE_TYPE, VALUE_TYPE> tmp(*this);
-        _n = _n->get_next();
-        return tmp;
-    }
-    
-    template<typename T>
-    template<typename NODE_TYPE, typename VALUE_TYPE>
-    VALUE_TYPE linked_list<T>::iterator<NODE_TYPE, VALUE_TYPE>::operator*() const {
-#ifndef NDEBUG
-        if (_n == nullptr) 
-            throw_except<null_pointer_exception>("_n must be != null");
-#endif//NDEBUG
-        return _n->get_value();
     }
 }
 #endif//_JSTD_CPP_LANG_UTIL_LINKED_LIST_H

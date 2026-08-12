@@ -2,9 +2,8 @@
 #define _ALLOCATORS_UTILS_H_
 
 #include <cpp/lang/utils/cond_compile.hpp>
-#include <cpp/lang/utils/comparator.hpp>
-#include <cpp/lang/system.hpp>
 #include <cpp/lang/traits/primitive_traits.hpp>
+#include <cpp/lang/system.hpp>
 #include <cstdint>
 #include <utility>
 #include <cstring>
@@ -12,12 +11,6 @@
 
 namespace tc
 {
-
-class null_pointer_exception;
-class illegal_argument_exception;
-
-template<typename T>
-void throw_except(const char* format, ...);
 
 namespace utils
 {
@@ -207,124 +200,6 @@ namespace internal
         if (out_order != system::native_byte_order())
             v = bswap<T>(v);
         std::memcpy(ptr, &v, sizeof(T));
-    }
-
-    /**
-     * Выполняет сортировку вставками с использованием пользовательского компаратора.
-     *
-     * @tparam T 
-     *      Тип элементов массива.
-     * 
-     * @tparam T_COMPARATOR 
-     *      Тип компаратора. По умолчанию — compare_to<T>, должен реализовывать operator()(const T&, const T&) и возвращать int (<0, 0, >0).
-     *
-     * @param array 
-     *      Указатель на массив элементов, которые требуется отсортировать.
-     * 
-     * @param len 
-     *      Количество элементов в массиве. Должно быть >= 0.
-     *
-     * @throws null_pointer_exception 
-     *      Eсли array равен nullptr.
-     * 
-     * @throws illegal_argument_exception 
-     *      Eсли len < 0.
-     *
-     * Сортирует массив вставками, используя заданный компаратор.
-     * 
-     * @since 1.0
-     */
-    template<typename T, typename T_COMPARATOR = compare_to<T>>
-    void intersect_sort(T* array, std::size_t len) {
-#ifndef NDEBUG
-    if (array == nullptr) throw_except<null_pointer_exception>("array must be != null");
-    if (len < 0) throw_except<illegal_argument_exception>("len must be >= 0");
-#endif//NDEBUG
-        T_COMPARATOR compare;
-        for (std::size_t i = 1; i < len; ++i) {
-            std::size_t j = i;
-            while (j > 0) {
-                T& a = array[j - 1];
-                T& b = array[j];
-                int comp = compare(a, b);
-                if (comp > 0) {
-                    T tmp   = std::move(a);
-                    a       = std::move(b);
-                    b       = std::move(tmp);
-                    --j;
-                    continue;
-                }
-                break;
-            }
-        }
-    }
-
-namespace internal
-{
-    template<typename T, typename T_COMPARATOR>
-    void quick_sort_impl(T* array, std::size_t left, std::size_t right, T_COMPARATOR& compare) {
-        
-        if (left >= right) return;
-
-        std::size_t i = left;
-        std::size_t j = right;
-        T& pivot = array[(left + right) / 2];
-
-        while (i <= j)
-        {
-            while (compare(array[i], pivot) < 0) ++i;
-            while (compare(array[j], pivot) > 0) --j;
-
-            if (i <= j) {
-                if (i != j) {
-                    T tmp = std::move(array[i]);
-                    array[i] = std::move(array[j]);
-                    array[j] = std::move(tmp);
-                }
-                ++i;
-                
-                if (j == 0) break;
-                --j;
-            }
-        }
-
-        if (left < j)   quick_sort_impl(array, left, j, compare);
-        if (i < right)  quick_sort_impl(array, i, right, compare);
-    }
-}
-
-    /**
-     * Выполняет быструю сортировку массива с использованием пользовательского компаратора.
-     *
-     * @tparam T 
-     *      Тип элементов массива.
-     * 
-     * @tparam T_COMPARATOR 
-     *      Тип компаратора. По умолчанию — compare_to<T>.
-     *
-     * @param array 
-     *      Указатель на массив, который нужно отсортировать.
-     * 
-     * @param len 
-     *      Количество элементов в массиве. Должно быть >= 0.
-     *
-     * @throws null_pointer_exception 
-     *      Eсли array == nullptr
-     * 
-     * @throws illegal_argument_exception 
-     *      Eсли len < 0
-     * 
-     * @since 1.0
-     */
-    template<typename T, typename T_COMPARATOR = compare_to<T>>
-    void quick_sort(T* array, std::size_t len) {
-        JSTD_DEBUG_CODE(
-            if (array == nullptr)
-                throw_except<null_pointer_exception>("array must be != null");
-        )
-        if (len <= 1) return;
-        T_COMPARATOR compare;
-        internal::quick_sort_impl(array, 0, len - 1, compare);
     }
 }
 

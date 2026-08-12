@@ -192,7 +192,7 @@ public:
      * @return 
      *      Текущее количество элементов.
      */
-    int64_t size() const;
+    std::size_t size() const;
 
     /**
      * Проверяет, пусто ли множество.
@@ -319,7 +319,7 @@ public:
     }
 
     template<typename K, typename KEY_HASH, typename KEY_EQUAL>
-    int64_t hash_set<K, KEY_HASH, KEY_EQUAL>::size() const {
+    std::size_t hash_set<K, KEY_HASH, KEY_EQUAL>::size() const {
         return m_storage.size();
     }
 

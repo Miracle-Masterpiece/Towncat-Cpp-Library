@@ -327,6 +327,7 @@ static void init_contribution(contribution* contrib_param, int w_in, int w_out, 
  *      calc_weights
  */
 int resize_image(const unsigned char* in, int w_in, int h_in, unsigned char* out, int w_out, int h_out, int channels, tca::allocator* alloc) {
+    #if 0
     tc::array<const unsigned char>  input (in, static_cast<std::size_t> (w_in * h_in * channels));
     tc::array<unsigned char>        output(out, static_cast<std::size_t>(w_out * h_out * channels));
     
@@ -386,7 +387,8 @@ int resize_image(const unsigned char* in, int w_in, int h_in, unsigned char* out
             }
         }
     }
-    return 0;    
+    return 0;
+    #endif 
 }
 
 /**
@@ -456,6 +458,7 @@ int resize_image(const unsigned char* in, int w_in, int h_in, unsigned char* out
  * to the final result.
  */
 int resize_image_alpha(const unsigned char* in, int w_in, int h_in, unsigned char* out, int w_out, int h_out, int channels, int alpha_index, tca::allocator* alloc) {
+    #if 0
     const std::size_t MAX_CHANNELS = 4;
 
     if (alpha_index >= channels)
@@ -553,7 +556,8 @@ int resize_image_alpha(const unsigned char* in, int w_in, int h_in, unsigned cha
             }
         }
     }
-    return 0;    
+    return 0;
+    #endif 
 }
 
 } //namespace internal

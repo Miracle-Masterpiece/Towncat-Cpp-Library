@@ -576,6 +576,7 @@ public:
         if (finded)
         {
             finded->set_value(std::forward<TVALUE_>(value));
+            unlink(finded);
             link_last(finded);
             return true;
         }

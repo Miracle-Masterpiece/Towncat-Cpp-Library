@@ -35,7 +35,12 @@ class image_packer {
     /**
      * Входной массив изображений.
      */
-    array<const image> m_images;
+    const image* m_images;
+   
+    /**
+     * 
+     */
+    std::size_t m_cnt_imgs;
     
     /**
      * Ширина выходного изображения (атласа).

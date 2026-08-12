@@ -8,99 +8,141 @@
 #include <initializer_list>
 #include <cstdint>
 #include <allocators/allocator.hpp>
+#include <cpp/lang/utils/comparator.hpp>
+#include <cpp/lang/common.hpp>
 
 #ifndef NDEBUG
     #include <cpp/lang/exceptions.hpp>
 #endif
 
-#define JSTD_TRIVIAL_COPY_CHECK 
-
 namespace tc
 {
 
     /**
-     * Конструирует массив объектов типа T в заранее выделенной области памяти с использованием placement new.
-     *
-     * Эта функция последовательно вызывает конструктор по умолчанию для каждого элемента массива,
-     * начиная с заданного адреса array. 
+     * Constructs a range of objects using default initialization.
      * 
-     * Если при конструировании одного из объектов выбрасывается исключение,
-     * ранее успешно сконструированные объекты будут уничтожены в обратном порядке.
-     *
-     * @tparam T 
-     *      Тип объектов, которые будут размещены.
+     * Constructs N objects of type T in the uninitialized memory region
+     * starting at array. Provides strong exception guarantee.
      * 
-     * @param array 
-     *      Указатель на предварительно выделенную память, достаточную для хранения `length` объектов типа T.
+     * @tparam T
+     *      The type of objects to construct.
      * 
-     * @param length 
-     *      Количество объектов, которые требуется сконструировать.
+     * @param array
+     *      Pointer to uninitialized memory.
      * 
-     * @throws null_pointer_exception 
-     *      Eсли array == nullptr
+     * @param length
+     *      Number of objects to construct.
      * 
-     * @throws Любое исключение, выброшенное конструктором T.
-     *
+     * @throws Any exception thrown by T's default constructor.
      * 
-     * @note Если включён JSTD_TRIVIAL_COPY_CHECK и тип T является тривиально копируемым,
-     *       функция завершает выполнение без создания объектов.
+     * @note
+     *      If an exception occurs, all successfully constructed objects 
+     *      are destroyed before rethrowing.
+     * 
+     * @warning
+     *      The memory region must be large enough for length objects
+     *      and must be properly aligned for type T.
      */
     template<typename T>
     void uninitialized_construct_n(T* array, std::size_t length) {
-        JSTD_DEBUG_CODE(
-            if (array == nullptr)
-            {
-                throw_except<null_pointer_exception>("array is null");
-            }
-        );
-
-#ifdef JSTD_TRIVIAL_COPY_CHECK
-        if (std::is_trivially_copyable<T>::value)
-            return;
-#endif//JSTD_TRIVIAL_COPY_CHECK
+        JSTD_DEBUG_CODE(check_non_null(array, "'array' is null"));
 
         std::size_t constructed = 0;
         try {
             for (;constructed < length; ++constructed)
                 new (array + constructed) T();
         } catch (...) {
-            while (constructed-- != 0)
-                array[constructed].~T();
+            while (constructed > 0)
+                array[--constructed].~T();
             throw;
         }
     }
 
     /**
-     * Явно вызывает деструкторы для массива объектов типа T, размещённых в указанной области памяти.
-     *
-     * Функция последовательно вызывает деструктор для каждого объекта, начиная с конца массива.
-     *
-     * @tparam T 
-     *      Тип объектов, чьи деструкторы необходимо вызвать.
+     * Allocates memory and default-initializes objects.
      * 
-     * @param array 
-     *      Указатель на массив объектов.
+     * Allocates memory for n objects of type T and default-constructs
+     * them in the allocated memory. Provides strong exception guarantee.
      * 
-     * @param length 
-     *      Количество объектов, для которых вызываются деструкторы.
-     *
-     * @throws null_pointer_exception 
-     *      Eсли array == nullptr.
-     *
-     * @note Если включён JSTD_TRIVIAL_COPY_CHECK и тип T является тривиально разрушимым,
-     *       функция завершает выполнение без вызова деструкторов.
+     * @tparam T
+     *      The type of objects to allocate and initialize.
+     * 
+     * @param n
+     *      Number of objects to allocate and construct.
+     * 
+     * @param alloc
+     *      Allocator to use for memory allocation.
+     * 
+     * @return
+     *      Pointer to the allocated and initialized memory,
+     *      or nullptr if memory allocation fails.
+     * 
+     * @throws
+     *      Any exception thrown by T's default constructor.
+     * 
+     * @note
+     *      If an exception occurs during construction, the allocated
+     *      memory is automatically deallocated before rethrowing.
+     * 
+     * @warning
+     *      The caller is responsible for deallocating the memory using
+     *      deallocate_and_destroy_n() or equivalent.
+     * 
+     * @example
+     *      // Allocate and construct 10 strings
+     *      tca::allocator* alloc = tca::get_default_allocator();
+     *      std::string* arr = allocate_and_initialize_n<std::string>(10, alloc);
+     *      if (arr) {
+     *          // Use arr...
+     *          deallocate_and_destroy_n(arr, 10, alloc);
+     *      }
+     */
+    template<typename T>
+    T* allocate_and_initialize_n(std::size_t n, tca::allocator* alloc) {
+        JSTD_DEBUG_CODE(check_non_null(alloc, "'alloc' is null"));
+
+        typedef typename remove_cv<T>::type Tvalue;
+
+        Tvalue* data = (Tvalue*) alloc->allocate_align(sizeof(T) * n, alignof(T));
+        if (!data)
+            return nullptr;
+
+        try {
+            uninitialized_construct_n(data, n);
+        } catch(...) {
+            alloc->deallocate(data);
+            throw;
+        }
+
+        return data;
+    }
+
+    /**
+     * Destroys a range of objects.
+     * 
+     * Calls destructors for N objects of type T in the array.
+     * 
+     * @tparam T
+     *      The type of objects to destroy.
+     * 
+     * @param array
+     *      Pointer to the array of objects.
+     * 
+     * @param length
+     *      Number of objects to destroy.
+     * 
+     * @note
+     *      Safe to call with nullptr or length 0 (no-op).
+     * 
+     * @warning
+     *      Objects must have been previously constructed.
      */
     template<typename T>
     void destroy_n(const T* array, std::size_t length) {
-        JSTD_DEBUG_CODE(check_non_null(array, "array is null"));
+        if (length == 0)        return;
         
-#ifdef JSTD_TRIVIAL_COPY_CHECK
-        if (std::is_trivially_destructible<T>::value)
-        {
-            return;
-        }
-#endif//JSTD_TRIVIAL_COPY_CHECK
-        
+        JSTD_DEBUG_CODE(check_non_null(array, "'array' is null"));
+
         std::size_t destructs = length;
         while (destructs > 0)
         {
@@ -109,45 +151,40 @@ namespace tc
     }
 
     /**
-     * Копирует массив объектов в ранее выделенную память с помощью конструктора копирования и placement new.
-     *
-     * Эта функция создаёт новые объекты типа T в массиве dst, копируя содержимое из src.
-     * При возникновении исключения во время копирования все уже сконструированные объекты будут уничтожены.
-     *
-     * @tparam T 
-     *      Тип объектов для копирования.
+     * Copies a range of objects into uninitialized memory.
      * 
-     * @param dst 
-     *      Указатель на ранее выделенную память, куда будет производиться копирование.
+     * Copy-constructs length objects from src to dst in uninitialized memory.
+     * Provides strong exception guarantee.
      * 
-     * @param src 
-     *      Указатель на массив исходных объектов, которые будут скопированы.
+     * @tparam T
+     *      The type of objects to copy.
      * 
-     * @param length 
-     *      Количество элементов, которые требуется скопировать.
-     *
-     * @throws null_pointer_exception 
-     *      Eсли dst == nullptr.
-     *      Если src == nullptr.
+     * @param dst
+     *      Destination uninitialized memory.
      * 
-     * @throws Любое исключение, выброшенное копирующим конструктором T.
-     *
-     * @note Если включён JSTD_TRIVIAL_COPY_CHECK и T является тривиально копируемым,
-     *       используется std::memcpy вместо конструктора копирования.
+     * @param src
+     *      Source objects to copy from.
+     * 
+     * @param length
+     *      Number of objects to copy.
+     * 
+     * @throws
+     *      Any exception thrown by T's copy constructor.
+     * 
+     * @note
+     *      If an exception occurs, all successfully constructed objects
+     *      are destroyed before rethrowing.
+     * 
+     * @warning
+     *      dst must be large enough for length objects.
+     *      dst and src must not overlap.
      */
     template<typename T>
     void uninitialized_copy_n(T* dst, const T* src, std::size_t length) {
-        JSTD_DEBUG_CODE(
-            check_non_null(dst, "dst is null");
-            check_non_null(src, "src is null");
-        )
-
-#ifdef JSTD_TRIVIAL_COPY_CHECK
-        if (std::is_trivially_copyable<T>::value) {
-            std::memcpy((void*) dst, (const void*) src, sizeof(T) * length);
-            return;
-        }
-#endif//JSTD_TRIVIAL_COPY_CHECK
+        if (!length) return;
+        
+        JSTD_DEBUG_CODE(check_non_null(dst, "'dst' is null"));
+        JSTD_DEBUG_CODE(check_non_null(src, "'src' is null"));
         
         std::size_t copied = 0;
         try {
@@ -159,41 +196,234 @@ namespace tc
             throw;
         }
     }
-
+    
+    /**
+     * Moves a range of objects into uninitialized memory.
+     * 
+     * Move-constructs length objects from src to dst in uninitialized memory.
+     * Provides strong exception guarantee.
+     * 
+     * @tparam T
+     *      The type of objects to move.
+     * 
+     * @param dst
+     *      Destination uninitialized memory.
+     * 
+     * @param src
+     *      Source objects to move from.
+     * 
+     * @param length
+     *      Number of objects to move.
+     * 
+     * @throws
+     *      Any exception thrown by T's move constructor.
+     * 
+     * @note
+     *      If an exception occurs, all successfully constructed objects
+     *      are destroyed before rethrowing.
+     * 
+     * @warning
+     *      dst must be large enough for length objects.
+     *      dst and src must not overlap.
+     */
     template<typename T>
-    T* allocate_and_copy_n(const T* src, std::size_t len, tca::allocator* alloc) {
-        T* data = (T*) alloc->allocate_align(sizeof(T) * len, alignof(T));
+    void uninitialized_move_n(T* dst, T* src, std::size_t length) {
+        if (!length) return;        
+        
+        JSTD_DEBUG_CODE(check_non_null(dst, "'dst' is null"));
+        JSTD_DEBUG_CODE(check_non_null(src, "'src' is null"));
+        
+        std::size_t moved = 0;
+        try {
+            for (;moved < length; ++moved)
+                new (dst + moved) T(std::move(src[moved]));
+        } catch (...) {
+            while (moved > 0)
+                dst[--moved].~T();
+            throw;
+        }
+    }
+
+    /**
+     * Allocates memory and moves objects into it.
+     * 
+     * Allocates memory for length objects of type T and moves them
+     * from src to the newly allocated memory.
+     * 
+     * @tparam T
+     *      The type of objects to move.
+     * 
+     * @param src
+     *      Source objects to move from.
+     * 
+     * @param len
+     *      Number of objects to move.
+     * 
+     * @param alloc
+     *      Allocator to use for memory allocation.
+     * 
+     * @return
+     *      Pointer to the newly allocated and populated memory,
+     *      or nullptr if allocation fails.
+     * 
+     * @throws Any exception thrown by T's move constructor.
+     * 
+     * @note
+     *      If an exception occurs during construction, memory is deallocated.
+     */
+    template<typename T>
+    T* allocate_and_move_n(T* src, std::size_t len, tca::allocator* alloc) {
+        
+        typedef typename remove_cv<T>::type Tvalue;
+
+        Tvalue* data = (Tvalue*) alloc->allocate_align(sizeof(T) * len, alignof(T));
         if (!data)
         {
             return nullptr;
         }
 
         try {
-            uninitialized_copy_n(const_cast<typename remove_cv<T>::type*>(data), src, len);
+            uninitialized_move_n(data, src, len);
         } catch (...) {
-            alloc->deallocate(const_cast<typename remove_cv<T>::type*>(data));
+            alloc->deallocate(data);
             throw;
         }
         
         return data;
     }
     
+    /**
+     * Allocates memory and copies objects into it.
+     * 
+     * Allocates memory for length objects of type T and copies them
+     * from src to the newly allocated memory.
+     * 
+     * @tparam T
+     *      The type of objects to copy.
+     * 
+     * @param src
+     *      Source objects to copy from.
+     * 
+     * @param len
+     *      Number of objects to copy.
+     * 
+     * @param alloc
+     *      Allocator to use for memory allocation.
+     * 
+     * @return
+     *      Pointer to the newly allocated and populated memory,
+     *      or nullptr if allocation fails.
+     * 
+     * @throws Any exception thrown by T's copy constructor.
+     * 
+     * @note
+     *      If an exception occurs during construction, memory is deallocated.
+     */
     template<typename T>
-    void deallocate_and_destroy_n(const T* src, std::size_t len, tca::allocator* alloc) {
-        JSTD_DEBUG_CODE(check_non_null(src, "src is null"));
-        JSTD_DEBUG_CODE(check_non_null(alloc, "alloc is null"));
+    T* allocate_and_copy_n(const T* src, std::size_t len, tca::allocator* alloc) {
+        JSTD_DEBUG_CODE(check_non_null(src, "'src' is null"));
+        JSTD_DEBUG_CODE(check_non_null(alloc, "'alloc' is null"));
 
-        while (len > 0)
+        typedef typename remove_cv<T>::type Tvalue;
+
+        Tvalue* data = (Tvalue*) alloc->allocate_align(sizeof(T) * len, alignof(T));
+        if (!data)
         {
-            src[--len].~T();
+            return nullptr;
+        }
+
+        try {
+            uninitialized_copy_n(data, src, len);
+        } catch (...) {
+            alloc->deallocate(data);
+            throw;
         }
         
-        alloc->deallocate(const_cast<typename remove_cv<T>::type*>(src));
+        return data;
+    }
+    
+    template<typename T, typename E>
+    T* allocate_and_copy_n(std::initializer_list<E> src, tca::allocator* alloc) {
+            
+        typedef typename remove_cv<T>::type Tvalue;
+
+        Tvalue* data = (Tvalue*) alloc->allocate_align(sizeof(T) * src.size(), alignof(T));
+        if (!data)
+        {
+            return nullptr;
+        }
+
+        try {
+            uninitialized_copy_n(data, src.begin(), src.size());
+        } catch (...) {
+            alloc->deallocate(data);
+            throw;
+        }
+        
+        return data;
+    }
+    
+    /**
+     * Destroys objects and deallocates memory.
+     * 
+     * Destroys all objects in the array and then deallocates the memory.
+     * 
+     * @tparam T
+     *      The type of objects to destroy.
+     * 
+     * @param src
+     *      Pointer to the array of objects.
+     * 
+     * @param len
+     *      Number of objects in the array.
+     * 
+     * @param alloc
+     *      Allocator to use for memory deallocation.
+     * 
+     * @note
+     *      Safe to call with src == nullptr (no-op).
+     * 
+     * @warning
+     *      Objects must have been previously constructed.
+     */
+    template<typename T>
+    void deallocate_and_destroy_n(T* src, std::size_t len, tca::allocator* alloc) {
+        JSTD_DEBUG_CODE(check_non_null(alloc, "'alloc' is null"));
+        if (src)
+        {
+            while (len > 0)
+                src[--len].~T();
+            alloc->deallocate(const_cast<typename remove_cv<T>::type*>(src));
+        }
     }
 
+    /**
+     * Copy-constructs objects from an initializer list.
+     * 
+     * Constructs objects of type T from elements in the initializer list.
+     * Provides strong exception guarantee.
+     * 
+     * @tparam T
+     *      The type of objects to construct.
+     * 
+     * @tparam E
+     *      The element type (deduced).
+     * 
+     * @param array
+     *      Destination uninitialized memory.
+     * 
+     * @param init_list
+     *      Initializer list of elements to copy from.
+     * 
+     * @throws Any exception thrown by T's constructor.
+     * 
+     * @note
+     *      If an exception occurs, all successfully constructed objects
+     *      are destroyed before rethrowing.
+     */
     template<typename T, typename E>
-    void uninitialized_copy_n(T* array, const std::initializer_list<E>& init_list) {
-        JSTD_DEBUG_CODE(check_non_null(array, "array is null"));
+    void uninitialized_copy_n(T* array, std::initializer_list<E> init_list) {
+        JSTD_DEBUG_CODE(check_non_null(array, "'array' is null"));
         std::size_t copied = 0;
         try {
             for (const E& e : init_list)
@@ -210,182 +440,50 @@ namespace tc
     }
 
     template<typename T>
-    T* allocate_and_copy_n(const std::initializer_list<T>& init_list, tca::allocator* alloc) {
-        T* data = (T*) alloc->allocate_align(sizeof(T) * init_list.size(), alignof(T));
-        if (!data)
-        {
-            return nullptr;
-        }
-
-        try {
-            uninitialized_copy_n(const_cast<typename remove_cv<T>::type*>(data), init_list);
-        } catch (...) {
-            alloc->deallocate(const_cast<typename remove_cv<T>::type*>(data));
-            throw;
-        }
-        
-        return data;
-    }
-
-    /**
-     * Копирует элементы одного массива в другой, используя оператор присваивания.
-     *
-     * В отличие от uninitialized_copy_n, эта функция предполагает, что объекты уже были сконструированы.
-     * Копирование производится при помощи оператора присваивания operator=.
-     *
-     * @tparam T 
-     *      Тип копируемых объектов.
-     * 
-     * @param dst 
-     *      Указатель на целевой массив, куда будут скопированы значения.
-     * 
-     * @param src 
-     *      Указатель на исходный массив, откуда будут взяты значения.
-     * 
-     * @param length 
-     *      Количество копируемых элементов.
-     *
-     * @throws null_pointer_exception 
-     *      Eсли dst == nullptr. 
-     *      Если src == nullptr.
-     *
-     * @note Если включён JSTD_TRIVIAL_COPY_CHECK и тип T тривиально копируемый,
-     *       используется std::memcpy вместо вызова operator=.
-     */
-    template<typename T>
     void copy(T* dst, const T* src, std::size_t length) {
         JSTD_DEBUG_CODE(
-            check_non_null(dst, "dst is null");
-            check_non_null(src, "src is null");
+            check_non_null(dst, "'dst' is null");
+            check_non_null(src, "'src' is null");
         )
-#ifdef JSTD_TRIVIAL_COPY_CHECK
-        if (std::is_trivially_copyable<T>::value) {
-            std::memcpy(dst, src, sizeof(T) * length);
-            return;
-        }
-#endif//JSTD_TRIVIAL_COPY_CHECK
         for (std::size_t i = 0; i < length; ++i)
             dst[i] = src[i];
     }
 
     /**
-     * Копирует заданный диапазон элементов из одного массива в другой с дополнительными проверками границ в режиме отладки.
-     * Этот метод обрабатывает как случай, когда исходный и целевой массивы перекрываются, так и когда они не перекрываются.
-     * Он предназначен для предотвращения конфликтов памяти и обеспечивает безопасное копирование.
-     *
-     * Подробное поведение в зависимости от положения диапазонов источника и назначения:
-     *      Если исходный и целевой массивы не перекрываются, элементы копируются напрямую из источника в назначение.
-     *      Если массивы перекрываются, элементы копируются таким образом, чтобы данные не были перезаписаны в процессе. 
+     * Copies null-terminated string with buffer limit.
+     * 
+     * Copies a null-terminated string from src to dst, ensuring dst
+     * is null-terminated and does not overflow the destination buffer.
      * 
      * @tparam T
-     *      Тип элементов массива. Ожидается, что T поддерживает семантику копирования и перемещения.
+     *      The character type.
      * 
-     * @param src 
-     *      Исходный массив, из которого копируются элементы. Не должен быть равен null.
+     * @param dst
+     *      Destination buffer.
      * 
-     * @param src_pos 
-     *      Позиция начала копирования в исходном массиве. Должна быть допустимым индексом.
+     * @param src
+     *      Source null-terminated string.
      * 
-     * @param dest 
-     *      Целевой массив, в который копируются элементы. Не должен быть равен null.
+     * @param dst_max
+     *      Maximum capacity of dst buffer (including null terminator).
      * 
-     * @param dst_pos 
-     *      Позиция начала копирования в целевом массиве. Должна быть допустимым индексом.
+     * @return
+     *      Number of characters copied (excluding null terminator).
      * 
-     * @param length 
-     *      Количество элементов, которые нужно скопировать из исходного массива в целевой массив. Не должно превышать границы ни одного из массивов.
+     * @note
+     *      The destination is always null-terminated.
+     *      If the source length >= dst_max - 1, the string is truncated.
      * 
-     * @param dst_length 
-     *      Длина целевого массива. Используется для проверки корректности позиции назначения.
-     * 
-     * @param src_length 
-     *      Длина исходного массива. Используется для проверки корректности позиции исходных данных.
-     * 
-     * @throws null_pointer_exception 
-     *      Eсли один из массивов src или dest равен null.
-     * 
-     * @throws index_out_of_bound_exception 
-     *      Eсли src_pos или dst_pos выходят за границы соответствующих массивов.
-     *      Eсли указанные диапазоны копирования выходят за пределы исходного или целевого массива.
-     */
-    template<typename T>
-    void arraycopy(
-        T* src,  std::size_t src_pos, 
-        T* dest, std::size_t dst_pos, 
-        std::size_t length, 
-        std::size_t dst_length, 
-        std::size_t src_length) 
-    {
-    JSTD_DEBUG_CODE(
-        check_non_null(src,  "src must be != null");
-        check_non_null(dest, "dest must be != null");
-        if (src_pos > src_length || length > src_length - src_pos)
-        {
-            throw_except<index_out_of_bound_exception>("src range out of bounds");
-        }
-        if (dst_pos > dst_length || length > dst_length - dst_pos)
-        {
-            throw_except<index_out_of_bound_exception>("dest range out of bounds");
-        }
-    )
-        if (src == dest && dst_pos > src_pos) 
-        {
-            for (std::size_t i = length; i > 0; --i) 
-            {
-                dest[dst_pos + i - 1] = src[src_pos + i - 1];
-            }
-        } 
-        else 
-        {
-            for (std::size_t i = 0; i < length; ++i) 
-            {
-                dest[dst_pos + i] = src[src_pos + i];
-            }
-        }
-    }
-
-    /**
-     * Копирует строку типа из буфера src в буфер dst, ограничивая количество элементов dst_max.
-     *
-     * Функция предназначена для безопасного копирования нуль-терминированных строк любых типов (например, char, wchar_t, char16_t и т.п.).
-     * 
-     * Копирование прекращается, когда:
-     *      Достигнут максимальный размер dst_max - 1 — в этом случае результат всегда завершается нулем.
-     *      В исходной строке найден нулевой символ (конец строки).
-     *
-     * В режиме отладки (когда не определен NDEBUG) производится проверка указателей на nullptr и недопустимых значений dst_max.
-     *
-     * @tparam T 
-     *      Тип символа (например, char, wchar_t, char16_t.
-     * 
-     * @param src 
-     *      Указатель на исходную нуль-терминированную строку. 
-     *      Не должен быть nullptr.
-     * 
-     * @param dst 
-     *      Указатель на буфер назначения. 
-     *      Не должен быть nullptr.
-     * 
-     * @param dst_max 
-     *      Максимальное количество элементов, которые можно записать в @code dst, включая завершающий нулевой символ.
-     * 
-     * @return 
-     *      Количество записанных символов. (Не включая нуль-терминатор).
-     * 
-     * @throws illegal_argument_exception 
-     *      Если dst_max < 0.
-     * 
-     * @throws null_pointer_exception 
-     *      Если src равен nullptr.
-     *      Если dst равен nullptr.
-     * 
-     * @note Если dst_max == 0, функция немедленно возвращает 0, не выполняя копирования.
+     * @example
+     *      char buf[10];
+     *      size_t len = ncopy(buf, "hello world", 10);  // copies "hello wor"
+     *      // buf = "hello wor", len = 9
      */
     template<typename T>
     std::size_t ncopy(T* dst, const T* src, std::size_t dst_max) {
         JSTD_DEBUG_CODE(
-            check_non_null(src, "src must be != null");
-            check_non_null(dst, "dst must be != null");
+            check_non_null(src, "'src' is null");
+            check_non_null(dst, "'dst' is null");
         )
         
         if (dst_max == 0)
@@ -410,6 +508,186 @@ namespace tc
         }
 
         return i;
+    }
+
+    /**
+     * Sorts array using insertion sort algorithm
+     * 
+     * @tparam T
+     *      Element type
+     * 
+     * @tparam
+     *      T_COMPARATOR Comparator type (default: compare_to<T>)
+     * 
+     * @param array
+     *      Pointer to array
+     * 
+     * @param len
+     *      Number of elements
+     * 
+     * @example
+     *      int arr[] = {5, 2, 8, 1, 9};
+     *      intersect_sort(arr, 5);  // arr = {1, 2, 5, 8, 9}
+     */
+    template<typename T, typename T_COMPARATOR = compare_to<T>>
+    void intersect_sort(T* array, std::size_t len) {
+        if (len == 0)
+            return;
+
+        JSTD_DEBUG_CODE(
+            check_non_null(array, "'array' is null");        
+        );
+
+        T_COMPARATOR compare;
+        for (std::size_t i = 1; i < len; ++i) {
+            std::size_t j = i;
+            while (j > 0) {
+                T& a = array[j - 1];
+                T& b = array[j];
+                int comp = compare(a, b);
+                if (comp > 0) {
+                    std::swap(a, b);
+                    --j;
+                    continue;
+                }
+                break;
+            }
+        }
+    }
+
+    /**
+     * Searches for element in sorted array using binary search
+     * 
+     * @tparam E
+     *      Element type
+     * 
+     * @tparam COMPARATOR_T
+     *      Comparator type (default: compare_to<E>)
+     * 
+     * @param arr
+     *      Pointer to sorted array
+     * 
+     * @param size
+     *      Array size
+     * 
+     * @param searched
+     *      Value to find
+     * 
+     * @return
+     *      Index of found element, or npos() if not found
+     * 
+     * @note:
+     *      Array MUST be sorted in ascending order
+     * 
+     * @example
+     *      int arr[] = {1, 2, 5, 8, 9};
+     *      size_t idx = binary_search(arr, 5, 8);   // idx = 3
+     *      size_t not_found = binary_search(arr, 5, 10);  // = npos()
+     */
+    template<typename E, typename COMPARATOR_T = compare_to<E>>
+    std::size_t binary_search(const E* arr, std::size_t size, const E& searched) {
+        if (size == 0)
+            return npos();
+        
+        COMPARATOR_T compare_to;
+        std::size_t start   = 0;
+        std::size_t end     = size - 1;
+        while (start <= end)
+        {
+            
+            const std::size_t mid       = (end - start) / 2 + start;
+            const E& mid_value          = arr[mid];
+            const int compare_result    = compare_to(searched, mid_value);
+            
+            if (compare_result == 0)
+            {
+                return mid;
+            }
+            else if (compare_result < 0)
+            {
+                end     = mid - 1;
+            }
+            else
+            {
+                start   = mid + 1;
+            }
+        }
+        
+        return npos();
+    }
+
+namespace internal
+{
+    template<typename T, typename T_COMPARATOR>
+    void quick_sort_impl(T* array, std::size_t left, std::size_t right, T_COMPARATOR& compare) {
+        
+        if (left >= right) return;
+
+        std::size_t i = left;
+        std::size_t j = right;
+        T& pivot = array[(left + right) / 2];
+
+        while (i <= j)
+        {
+            while (compare(array[i], pivot) < 0) ++i;
+            while (compare(array[j], pivot) > 0) --j;
+
+            if (i <= j) {
+                if (i != j) {
+                    T tmp = std::move(array[i]);
+                    array[i] = std::move(array[j]);
+                    array[j] = std::move(tmp);
+                }
+                ++i;
+                
+                if (j == 0) break;
+                --j;
+            }
+        }
+
+        if (left < j)   quick_sort_impl(array, left, j, compare);
+        if (i < right)  quick_sort_impl(array, i, right, compare);
+    }
+} //namespace internal
+
+    /**
+     * Sorts array using quick sort algorithm
+     * 
+     * @tparam T
+     *      Element type
+     * 
+     * @tparam T_COMPARATOR
+     *      Comparator type (default: compare_to<T>)
+     * 
+     * @param array
+     *      Pointer to array
+     * 
+     * @param len
+     *      Number of elements
+     * 
+     * @example
+     *      int arr[] = {9, 2, 7, 1, 5, 3, 8, 4, 6};
+     *      quick_sort(arr, 9);  // arr = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+     * 
+     * @example
+     * // Custom comparator for descending order
+     * struct Descending {
+     *     int operator()(int a, int b) const {
+     *         return b - a;  // Reverse comparison
+     *     }
+     * };
+     *      int arr[] = {1, 2, 3, 4, 5};
+     *      quick_sort<int, Descending>(arr, 5);  // arr = {5, 4, 3, 2, 1}
+     */
+    template<typename T, typename T_COMPARATOR = compare_to<T>>
+    void quick_sort(T* array, std::size_t len) {
+        JSTD_DEBUG_CODE(
+            if (array == nullptr)
+                throw_except<null_pointer_exception>("array must be != null");
+        )
+        if (len <= 1) return;
+        T_COMPARATOR compare;
+        internal::quick_sort_impl(array, 0, len - 1, compare);
     }
 
 }
