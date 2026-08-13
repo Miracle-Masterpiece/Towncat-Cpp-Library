@@ -53,7 +53,7 @@ protected:
     
     typedef typename remove_cv<T>::type Tvalue;
 
-    tca::allocator* _allocator;
+    tca::allocator* const _allocator;
     Tvalue* _data;
  
 public:
@@ -129,100 +129,118 @@ public:
     
     /**
      * Copy constructor.
+     * Creates a copy of the array.
      * 
-     * Creates a deep copy of the source array.
-     * Uses the same allocator as the source.
+     * The allocator of the copied object is used for the newly created array.
      * 
-     * @param a
-     *      The array to copy from.
+     * If the length of the source array is 0, only the allocator is copied.
+     * No memory is allocated for the array, and the data() function returns nullptr.
      * 
      * @throws out_of_memory_error
-     *      if memory allocation fails.
+     *      If there is insufficient memory.
      * 
      * @throws
-     *      Any exception thrown by T's copy constructor.
+     *      Any exception thrown by the element's copy constructor.
      * 
-     * @note
-     *      If the source array is empty, the copy is also empty.
-     *      The allocator is copied from the source.
+     * @example 
+     *      tc::array<int> ints = {1, 2, 3, 4};
+     *      tc::array<int> copied = ints;
+     *      
+     *      for (int& i : copied) {
+     *          std::cout << i << "\n";
+     *      }
      * 
-     * @example
-     *      array<int> original = {1, 2, 3};
-     *      array<int> copy(original);  // deep copy
-     *      copy[0] = 100;  // original[0] remains 1
+     *      assert(copied.length == ints.length);
+     *      assert(copied.get_allocator() == ints.get_allocator());
+     * 
+     * @example 
+     *      tc::array<int> ints;
+     *      tc::array<int> copied = ints;
+     *      assert(copied.data() == nullptr);
+     *      assert(copied.length == 0);
+     *      assert(copied.get_allocator() == ints.get_allocator());
      */
     array(const array<T>& a);
-    
+
     /**
      * Move constructor.
      * 
-     * Transfers ownership of the source array's data.
-     * The source is left in a valid empty state.
+     * Transfers the allocated memory, size, and allocator to the current object.
      * 
-     * @param a
-     *      The array to move from.
-     * 
-     * @note
-     *      No memory allocation occurs during move construction.
-     *      After the move, a.length == 0 and a.data() == nullptr.
+     * After the move, 'a' is guaranteed to retain its allocator.
      * 
      * @example
-     *      array<int> source = {1, 2, 3};
-     *      array<int> dest(std::move(source));  // move
-     *      // source is now empty
+     *      tc::array<int> ints = {0, 1, 2, 3, 4};
+     *      tc::array<int> moved = std::move(ints);
+     *      
+     *      assert(moved.length == 5);
+     *      assert(moved.get_allocator() == ints.get_allocator());
      */
     array(array<T>&& a);
     
     /**
-     * Copy assignment operator.
+     * Copies elements from object 'a' into this object.
      * 
-     * Replaces the contents of this array with a deep copy of the source.
+     * Provides the strong exception guarantee.
+     * If an exception is thrown during memory allocation or element copying,
+     * the current object remains unchanged.
      * 
-     * @param a
-     *      The array to copy from.
+     * The allocator of the current object is not modified during copying.
+     * The allocator of the current object is used to create the copy.
      * 
-     * @return
-     *      Reference to this array.
+     * After a successful copy, the old contents of the current object
+     * are deallocated and replaced with a copy of the contents of 'a'.
+     * 
+     * If array 'a' has a length of 0,
+     * then after copying this object will have a length of 0, and data() will return nullptr.
      * 
      * @throws out_of_memory_error
-     *      if memory allocation fails.
+     *      If there is insufficient memory.
      * 
      * @throws
-     *      Any exception thrown by T's copy constructor.
-     * 
-     * @note
-     *      Self-assignment is handled safely.
-     *      Existing data is destroyed before assigning new data.
-     *      The allocator is NOT changed during assignment.
+     *      Any exception thrown by the element's copy constructor.
      * 
      * @example
-     *      array<int> arr1 = {1, 2, 3};
-     *      array<int> arr2;
-     *      arr2 = arr1;  // copy assignment
+     *      tc::array<int>  ints = {0, 1, 2, 3, 4};
+     *      tc::array<int> copied;
+     *      copied = ints;
+     * 
+     *      for (int& i : copied) {
+     *          std::cout << i << "\n";
+     *      }
+     * 
+     *      assert(copied.length == ints.length);
      */
     array<T>& operator=(const array<T>& a);
     
     /**
-     * Move assignment operator.
+     * Moves data from object 'a' into this object.
+     * The move operation provides the strong exception guarantee.
+     * If an exception is thrown during the move, both objects remain unchanged.
      * 
-     * Transfers ownership of the source array's data.
-     * The source is left in a valid empty state.
+     * The allocator of the current object is not modified during the move.
      * 
-     * @param a
-     *      The array to move from.
+     * If the allocator of the current object and that of 'a' are equal,
+     * the memory is transferred to the current object without copying.
      * 
-     * @return
-     *      Reference to this array.
+     * If the allocators are not equal, a copy is performed instead.
      * 
-     * @note
-     *      No memory allocation occurs during move assignment.
-     *      Self-assignment is handled safely.
-     *      The allocator is swapped with the source.
+     * @throws out_of_memory_error
+     *      If there is insufficient memory.
+     * 
+     * @throws
+     *      Any exception thrown by the element's copy constructor.
      * 
      * @example
-     *      array<int> arr1 = {1, 2, 3};
-     *      array<int> arr2 = {4, 5, 6};
-     *      arr1 = std::move(arr2);  // arr1 now has {4,5,6}, arr2 is empty
+     *      tc::array<int> ints = {0, 1, 2, 3, 4};
+     *      
+     *      tc::array<int> moved;
+     *      tc::allocator* alloc = moved.get_allocator(); 
+     * 
+     *      moved = std::move(ints);
+     * 
+     *      assert(moved.length == 5);
+     *      assert(moved.get_allocator() == alloc);
      */
     array<T>& operator=(array<T>&& a);
 
@@ -413,7 +431,6 @@ public:
 
     template<typename T>
     array<T>::array(std::size_t sz, tca::allocator* allocator) : array<T>(allocator) {
-    
         if (sz > 0)
         {
             _data  = allocate_and_initialize_n<Tvalue>(sz, allocator);
@@ -424,10 +441,9 @@ public:
     }
 
     template<typename T>
-    array<T>::array(const std::initializer_list<T>& init_list, tca::allocator* allocator) {
+    array<T>::array(const std::initializer_list<T>& init_list, tca::allocator* allocator) : _allocator(allocator) {
         JSTD_DEBUG_CODE(check_non_null(allocator));
         
-        _allocator       = allocator;
         Tvalue* data = nullptr;
         std::size_t sz = init_list.size();
 
@@ -445,7 +461,7 @@ public:
     template<typename T>
     array<T>::array(const array<T>& a) : array<T>(a._allocator) {
     
-        Tvalue* data         = nullptr;
+        Tvalue* data    = nullptr;
         std::size_t len = a.length;
 
         if (len > 0)
@@ -480,10 +496,7 @@ public:
                 throw_except<out_of_memory_error>("Out of memory");
         }
         
-        if (_data)
-        {
-            deallocate_and_destroy_n(_data, length, _allocator);
-        }
+        deallocate_and_destroy_n(_data, length, _allocator);
 
         _data   = new_data;
         length  = new_len;
@@ -493,11 +506,16 @@ public:
     
     template<typename T>
     array<T>& array<T>::operator= (array<T>&& a) {
-        if (&a != this)
+        if (&a == this)
+            return *this;
+        if (get_allocator() == a.get_allocator())
         {
-            _allocator = a._allocator;
             std::swap(_data,        a._data);
             std::swap(length,       a.length);
+        }
+        else
+        {
+            *this = a;
         }
         return *this;
     }

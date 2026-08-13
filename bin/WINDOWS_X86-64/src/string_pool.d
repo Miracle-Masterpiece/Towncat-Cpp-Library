@@ -12,14 +12,15 @@ bin/WINDOWS_X86-64/src/string_pool.o: src/string_pool.cpp \
  include/cpp/lang/traits/cv_traits.hpp \
  include/cpp/lang/utils/comparator.hpp include/cpp/lang/common.hpp \
  include/cpp/lang/utils/objects.hpp include/cpp/lang/utils/hash.hpp \
- include/cpp/lang/traits/pointer_traits.hpp \
- include/cpp/lang/utils/map_entry.hpp include/cpp/lang/utils/pair.hpp \
+ include/cpp/lang/traits/pointer_traits.hpp include/cpp/lang/numbers.hpp \
+ include/cpp/lang/math/math.hpp include/cpp/lang/utils/map_entry.hpp \
+ include/cpp/lang/traits/SFINAE.hpp \
+ include/cpp/lang/traits/relatoship_traits.hpp \
+ include/cpp/lang/utils/pair.hpp \
  include/cpp/lang/traits/type_properties.hpp \
  include/cpp/lang/utils/shared_ptr.hpp \
  include/internal/smart_ptrs/shared_ptr_t.hpp \
  include/allocators/Helpers.hpp \
- include/cpp/lang/traits/relatoship_traits.hpp \
- include/cpp/lang/traits/SFINAE.hpp \
  include/internal/smart_ptrs/shared_ptr_array_specialization.hpp \
  include/cpp/lang/cstr.hpp include/cpp/lang/string.hpp \
- include/cpp/lang/math.hpp include/cpp/lang/math/math.hpp
+ include/cpp/lang/math.hpp

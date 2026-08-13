@@ -102,7 +102,7 @@ public:
      *      ptr_iterator<int> it(arr, arr + 3);
      */
     ptr_iterator(E* ptr, E* end) : ptr(ptr)
-#ifdef JSTD_DEBUG_CODE
+#ifndef NDEBUG
     , end(end)
 #endif
     {}
@@ -250,7 +250,7 @@ class array_list {
     /**
      *  Allocator used for memory management.
      */
-    tca::allocator* m_allocator;
+    tca::allocator* const m_allocator;
     
     /**
      * Pointer to element storage.
@@ -359,100 +359,114 @@ public:
     
     /**
      * Copy constructor.
+     * Creates a copy of this array_list.
      * 
-     * Creates a deep copy of the source list. The allocator is copied from
-     * the source list.
-     * 
-     * @param list
-     *      The list to copy from.
+     * When creating an array_list, the allocator of the copied object is used and saved.
      * 
      * @throws out_of_memory_error
-     *      If memory allocation fails.
+     * If there is not enough memory.
      * 
      * @throws
-     *      Any exception thrown by E's copy constructor.
+     * Any exception thrown by the element's copy constructor.
      * 
-     * @note
-     *      The new list has the same size and capacity as the source.
-     *      All elements are copied using copy construction.
+     * @example 
+     *      tc::array_list<int> ints = {1, 2, 3, 4};
+     *      tc::array_list<int> copied = ints;
+     *      
+     *      for (int& i : copied) {
+     *          std::cout << i << "\n";
+     *      }
      * 
-     * @example
-     *      array_list<int> original = {1, 2, 3};
-     *      array_list<int> copy(original);  // deep copy
-     *      copy[0] = 100;  // original[0] remains 1
+     *      assert(copied.size() == ints.size());
+     *      assert(copied.get_allocator() == ints.get_allocator());
+     * 
+     * @example 
+     *      tc::array_list<int> ints;
+     *      tc::array_list<int> copied = ints;
+     *      assert(copied.size() == 0);
+     *      assert(copied.get_allocator() == ints.get_allocator());
      */
     array_list(const array_list<E>& list);
     
     /**
      * Move constructor.
      * 
-     * Transfers ownership of the source list's data. The source is left in
-     * a valid empty state.
+     * Passes the allocated memory, size, capacity and allocator to the current array_list.
      * 
-     * @param list
-     *      The list to move from.
-     * 
-     * @note
-     *      No memory allocation occurs during move construction.
-     *      After the move, list.size() == 0 and list.data() == nullptr.
+     * After moving 'list' is guaranteed to retain its allocator
+     * and will remain in a valid but unspecified state.
      * 
      * @example
-     *      array_list<int> source = {1, 2, 3};
-     *      array_list<int> dest(std::move(source));  // move
-     *      // source is now empty
+     *      tc::array_list<int> ints = {0, 1, 2, 3, 4};
+     *      tc::array_list<int> moved = std::move(its);
+     * 
+     *      assert(moved.size() == 5);
+     *      assert(moved.get_allocator() == ints.get_allocator());
      */
     array_list(array_list<E>&& list);
-    
+
     /**
-     * Copy assignment operator.
+     * Copies the elements from 'list' to this array_list.
      * 
-     * Replaces the contents of this list with a deep copy of the source list.
+     * Strong exceptions guarantee maintained.
+     * If an exception occurs while allocating memory or copying an element, 
+     * the current object remains unchanged.
      * 
-     * @param list
-     *      The list to copy from.
+     * When copying, the allocator of the current object does not change.
+     * To create a copy, the allocator of the current object is used.
      * 
-     * @return
-     *      Reference to this list.
+     * After successful copying, the old contents of the current object
+     * is freed and replaced with a copy of the contents of 'list'.
      * 
      * @throws out_of_memory_error
-     *      If memory allocation fails.
+     *      If there is not enough memory
      * 
      * @throws
-     *      Any exception thrown by E's copy constructor.
-     * 
-     * @note
-     *      Self-assignment is handled safely.
-     *      Existing data is destroyed before assigning new data.
-     *      The allocator is NOT changed during assignment.
+     *      Any exception thrown by the element's copy constructor.
      * 
      * @example
-     *      array_list<int> list1 = {1, 2, 3};
-     *      array_list<int> list2;
-     *      list2 = list1;  // copy assignment
+     *      tc::array_list<int> ints = {0, 1, 2, 3, 4};
+     *      tc::array_list<ints> copied;
+     *      copied = ints;
+     * 
+     *      for (int& i : copied) {
+     *          std::cout << i << "\n";
+     *      }
+     * 
+     * assert(compied.size() == ints.size());
      */
     array_list<E>& operator=(const array_list<E>& list);
     
     /**
-     * Move assignment operator.
+     * Moves data from the 'list' object to this array_list.
+     * There is a strong exceptions guarantee when moving.
+     * If an exception occurs while moving, both objects remain unchanged.
      * 
-     * Transfers ownership of the source list's data. The source is left in
-     * a valid empty state.
+     * The allocator of the current object does not change when moved.
      * 
-     * @param list
-     *      The list to move from.
+     * If the current object's allocator and 'a' are the same, 
+     * memory is transferred to the current object without copying.
      * 
-     * @return
-     *      Reference to this list.
+     * If the allocators do not match, a copy is performed.
      * 
-     * @note
-     *      No memory allocation occurs during move assignment.
-     *      Self-assignment is handled safely.
-     *      The allocator is swapped with the source.
+     * After moving, 'list' remains in a valid but unspecified state.
+     * 
+     * @throws out_of_memory_error
+     *      If there is not enough memory.
+     * 
+     * @throws 
+     *      Any exception thrown by the element's copy constructor.
      * 
      * @example
-     *      array_list<int> list1 = {1, 2, 3};
-     *      array_list<int> list2 = {4, 5, 6};
-     *      list1 = std::move(list2);  // list1 now has {4,5,6}, list2 is empty
+     *      tc::array_list<int> ints = {0, 1, 2, 3, 4};
+     *      
+     *      tc::array_list<int> moved;
+     *      tc::allocator* alloc = moved.get_allocator(); 
+     * 
+     *      moved = std::move(ints);
+     * 
+     *      assert(moved.size() == 5);
+     *      assert(moved.get_allocator() == alloc);
      */
     array_list<E>& operator=(array_list<E>&& list);
     
@@ -608,9 +622,6 @@ public:
      * @param idx
      *      Position of the element to remove.
      * 
-     * @param ret
-     *      Pointer to store the removed value (optional, can be nullptr).
-     * 
      * @return
      *      true on success.
      * 
@@ -623,10 +634,9 @@ public:
      * 
      * @example
      *      array_list<int> list = {1, 2, 3, 4, 5};
-     *      int old_value;
-     *      list.remove_at(2, &old_value);  // old_value = 3, list = {1, 2, 4, 5}
+     *      list.remove_at(2);  // old_value = 3, list = {1, 2, 4, 5}
      */
-    bool remove_at(std::size_t idx, Evalue* ret = nullptr);
+    bool remove_at(std::size_t idx);
     
     /**
      * Removes at position by swapping with the last element.
@@ -636,8 +646,6 @@ public:
      * 
      * @param idx
      *      Position of the element to remove.
-     * @param ret
-     *      Pointer to store the removed value (optional, can be nullptr).
      * 
      * @return
      *      true on success.
@@ -651,10 +659,9 @@ public:
      * 
      * @example
      *      array_list<int> list = {1, 2, 3, 4, 5};
-     *      int old_value;
-     *      list.fast_remove_at(1, &old_value);  // old_value = 2, list = {1, 5, 3, 4}
+     *      list.fast_remove_at(1);  // list = {1, 5, 3, 4}
      */
-    bool fast_remove_at(std::size_t idx, Evalue* ret = nullptr);
+    bool fast_remove_at(std::size_t idx);
     
     /**
      * Sets the element at the specified position.
@@ -668,9 +675,6 @@ public:
      * @param e
      *      New element value.
      * 
-     * @param ret_old_value
-     *      Pointer to store the old value (optional, can be nullptr).
-     * 
      * @return
      *      true on success.
      * 
@@ -682,11 +686,10 @@ public:
      * 
      * @example
      *      array_list<int> list = {1, 2, 3};
-     *      int old;
-     *      list.set(1, 99, &old);  // old = 2, list = {1, 99, 3}
+     *      list.set(1, 99);  // list = {1, 99, 3}
      */
     template<typename _E>
-    bool set(std::size_t idx, _E&& e, Evalue* ret_old_value = nullptr);
+    bool set(std::size_t idx, _E&& e);
     
     /**
      * Accesses element at index (const).
@@ -927,6 +930,36 @@ public:
         return list::ptr_iterator<E>(m_data + m_size, m_data + m_size);
     }
 
+    /**
+    * Index access operator.
+    *
+    * Returns a reference to the element at the given index.
+    *
+    * @param idx
+    *       The element's index.
+    *
+    * @throws index_out_of_bound_exception
+    *       If idx >= size()
+    */
+    E& operator[] (std::size_t idx) {
+        return at(idx);
+    }
+    
+    /**
+    * Index access operator.
+    *
+    * Returns a constant reference to the element at the given index.
+    *
+    * @param idx
+    *       The element index.
+    *
+    * @throws index_out_of_bound_exception
+    *       If idx >= size()
+    */
+    const E& operator[] (std::size_t idx) const {
+        return at(idx);
+    }
+
 };
 
     template<typename E>
@@ -962,16 +995,19 @@ public:
     }
 
     template<typename E>
-    array_list<E>::array_list(const array_list<E>& list) : array_list<E>() {
-        m_allocator = list.m_allocator;
+    array_list<E>::array_list(const array_list<E>& list) : array_list<E>(list.get_allocator()) {
         
-        Evalue* data = allocate_and_copy_n<Evalue>(list.data(), list.size(), m_allocator);
-        if (!data)
-            throw_except<out_of_memory_error>("Out of memory");
+        if (list.size() > 0)
+        {
+            Evalue* data = allocate_and_copy_n<Evalue>(list.data(), list.size(), m_allocator);
+            if (!data)
+                throw_except<out_of_memory_error>("Out of memory");
+            
+            m_data      = data;
+            m_capacity  = list.size();
+            m_size      = list.size();
+        }
 
-        m_data      = data;
-        m_capacity  = list.size();
-        m_size      = list.size();
     }
     
     template<typename E>
@@ -1003,23 +1039,29 @@ public:
         return *this;
     }
     
+
     template<typename E>
     array_list<E>& array_list<E>::operator= (array_list<E>&& list) {
-        if (&list != this) {
-            m_allocator = list.m_allocator;
+        if (&list == this)
+            return *this;
+        if (get_allocator() == list.get_allocator())
+        {
             std::swap(m_data,       list.m_data);
             std::swap(m_capacity,   list.m_capacity);
             std::swap(m_size,       list.m_size);
+        }
+        else
+        {
+            *this = list;
         }
         return *this;
     }
 
     template<typename E>
     template<typename _E>
-    bool array_list<E>::set(std::size_t idx, _E&& e, Evalue* ret_old_value) {
-        check_index(idx, m_size);
-        if (ret_old_value != nullptr)
-            *ret_old_value = std::move(m_data[idx]);
+    bool array_list<E>::set(std::size_t idx, _E&& e) {
+        JSTD_DEBUG_CODE(check_index(idx, m_size));
+        static_assert(!is_const<E>::value, "Cannot modified const type");
         m_data[idx] = std::forward<_E>(e);
         return true;
     }
@@ -1050,7 +1092,7 @@ public:
 
     template<typename E>
     E& array_list<E>::at(std::size_t idx) const {
-        check_index(idx, m_size);
+        JSTD_DEBUG_CODE(check_index(idx, m_size));
         return m_data[idx];
     }
     
@@ -1083,20 +1125,20 @@ public:
         std::size_t finded_index = index_of(e);
         if (finded_index == npos())
             return false;
-        return remove_at(finded_index, nullptr);
+        return remove_at(finded_index);
     }
     
     template<typename E>
-    bool array_list<E>::remove_at(std::size_t idx, Evalue* ret) {
-        check_index(idx, m_size);
+    bool array_list<E>::remove_at(std::size_t idx) {
+        JSTD_DEBUG_CODE(check_index(idx, m_size));
 
-        if (ret != nullptr)
-            *ret = std::move(m_data[idx]);
-
-        m_data[idx].~E();
+        m_data[idx].~Evalue();
 
         for (std::size_t i = idx; i < m_size - 1; ++i)
-            new(m_data + i) E(std::move(m_data[i + 1]));
+        {
+            new(&m_data[i]) Evalue(std::move(m_data[i + 1]));
+            m_data[i + 1].~Evalue();
+        }
 
         --m_size;
         
@@ -1104,17 +1146,21 @@ public:
     }
     
     template<typename E>
-    bool array_list<E>::fast_remove_at(std::size_t idx, Evalue* ret) {
-        check_index(idx, m_size);
-        if (idx == m_size - 1)
-            return remove_at(idx, ret);
-        
-        std::swap(m_data[idx], m_data[m_size - 1]);
-        
-        if (ret != nullptr)
-            *ret = std::move(m_data[m_size - 1]);
-        
-        m_data[m_size - 1].~E();
+    bool array_list<E>::fast_remove_at(std::size_t idx) {
+        JSTD_DEBUG_CODE(check_index(idx, m_size));
+    
+        // Call destructor for removal element
+        m_data[idx].~Evalue();
+    
+        if (idx != m_size - 1)
+        {
+            // Move last element to current
+            new(&m_data[idx]) Evalue(std::move(m_data[m_size - 1]));
+            
+            // Destroy last element
+            m_data[m_size - 1].~Evalue();
+        }
+
         --m_size;
         
         return true;
@@ -1123,25 +1169,41 @@ public:
     template<typename E>
     template<typename _E>
     void array_list<E>::add(_E&& e) {
-        if (m_size + 1 > m_capacity) 
+        if (m_size >= m_capacity) 
             grow();
-        new (m_data + m_size) E(std::forward<_E>(e));
+        new (&m_data[m_size]) Evalue(std::forward<_E>(e));
         ++m_size;
     }
 
     template<typename E>
     template<typename _E>
     void array_list<E>::add(std::size_t idx, _E&& e) {
-        check_index(idx, m_size + 1);
+        JSTD_DEBUG_CODE(check_index(idx, m_size + 1););
         
-        if (m_size + 1 > m_capacity) 
+        if (m_size >= m_capacity)
+        {
             grow();
-        
+        }
+
         for (std::size_t i = m_size; i > idx; --i)
-            new(m_data + i) E(std::move(m_data[i - 1]));
-        
-        new(m_data + idx) E(std::forward<_E>(e));
-        
+        {
+            new (&m_data[i]) Evalue(std::move(m_data[i - 1]));
+            m_data[i - 1].~Evalue();
+        }
+
+        try {
+            new (&m_data[idx]) Evalue(std::forward<_E>(e));
+        } catch (...)
+        {
+            //Rollback
+            for (std::size_t i = idx; i < m_size; ++i)
+            {
+                new (&m_data[i]) Evalue(std::move(m_data[i + 1]));
+                m_data[i + 1].~Evalue();
+            }
+            throw;
+        }
+
         ++m_size;
     }
 

@@ -15,16 +15,31 @@ namespace tc
 
 template<typename TKEY, typename TVALUE, typename THASHER = hash_for<TKEY>, typename TEQUALER = equal_to<TKEY>>
 class hash_map {
-private:
+
     /**
      * 
      */
-    using entry = map::entry<TKEY, TVALUE>;
+    typedef typename remove_cv<TKEY>::type Kvalue;
     
     /**
      * 
      */
-    tca::allocator* m_allocator;
+    typedef typename remove_cv<TVALUE>::type Vvalue;
+
+public:
+    /**
+    * The node type used to store hash_map<T> elements.
+    *
+    * The type is declared publicly so it can be used.
+    * when creating specialized allocators, such as pool_allocator,
+    * customized allocation of hash_map<T> nodes.
+    */
+    typedef map::entry<TKEY, TVALUE> entry;
+private:
+    /**
+     * 
+     */
+    tca::allocator* const m_allocator;
 
     /**
      * 
@@ -112,6 +127,12 @@ public:
      */
     template<typename TKEY_, typename TVALUE_>
     bool put(TKEY_&& key, TVALUE_&& value);
+    
+    /**
+     * 
+     */
+    template<typename TKEY_, typename TVALUE_>
+    bool insert(TKEY_&& key, TVALUE_&& value);
 
     /**
      * @throws no_such_element_exception
@@ -343,7 +364,7 @@ public:
         try {
             for (const pair<TKEY, TVALUE>& p : init_list)
             {
-                put(p.first(), p.second());
+                insert(p.first(), p.second());
             }
         } catch (...) {
             clear();
@@ -353,11 +374,18 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     hash_map<TKEY, TVALUE, THASHER, TEQUALER>::hash_map(const hash_map<TKEY, TVALUE, THASHER, TEQUALER>& map) :
-        hash_map() {
-        hash_map<TKEY, TVALUE, THASHER, TEQUALER> tmp(map.get_allocator());
-        tmp.put_all(map);
-        (*this) = std::move(tmp);
-    }
+        hash_map(map.get_allocator()) {
+        
+        try {
+            for (const entry& e : map)
+            {
+                insert(e.get_key(), e.get_value());
+            }
+        } catch (...) {
+            clear();
+            throw;
+        }
+    } 
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     hash_map<TKEY, TVALUE, THASHER, TEQUALER>::hash_map(hash_map<TKEY, TVALUE, THASHER, TEQUALER>&& map) :
@@ -365,29 +393,36 @@ public:
         m_buckets(std::move(map.m_buckets)),
         m_size(map.m_size),
         m_load_factor(map.m_load_factor) {
-        map.m_allocator = nullptr;
         map.m_size      = 0;
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     hash_map<TKEY, TVALUE, THASHER, TEQUALER>& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::operator= (const hash_map<TKEY, TVALUE, THASHER, TEQUALER>& map) {
-        if (&map != this) {
+        if (&map != this)
+        {
             hash_map<TKEY, TVALUE, THASHER, TEQUALER> tmp(m_allocator);
             tmp.put_all(map);
-            (*this) = std::move(tmp);
+            *this = std::move(tmp);
         }
         return *this;
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     hash_map<TKEY, TVALUE, THASHER, TEQUALER>& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::operator= (hash_map<TKEY, TVALUE, THASHER, TEQUALER>&& map) {
-        if (&map != this)
+        if (&map == this)
+            return *this;
+
+        if (get_allocator() == map.get_allocator())
         {
-            std::swap(m_allocator,   map.m_allocator);
             std::swap(m_buckets,     map.m_buckets);
             std::swap(m_size,        map.m_size);
             std::swap(m_load_factor, map.m_load_factor);
         }
+        else
+        {
+            *this = map;
+        }
+        
         return *this;
     }
 
@@ -464,6 +499,7 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename TKEY_, typename TVALUE_>
     bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::put(TKEY_&& key, TVALUE_&& value) {
+        
         ensure_capacity();
 
         entry* finded   = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
@@ -482,6 +518,40 @@ public:
             ++m_size;
             return true;
         }
+    }
+    
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    template<typename TKEY_, typename TVALUE_>
+    bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::insert(TKEY_&& key, TVALUE_&& value) {
+        ensure_capacity();
+
+        entry* finded   = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
+        if (!finded)
+        {
+            entry* e = alloc_entry(std::forward<TKEY_>(key), std::forward<TVALUE_>(value), internal::map::hash_key<THASHER>(key));
+            
+            std::size_t idx = internal::map::bucket_index<THASHER>(key, m_buckets);
+            internal::map::append_entry(idx, e, m_buckets);
+            
+            ++m_size;
+            return true;
+        }
+        
+        return false;
+    }
+    
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    template<typename TVALUE_>
+    bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::replace(const TKEY& key, TVALUE_&& value) {
+        ensure_capacity();
+
+        entry* finded   = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
+        if (finded)
+        {
+            finded->set_value(std::forward<TVALUE_>(value));
+        }
+        
+        return false;
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -509,14 +579,6 @@ public:
             }
         }
         return false;
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TVALUE_>
-    bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::replace(const TKEY& key, TVALUE_&& value) {
-        if (is_empty())
-            return false;
-        return internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>

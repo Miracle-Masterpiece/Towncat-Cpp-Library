@@ -1,6 +1,8 @@
 #ifndef C151DFEA_DFA0_44BB_9C18_756422D43DDA
 #define C151DFEA_DFA0_44BB_9C18_756422D43DDA
 
+#include <cpp/lang/traits/SFINAE.hpp>
+#include <cpp/lang/traits/relatoship_traits.hpp>
 #include <cpp/lang/utils/hash.hpp>
 #include <cstddef>
 #include <utility>
@@ -57,17 +59,12 @@ public:
     /**
      * 
      */
-    TKEY& get_key();
+    const TKEY& get_key() const;
 
     /**
      * 
      */
     TVAL& get_value();
-
-    /**
-     * 
-     */
-    const TKEY& get_key() const;
 
     /**
      * 
@@ -113,11 +110,6 @@ namespace map
     template<typename TKEY, typename TVAL>
     void entry<TKEY, TVAL>::set_next(entry<TKEY, TVAL>* e) {
         m_next = e;
-    }
-
-    template<typename TKEY, typename TVAL>
-    TKEY& entry<TKEY, TVAL>::get_key() {
-        return m_key;
     }
     
     template<typename TKEY, typename TVAL>

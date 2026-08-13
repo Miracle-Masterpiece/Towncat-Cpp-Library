@@ -10,5 +10,5 @@ bin/WINDOWS_X86-64/src/img_utils.o: src/img_utils.cpp \
  include/cpp/lang/traits/cv_traits.hpp \
  include/cpp/lang/utils/comparator.hpp include/cpp/lang/common.hpp \
  include/cpp/lang/utils/objects.hpp include/cpp/lang/utils/hash.hpp \
- include/cpp/lang/traits/pointer_traits.hpp include/cpp/lang/math.hpp \
- include/cpp/lang/math/math.hpp
+ include/cpp/lang/traits/pointer_traits.hpp include/cpp/lang/numbers.hpp \
+ include/cpp/lang/math/math.hpp include/cpp/lang/math.hpp

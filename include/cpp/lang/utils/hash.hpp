@@ -3,6 +3,8 @@
 
 #include <cpp/lang/traits/primitive_traits.hpp>
 #include <cpp/lang/traits/pointer_traits.hpp>
+#include <cpp/lang/traits/cv_traits.hpp>
+#include <cpp/lang/numbers.hpp>
 #include <cstdint>
 
 namespace tc
@@ -12,102 +14,75 @@ namespace internal
 {
 
 /**
- * Primary template for a disabled hash functor.
- *
- * This is a no-op base template. When the second template parameter is false,
- * this template provides an empty, default-constructible type.
- *
- * @tparam T
- *      The type for which hashing is being considered.
- *
- * @tparam bool
- *      A boolean flag indicating whether the hash should be disabled.
- */
-template<typename T, bool>
+* Basic template for disabling hashing for unsupported types.
+*
+* By default, all constructors and destructors are removed,
+* to prevent creation of a hasher object.
+*/
+template<typename T, bool = true>
 struct disabled_hash {
+    disabled_hash()  = delete;
+    ~disabled_hash() = delete;
+};
+
+/**
+ * Specialization for primitive types and types
+ * whose hash can be calculated without user-defined specializations.
+ */
+template<typename T>
+struct disabled_hash<T, false> {
 
 };
 
 /**
- * Partial specialization of disabled_hash for types that are NOT hashable.
- *
- * When the flag is true, this specialization deletes both the constructor
- * and destructor, effectively disabling the hash functor for non-primitive
- * and non-pointer types.
- *
- * This prevents accidental usage of the default hash implementation for
- * types that do not support it.
- *
- * @tparam T
- *      The type for which hashing is disabled.
- *
- * @note
- *      Deleting the destructor ensures that the type cannot be instantiated
- *      even as a temporary or in any context that requires construction.
- *      This provides a compile-time error when the user attempts to use
- *      hash_for with unsupported types.
+ * Obtaining a hash for types castable to std::size_t types
  */
 template<typename T>
-struct disabled_hash<T, true> {
-    disabled_hash()     = delete;
-    ~disabled_hash()    = delete;
+std::size_t get_hash(T v) {
+    return static_cast<std::size_t>(v);
+}
+
+/**
+ * Get a hash for a float
+ */
+template<>
+inline std::size_t get_hash<float>(float v) {
+    return static_cast<std::size_t>(num::float_to_uint_bits(v));
+}
+
+/**
+ * Get a hash for a double
+ */
+template<>
+inline std::size_t get_hash<double>(double v) {
+    return static_cast<std::size_t>(num::double_to_uint_bits(v));
+}
+
+/**
+ * Getting a hash for pointers
+ */
+template<typename T>
+std::size_t get_hash(T* v) {
+    return reinterpret_cast<std::size_t>(v);
+}
+
+template<typename T>
+struct base_hash_for : disabled_hash<T, (!is_pointer<T>::value && !is_primitive<T>::value)> {
+    std::size_t operator() (const T& t) const {
+        return get_hash(t);
+    }
 };
 
 } //namespace internal
 
-/**
- * Default hash functor for the library.
- *
- * Provides a default hash implementation for primitive types and pointers
- * by directly casting the key value to std::size_t.
- *
- * For non-primitive, non-pointer types, this template inherits from
- * internal::disabled_hash, which deletes the constructor and destructor,
- * causing a compile-time error upon instantiation.
- *
- * @tparam K
- *      The key type for which the hash is computed.
- *
- * @param key
- *      The key to be hashed.
- *
- * @return
- *      A hash code as std::size_t.
- *
- * @note
- *      This hash functor is enabled only for:
- *      - Primitive types (as defined by is_primitive<K>)
- *      - Pointer types (K*)
- *
- * @warning
- *      Attempting to use hash_for with a non-primitive, non-pointer type
- *      will result in a compile-time error because the type is not
- *      constructible (constructor and destructor are deleted).
- *
- * @example
- *      // Works for primitive types:
- *      hash_for<int> h1;
- *      auto hash1 = h1(42);  // OK
- *
- *      // Works for pointers:
- *      hash_for<int*> h2;
- *      int value = 10;
- *      auto hash2 = h2(&value);  // OK
- *
- *      // Compile-time error for custom types:
- *      struct MyType {};
- *      hash_for<MyType> h3;  // ERROR: deleted constructor
- *
- * @see
- *      internal::disabled_hash
- *      is_primitive
- *      is_pointer
- */
-template<typename K>
-struct hash_for : internal::disabled_hash<K, (!is_primitive<K>::value && !is_pointer<K>::value) > {
-    std::size_t operator() (const K& key) const {
-        return static_cast<std::size_t>(key);
-    }
+template<typename T>
+struct hash_for : internal:: base_hash_for<T> {
+    
+};
+
+template<typename T>
+struct hash_for<const T> : hash_for<T> {
+
 };
 
 /**

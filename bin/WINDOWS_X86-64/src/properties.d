@@ -11,9 +11,11 @@ bin/WINDOWS_X86-64/src/properties.o: src/properties.cpp \
  include/cpp/lang/traits/cv_traits.hpp \
  include/cpp/lang/utils/comparator.hpp include/cpp/lang/common.hpp \
  include/cpp/lang/utils/objects.hpp include/cpp/lang/utils/hash.hpp \
- include/cpp/lang/traits/pointer_traits.hpp \
- include/cpp/lang/utils/map_entry.hpp include/cpp/lang/utils/pair.hpp \
+ include/cpp/lang/traits/pointer_traits.hpp include/cpp/lang/numbers.hpp \
+ include/cpp/lang/math/math.hpp include/cpp/lang/utils/map_entry.hpp \
+ include/cpp/lang/traits/SFINAE.hpp \
+ include/cpp/lang/traits/relatoship_traits.hpp \
+ include/cpp/lang/utils/pair.hpp \
  include/cpp/lang/traits/type_properties.hpp include/cpp/lang/string.hpp \
- include/cpp/lang/math.hpp include/cpp/lang/math/math.hpp \
- include/cpp/lang/io/ostream.hpp include/cpp/lang/io/istream.hpp \
- include/cpp/lang/utils/date.hpp
+ include/cpp/lang/math.hpp include/cpp/lang/io/ostream.hpp \
+ include/cpp/lang/io/istream.hpp include/cpp/lang/utils/date.hpp

@@ -11,7 +11,7 @@ bin/WINDOWS_X86-64/src/file_channel.o: src/file_channel.cpp \
  include/cpp/lang/traits/cv_traits.hpp \
  include/cpp/lang/utils/comparator.hpp include/cpp/lang/common.hpp \
  include/cpp/lang/utils/objects.hpp include/cpp/lang/utils/hash.hpp \
- include/cpp/lang/traits/pointer_traits.hpp \
- include/cpp/lang/io/utility.hpp include/cpp/lang/io/constants.hpp \
- include/cpp/lang/string.hpp include/cpp/lang/math.hpp \
- include/cpp/lang/math/math.hpp include/cpp/lang/io/channel.hpp
+ include/cpp/lang/traits/pointer_traits.hpp include/cpp/lang/numbers.hpp \
+ include/cpp/lang/math/math.hpp include/cpp/lang/io/utility.hpp \
+ include/cpp/lang/io/constants.hpp include/cpp/lang/string.hpp \
+ include/cpp/lang/math.hpp include/cpp/lang/io/channel.hpp
