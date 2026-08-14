@@ -43,8 +43,8 @@ namespace tc
     }
 
     void scp::print_log() const {
-        for (const map::entry<cstr, shared_ptr<const string>>& e : m_map)
-            system::tsprintf("[%s]\n", e.get_value()->cstr());
+        for (const pair<cstr, shared_ptr<const string>>& e : m_map)
+            system::tsprintf("[%s]\n", e.second()->cstr());
     }
 
     bool scp::intern(const char* str) {

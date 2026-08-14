@@ -17,7 +17,7 @@ namespace tc
     }
     
     template<typename TCHAR>
-    tstring<TCHAR>::tstring(const tstring<TCHAR>& s, tca::allocator* allocator) : tstring<TCHAR>(s.cstr(), allocator) {
+    tstring<TCHAR>::tstring(const tstring<TCHAR>& s) : tstring<TCHAR>(s.cstr(), s.get_allocator()) {
         
     }
     
@@ -81,26 +81,38 @@ namespace tc
     tstring<TCHAR>& tstring<TCHAR>::operator=(tstring<TCHAR>&& s) {
         if (this == &s) return *this;
 
-        if (!is_inline_string())
-            allocator->deallocate(data);
-
-        allocator = s.allocator;
-        cap       = s.cap;
-        size      = s.size;
-
-        if (s.is_inline_string())
+        if (get_allocator() == s.get_allocator())
         {
-            std::memcpy(inline_data, s.inline_data, (s.size + 1) * sizeof(TCHAR));
+            if (!is_inline_string())
+            {
+                allocator->deallocate(data);
+            }
+            
+            if (s.is_inline_string())
+            {
+                std::memcpy(cstr(), s.cstr(), s.length());
+                cap  = s.cap;
+                size = s.length();
+            }
+            else
+            {
+                data   = s.data;
+                s.data = nullptr;
+
+                size   = s.size;
+                s.size = 0;
+
+                cap    = s.cap;
+                
+                s.cap            = INLINE_BUFFER_SIZE;
+                s.inline_data[0] = 0;
+            }
+
         }
         else
         {
-            data   = s.data;
-            s.data = nullptr;
+            *this = s;
         }
-
-        s.cap   = INLINE_BUFFER_SIZE;
-        s.size  = 0;
-        s.inline_data[0] = TCHAR(0);
 
         return *this;
     }

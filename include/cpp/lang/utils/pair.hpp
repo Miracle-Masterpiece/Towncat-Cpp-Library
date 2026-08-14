@@ -2,6 +2,7 @@
 #define A8229C78_54B7_47A2_A539_4D9F8ECA9E27
 
 #include <cpp/lang/traits/type_properties.hpp>
+#include <cpp/lang/utils/hash.hpp>
 #include <cstddef>
 
 namespace tc
@@ -220,6 +221,23 @@ struct pair : private internal::pair_element<A, 0>, private internal::pair_eleme
         return pair<A, B>(std::forward<A>(a), std::forward<B>(b));
     }
 
-}
+    template<typename T, typename E>
+    struct hash_for<pair<T, E>> {
+        std::size_t operator() (const pair<T, E>& e) const {
+            hash_for<T> khash;
+            hash_for<E> vhash;
+            return (khash(e.first()) * 17) ^ (vhash(e.second()) >> 4);
+        }
+    };
 
+    template<typename T, typename E>
+    struct equal_to<pair<T, E>> {
+        std::size_t operator() (const pair<T, E>& a, const pair<T, E>& b) const {
+            equal_to<T> kequal;
+            equal_to<E> vequal;
+            return kequal(a.first(), b.first()) && vequal(a.second(), b.second());
+        }
+    };
+
+}
 #endif /* A8229C78_54B7_47A2_A539_4D9F8ECA9E27 */

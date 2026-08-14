@@ -3,6 +3,7 @@
 
 #include <cpp/lang/traits/SFINAE.hpp>
 #include <cpp/lang/traits/relatoship_traits.hpp>
+#include <cpp/lang/utils/pair.hpp>
 #include <cpp/lang/utils/hash.hpp>
 #include <cstddef>
 #include <utility>
@@ -27,13 +28,7 @@ class entry {
     /**
      * 
      */
-    TKEY m_key;
-
-    /**
-     * 
-     */
-    TVAL m_value;
-
+    pair<TKEY, TVAL> m_pair;
 public:
     /**
      * 
@@ -74,6 +69,16 @@ public:
     /**
      * 
      */
+    pair<TKEY, TVAL>& get_pair();
+    
+    /**
+     * 
+     */
+    const pair<TKEY, TVAL>& get_pair() const;
+
+    /**
+     * 
+     */
     template<typename TVAL_>
     void set_value(TVAL_&&);
 
@@ -92,8 +97,7 @@ namespace map
     entry<TKEY, TVAL>::entry(TKEY_&& key, TVAL_&& value, std::size_t hashcode) :
         m_next(nullptr),
         m_hash(hashcode),
-        m_key(std::forward<TKEY_>(key)),
-        m_value(std::forward<TVAL_>(value)) {
+        m_pair(std::forward<TKEY_>(key), std::forward<TVAL_>(value)) {
 
     }
     
@@ -114,23 +118,33 @@ namespace map
     
     template<typename TKEY, typename TVAL>
     TVAL& entry<TKEY, TVAL>::get_value() {
-        return m_value;
+        return m_pair.second();
     }
 
     template<typename TKEY, typename TVAL>
-    const TKEY& entry<TKEY, TVAL>::get_key() const {
-        return m_key;
+    pair<TKEY, TVAL>& entry<TKEY, TVAL>::get_pair() {
+        return m_pair;
+    }
+    
+    template<typename TKEY, typename TVAL>
+    const pair<TKEY, TVAL>& entry<TKEY, TVAL>::get_pair() const {
+        return m_pair;
     }
     
     template<typename TKEY, typename TVAL>
     const TVAL& entry<TKEY, TVAL>::get_value() const {
-        return m_value;
+        return m_pair.second();
     }
 
     template<typename TKEY, typename TVAL>
+    const TKEY& entry<TKEY, TVAL>::get_key() const {
+        return m_pair.first();
+    }
+    
+    template<typename TKEY, typename TVAL>
     template<typename TVAL_>
     void entry<TKEY, TVAL>::set_value(TVAL_&& value) {
-        m_value = std::forward<TVAL_>(value);
+        m_pair.second() = std::forward<TVAL_>(value);
     }
 
     template<typename TKEY, typename TVAL>
@@ -139,24 +153,6 @@ namespace map
     }
 
 } //namespace map
-
-template<typename K, typename V>
-struct hash_for<map::entry<K, V>> {
-    std::size_t operator() (const map::entry<K, V>& e) const {
-        hash_for<K> khash;
-        hash_for<V> vhash;
-        return (khash(e.get_key()) * 17) ^ (vhash(e.get_value()) >> 4);
-    }
-};
-
-template<typename K, typename V>
-struct equal_to<map::entry<K, V>> {
-    std::size_t operator() (const map::entry<K, V>& a, const map::entry<K, V>& b) const {
-        equal_to<K> kequal;
-        equal_to<V> vequal;
-        return kequal(a.get_key(), b.get_key()) && vequal(a.get_value(), b.get_value());
-    }
-};
 
 } //namespace tc
 

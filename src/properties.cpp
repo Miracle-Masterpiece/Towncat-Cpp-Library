@@ -44,10 +44,10 @@ namespace tc {
             out.write(&NEW_LINE, 1);
         }
 
-        for (const entry& e : m_values)
+        for (const pair<tc::string, tc::string>& e : m_values)
         {    
-            const string& key     = e.get_key();
-            const string& value   = e.get_value();
+            const string& key     = e.first();
+            const string& value   = e.second();
             
             out.write(key.cstr(), key.length());
          

@@ -23,4 +23,5 @@ bin/WINDOWS_X86-64/src/main.o: src/main.cpp \
  include/cpp/lang/utils/map_entry.hpp include/cpp/lang/traits/SFINAE.hpp \
  include/cpp/lang/traits/relatoship_traits.hpp \
  include/cpp/lang/utils/pair.hpp \
- include/cpp/lang/traits/type_properties.hpp
+ include/cpp/lang/traits/type_properties.hpp \
+ include/cpp/lang/utils/linked_hash_map.hpp

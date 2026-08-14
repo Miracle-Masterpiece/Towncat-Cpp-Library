@@ -339,12 +339,12 @@ private:
     /**
      * 
      */
-    typedef list::node_iterator<node, T>        Iterator;
+    typedef list::node_iterator<node, T>        iterator;
 
     /**
      * 
      */
-    typedef list::node_iterator<node, const T>  ConstIterator;
+    typedef list::node_iterator<node, const T>  const_iterator;
 
     /**
      * Memory allocator for memory management
@@ -863,20 +863,20 @@ public:
     */
     std::size_t hashcode() const;
 
-    ConstIterator begin() const {
-        return ConstIterator(_head);
+    const_iterator begin() const {
+        return const_iterator(_head);
     }
 
-    ConstIterator end() const {
-        return ConstIterator(nullptr);
+    const_iterator end() const {
+        return const_iterator(nullptr);
     }
 
-    Iterator begin() {
-        return Iterator(_head);
+    iterator begin() {
+        return iterator(_head);
     }
 
-    Iterator end() {
-        return Iterator(nullptr);
+    iterator end() {
+        return iterator(nullptr);
     }
 };
     template<typename T>

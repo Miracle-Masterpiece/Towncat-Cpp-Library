@@ -39,12 +39,12 @@ public:
     /**
      * 
      */
-    using entry_iterator = typename hash_map<string, string>:: template iterator<entry>;
+    typedef typename hash_map<string, string>::iterator iterator;
     
     /**
      * 
      */
-    using const_entry_iterator = typename hash_map<string, string>:: template iterator<const entry>;
+    typedef typename hash_map<string, string>::const_iterator const_iterator;
 
     /**
      * Создает объект свойств с заданным аллокатором.
@@ -142,7 +142,7 @@ public:
      * @return 
      *      Константный итератор на первый элемент.
      */
-    const_entry_iterator begin() const {
+    const_iterator begin() const {
         return m_values.begin();
     }
 
@@ -152,7 +152,7 @@ public:
      * @return 
      *      Константный итератор на элемент, следующий за последним.
      */
-    const_entry_iterator end() const {
+    const_iterator end() const {
         return m_values.end();
     }
 

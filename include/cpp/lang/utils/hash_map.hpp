@@ -5,7 +5,6 @@
 #include <cpp/lang/utils/map_entry.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/hash.hpp>
-#include <cpp/lang/utils/pair.hpp>
 #include <cpp/lang/array.hpp>
 #include <initializer_list>
 #include <cassert>
@@ -13,21 +12,55 @@
 namespace tc
 {
 
+/**
+ * Hash table implementation.
+ *
+ * This implementation provides constant performance for the functions
+ * get, insert, and put, provided that the key hashes are well distributed.
+ *
+ * The performance of this implementation is affected by two parameters: initial capacity and load factor.
+ *
+ * The initial capacity is simply the number of buckets in the hash table.
+ * The load factor is the ratio of the number of elements to the number of buckets after which rehashing and increasing the buckets will occur.
+ *
+ * The default load factor is 0.75.
+ *
+ * This implementation is not thread-safe.
+ *
+ * By default, tc::hash_for<TKEY> is used for key hashing.
+ * By default, tc::equal_to<TKEY> is used for key comparison.
+ *
+ *
+ * For iteration, the tc::pair<TKEY, TVALUE> class is used.
+ *
+ * @example
+ *       tc::hash_map<int, tc::string> map = {
+ *           {1, "one"},
+ *           {2, "two"},
+ *           {3, "three"},
+ *           {4, "four"}
+ *       };
+ *
+ *       for (tc::pair<int, tc::string>& p : map) {
+ *           std::cout << p.first() << " = " << p.second() << "\n";
+ *       } 
+ * 
+ * @example 
+ *       const tc::hash_map<int, tc::string> map = { 
+ *           {1, "one"}, 
+ *           {2, "two"}, 
+ *           {3, "three"}, 
+ *           {4, "four"} 
+ *       }; 
+ * 
+ *       for (const tc::pair<int, tc::string>& p : map) { 
+ *           std::cout << p.first() << " = " << p.second() << "\n"; 
+ *       } 
+ */
 template<typename TKEY, typename TVALUE, typename THASHER = hash_for<TKEY>, typename TEQUALER = equal_to<TKEY>>
 class hash_map {
-
-    /**
-     * 
-     */
-    typedef typename remove_cv<TKEY>::type Kvalue;
-    
-    /**
-     * 
-     */
-    typedef typename remove_cv<TVALUE>::type Vvalue;
-
 public:
-    /**
+   /**
     * The node type used to store hash_map<T> elements.
     *
     * The type is declared publicly so it can be used.
@@ -36,19 +69,19 @@ public:
     */
     typedef map::entry<TKEY, TVALUE> entry;
 private:
-    /**
-     * 
-     */
+   /**
+    * The memory management allocator is a hash map.
+    */
     tca::allocator* const m_allocator;
 
-    /**
-     * 
-     */
+   /**
+    * An array of pointers to linked lists of nodes storing the hash map values.
+    */
     array<entry*> m_buckets;
 
     /**
-     * 
-     */
+    * Number of elements stored in the hash map
+    */
     std::size_t m_size;
 
     /**
@@ -56,183 +89,549 @@ private:
      */
     float m_load_factor;
 
-    /**
-     * 
-     */
+   /**
+    * Allocates memory and initializes a new entry.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    *       Any copy or move constructor exception.
+    */
     template<typename TKEY_, typename TVALUE_>
     entry* alloc_entry(TKEY_&&, TVALUE_&&, std::size_t hashcode);
     
-    /**
-     * 
-     */
-    void free_entry(entry*);
+   /**
+    * Calls the destructor and frees the memory of the passed entry.
+    */
+    void free_entry(entry* e);
 
-    /**
-     * 
-     */
-    void lazy_init();
-
-    /**
-     * 
-     */
+   /**
+    * Increases the capacity of this hash map.
+    * Rehash allocates a new, larger array,
+    * and then appends all entries to it.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory
+    */
     void rehash();
 
-    /**
-     * 
-     */
+   /**
+    * Returns the load factor of this hash map.
+    * The load factor is the value of size() / m_buckets.length
+    */
     float get_load_factor() const;
 
-    /**
-     * 
-     */
+   /**
+    * Attempts to increase the capacity of this hash map.
+    *
+    * First, checks that the bucket array length is not 0, then allocates a new array.
+    * Otherwise, checks that the current load factor is not greater than m_load_factor,
+    * in which case, reallocates memory for buckets.
+    *
+    * @see rehash()
+    * @see get_load_factor();
+    */
     void ensure_capacity();
+
 public:
-    /**
-     * 
-     */
+   /**
+    * Creates a hash map with the passed allocator.
+    *
+    * @param allocator
+    *       The allocator responsible for allocating and deallocating memory for this hash map.
+    */
     hash_map(tca::allocator* allocator = tca::get_default_allocator());
     
-    /**
-     * 
-     */
+   /** 
+    * Creates a hash map with the initial capacity. 
+    * 
+    * @param initial_capacity 
+    *       Initial capacity of the hash map. 
+    * 
+    * @param load_factor 
+    *       Hash map load factor. 
+    *       The value above which memory will be redistributed and the number of buckets will increase. 
+    * 
+    * @param allocator 
+    *       An allocator responsible for allocating and freeing memory for this hash map. 
+    * 
+    * @throws out_of_memory_error 
+    *       If there is not enough memory. 
+    */
     hash_map(std::size_t initial_capacity, float load_factor = 0.75f, tca::allocator* allocator = tca::get_default_allocator());
     
-    /**
-     * 
-     */
+   /**
+    * Creates a hash map and initializes it using std::initializer_list
+    *
+    * If duplicate elements appear in std::initializer_list, only the first entry will be added.
+    *
+    * @param load_factor
+    *       The hash map load factor.
+    *       The value above which memory will be reallocated and the number of buckets will be increased.
+    *
+    * @param allocator
+    *       The allocator responsible for allocating and freeing memory for this hash map.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    *       Any element copy constructor exception.
+    *
+    * @example
+    *       tc::hash_map<int, int> map = {{1, 1}, {2, 2}};
+    *       assert(map.size() == 2);
+    */
     hash_map(const std::initializer_list<const pair<TKEY, TVALUE>>& init_list, float load_factor = 0.75f, tca::allocator* allocator = tca::get_default_allocator());
 
-    /**
-     * 
-     */
+   /**
+    *
+    * Copy constructor.
+    *
+    * Copies the values ​​of the passed hash map to this hash map.
+    * The allocator of the copied hash map is used when constructing this hash map.
+    *
+    * @param map
+    *       The hash map whose values ​​will be copied.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    *       Any element copy constructor exception.
+    *
+    * @example
+    *       tc::hash_map<int, int> map = {{1, 1}, {2, 2}};
+    *       tc::hash_map<int, int> copied = map;
+    *
+    *       std::cout << copied.get(1) << "\n";
+    *       std::cout << copied.get(2) << "\n"; 
+    * 
+    *       assert(copied.size() == map.size()); 
+    *       assert(copied.contains_key(1)); 
+    *       assert(copied.contains_key(2)); 
+    *       assert(copied.get_allocator() == map.get_allocator()); 
+    */
     hash_map(const hash_map<TKEY, TVALUE, THASHER, TEQUALER>& map);
     
-    /**
-     * 
-     */
+   /**
+    * Move constructor.
+    *
+    * Moves the resources associated with 'map' to this hashmap.
+    * After moving, this hashmap will use the passed hashmap pointer.
+    *
+    * The allocator of 'map' is unchanged.
+    * After moving, 'map' is left in a valid but unspecified state.
+    *
+    * @param map
+    *       The hashmap whose resources will be moved to this hashmap.
+    *
+    * @example
+    *       tc::hash_map<int, int> map = {{1, 1}, {2, 2}};
+    *       tc::hash_map<int, int> moved = std::move(map);
+    *
+    *       assert(moved.get_allocator() == map.get_allocator());
+    *       assert(moved.size() == 2); 
+    *       assert(moved.contains_key(1)); 
+    *       assert(moved.contains_key(2)); 
+    */
     hash_map(hash_map<TKEY, TVALUE, THASHER, TEQUALER>&& map);
     
-    /**
-     * 
-     */
+   /**
+    * Copy operator.
+    *
+    * Copies elements from the passed hash map to this hash map.
+    *
+    * This object's allocator is not modified during copying.
+    *
+    * Strong exception guarantee.
+    * If an exception is thrown during copying, the objects are not modified.
+    *
+    * @param map
+    *       The map from which the elements will be copied.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    *       Any exception thrown by the element's copy constructor.
+    *
+    * @example
+    *       tc::hash_map<int, int> map = {{1, 1}, {2, 2}};
+    *
+    *       tca::malloc_free_allocator alloc;
+    *       tc::hash_map<int, int> copied(&alloc); 
+    *       
+    *       copied = map; 
+    *       
+    *       assert(copied.size() == map.size()); 
+    *       assert(copied.get_allocator() == &alloc); 
+    *       assert(map.contains_key(1)); 
+    *       assert(map.contains_key(2)); 
+    */
     hash_map<TKEY, TVALUE, THASHER, TEQUALER>& operator= (const hash_map<TKEY, TVALUE, THASHER, TEQUALER>& map);
     
-    /**
-     * 
-     */
+   /**
+    * Move operator.
+    *
+    * Moves elements from the passed hash map to this hash map.
+    *
+    * If the allocators are the same, ownership of the resource is simply transferred.
+    * If the allocators are different, the elements are copied.
+    *
+    * Strong exception guarantee.
+    * If an exception is thrown during copying, the objects are not modified.
+    *
+    * After moving, 'map' saves its allocator
+    * and remains in a valid but unspecified state.
+    *
+    * @param map
+    *       The map from which the elements will be moved.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory..
+    *
+    * @throws
+    *       Any exception thrown by the element's copy constructor. * 
+    * 
+    * @example 
+    *       tc::hash_map<int, int> map = {{1, 1}, {2, 2}}; 
+    *       
+    *       tca::malloc_free_allocator alloc; 
+    *       tc::hash_map<int, int> moved(&alloc); 
+    *       
+    *       moved = std::move(map); //Allocators are different, so this will result in a copy 
+    *       assert(moved.get_allocator() = &alloc); 
+    * 
+    * @example 
+    *       tc::hash_map<int, int> map = {{1, 1}, {2, 2}}; 
+    *       tc::hash_map<int, int> moved; 
+    *       
+    *       moved = std::move(map); //Allocators are the same, fair move
+    * 
+    *       assert(moved.get_allocator() = map.get_allocator());
+    *
+    */
     hash_map<TKEY, TVALUE, THASHER, TEQUALER>& operator= (hash_map<TKEY, TVALUE, THASHER, TEQUALER>&& map);
     
-    /**
-     * 
-     */
+   /**
+    * Inserts a key and value into this hash map.
+    *
+    * If the key is already mapped to a value, the value will be modified.
+    *
+    * Strong exception guarantee.
+    * If the function throws an exception, the object will be preserved unchanged.
+    *
+    * @param key
+    *       The key to be mapped to the value.
+    *
+    * @param value
+    *       The value mapped to the key.
+    *
+    * @return
+    *       If the key was successfully added to the hash map or the value was modified.
+    *       Otherwise, false.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    *       Any exception thrown from the constructor (copy/move) of the key or value.
+    *
+    *
+    * @see insert()
+    * @see size()
+    * @see replace()
+    */
     template<typename TKEY_, typename TVALUE_>
     bool put(TKEY_&& key, TVALUE_&& value);
     
-    /**
-     * 
-     */
+   /**
+    * Inserts a key and value into this hash map.
+    *
+    * If the key is already mapped to a value, do nothing.
+    *
+    * Strong exception guarantee.
+    * If the function throws an exception, the object is preserved unchanged.
+    *
+    * @param key
+    *       The key to be mapped to the value.
+    *
+    * @param value
+    *       The value mapped to the key.
+    *
+    * @return
+    *       If the key was successfully added to the hash map.
+    *       If this key already exists in the hash map, return false.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    * Any exception thrown from the constructor (copy/move) of the key or value.
+    *
+    * @see put()
+    * @see size()
+    * @see replace()
+    */
     template<typename TKEY_, typename TVALUE_>
     bool insert(TKEY_&& key, TVALUE_&& value);
 
-    /**
-     * @throws no_such_element_exception
-     *      Если значения по переданному ключу не существует.
-     */
+   /**
+    * Returns a reference to the value associated with the passed key.
+    * If there is no equivalent key to the passed one, an exception is thrown.
+    *
+    * @throws no_such_element_exception
+    *       If no value exists for the passed key.
+    */
     TVALUE& get(const TKEY& key);
     
-    /**
-     * @throws no_such_element_exception
-     *      Если значения по переданному ключу не существует.
-     */
+   /**
+    * Returns a constant reference to the value associated with the passed key.
+    * If there is no equivalent key to the passed one, an exception is thrown.
+    *
+    * @throws no_such_element_exception
+    *       If no value exists for the passed key.
+    */
     const TVALUE& get(const TKEY& key) const;
        
-    /**
-     * 
-     */
+   /**
+    * Replaces the value, given the key, with a new value.
+    *
+    * If an equivalent key does not exist in the hash map, the function does nothing.
+    *
+    * @return
+    *       true if the value has been modified; otherwise, false.
+    *
+    * @throw
+    *       Any exception thrown from the value's copy constructor.
+    * 
+    * @see put()
+    * @see insert()
+    */
     template<typename TVALUE_>
     bool replace(const TKEY& key, TVALUE_&& value);
 
-    /**
-     * 
-     */
+   /**
+    * Checks whether the hash map contains a key equivalent to the one passed.
+    * 
+    * @return
+    *       true - only if the key is contained in the hash map.
+    *       Otherwise, false.
+    */
     bool contains_key(const TKEY& key) const;
     
-    /**
-     * 
-     */
+   /**
+    * Checks whether the hash map contains a value equivalent to the one passed.
+    *
+    * @return
+    *       true - only if the value is contained in the hash map.
+    *       Otherwise, false.
+    */
     template<typename TVALUE_EQUALER = equal_to<TVALUE>>
     bool contains_value(const TVALUE& value) const;
 
-    /**
-     * 
-     */
-    TVALUE& get_or_default(const TKEY& key, TVALUE& value);
+   /**
+    * Returns a reference to the value associated with the key.
+    *
+    * If the hashmap does not contain a key equivalent to the one passed in,
+    * the default value passed in by the user is returned.
+    *
+    * @return
+    *       A reference to the value from the hashmap, or a reference to the default value if the value does not exist in the hashmap.
+    */
+    template<typename DEFAULT_T, typename = typename enable_if<
+                                                                is_same<
+                                                                    typename remove_cv<DEFAULT_T>::type, typename remove_cv<TVALUE>::type
+                                                                >::value
+                                                                &&
+                                                                is_cv_castable<TVALUE, DEFAULT_T>::value
+                                                            >::type>
+    DEFAULT_T& get_or_default(const TKEY& key, DEFAULT_T& default_value) {
+        entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
+        if (finded)
+            return finded->get_value();
+        return default_value;
+    }
     
-    /**
-     * 
-     */
+   /**
+    * Returns a constant reference to the value associated with the key.
+    *
+    * If the hash map does not contain a key equivalent to the one passed in,
+    * the default value passed in by the user is returned.
+    *
+    * @return
+    *       A reference to the value from the hash map, or a reference to the default value if the value does not exist in the hash map.
+    */
+    template<typename DEFAULT_T, typename = typename enable_if<
+                                                                is_same<
+                                                                    typename remove_cv<DEFAULT_T>::type, typename remove_cv<TVALUE>::type
+                                                                >::value
+                                                            >::type>
+    const DEFAULT_T& get_or_default(const TKEY& key, DEFAULT_T& default_value) const {
+        const entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
+        if (finded)
+            return finded->get_value();
+        return default_value;
+    }
+
+   /**
+    * Removes a key-value from the hash map.
+    *
+    * @return
+    *       true if the deletion was successful. Otherwise, false.
+    */
     bool remove(const TKEY& key);
 
-    /**
-     * 
-     */
-    const TVALUE& get_or_default(const TKEY& key, TVALUE& value) const;
-    
-    /**
-     * 
-     */
+   /**
+    * Returns the allocator responsible for allocating
+    * and deallocating memory for this hash map.
+    */
     tca::allocator* get_allocator() const;
 
-    /**
-     * 
-     */
+   /** 
+    * Returns the hash code of this hash-map. 
+    * The hash code is generated based on all stored elements. 
+    * 
+    * tca::hash_for<TKEY> and tca::hash_for<TVALUE> is used to generate the hash code of elements. 
+    * 
+    * @return 
+    *       The hash code of this list. 
+    */
     std::size_t hashcode() const;
     
-    /**
-     * 
-     */
+   /**
+    * Checks if this hash-map is equal to the passed 'map'.
+    *
+    * tc::equal_to<TKEY> and tc::equal_to<TVALUE> is used for comparison.
+    *
+    * @param map
+    *       Another hash-map to check.
+    *
+    * @return
+    *       true - only if the hash-map have the same sizes,
+    *       and the same element contents. False - otherwise.
+    *
+    * @example
+    *       tc::hash_map<int, int> ints_1 = {{1, 1}, {2, 2}};
+    *       tc::hash_map<int, int> ints_2 = {{1, 1}, {2, 2}};
+    *       tc::hash_map<int, int> ints_3 = {{1, 1}, {5, 5}};
+    * 
+    *       std::cout << ints_1.equals(ints_2) << "\n"; //output true 
+    *       std::cout << ints_1.equals(ints_3) << "\n"; //output false 
+    * 
+    */
     template<typename THasher>
     bool equals(const hash_map<TKEY, TVALUE, THasher, TEQUALER>& map) const;
 
-    /**
-     * @return
-     *      Размер этой карты.
-     */
+   /**
+    * @return
+    *       The number of elements this hash map stores.
+    */
     std::size_t size() const;
 
-    /**
-     * @return
-     *      Является ли карта пустой.
-     */
+   /**
+    * @return
+    *       Whether the map is empty.
+    *       Returns true only if size() returns 0.
+    *       Otherwise, returns false.
+    */
     bool is_empty() const;
 
-    /**
-     * 
-     */
+   /**
+    * Clears this hash map.
+    * After calling size(), size() will be 0.
+    */
     void clear();
 
-    /**
-     * 
-     */
+   /**
+    * Inserts elements from the passed hash map into this hash map.
+    * If the key already exists in this hash map, its value will be replaced.
+    *
+    * Strong exception guarantee.
+    * If the function throws an exception, the object will be left unchanged.
+    *
+    * @param map
+    *       The hash map from which to insert values ​​into this hash map.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    *       Any exception thrown by the constructor (copy or move) of the key or value.
+    *
+    */
     template<typename THASHER_, typename TEQUALER_>
     void put_all(const hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map);
-
-    /**
-     * 
-     */
+    
+   /**
+    * Inserts elements from the passed iterator into this hash map.
+    * If the key already exists in this hash map, its value will be replaced.
+    *
+    * The iterator must return a reference to a tc::pair<TKEY, TVALUE>
+    *
+    * Strong exception guarantee.
+    * If the function throws an exception, the object will be left unchanged.
+    *
+    * @param begin
+    *       The iterator to the beginning.
+    *
+    * @param end
+    *       The iterator to the end.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    *       Any exception thrown by the constructor (copy or move) of the key or value.
+    *
+    */
+    template<typename ITERATOR>
+    void put_all(ITERATOR begin, ITERATOR end);
+    
+   /**
+    * Checks whether the keys of the passed hash map are contained in this hash map.
+    *
+    * @param map
+    *       The hash map whose keys will be checked.
+    *
+    * @return
+    *       true if all keys of 'map' are contained in this hash map.
+    *       Otherwise, false.
+    */
     template<typename THASHER_, typename TEQUALER_>
     bool contains_all(const hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map) const;
+    
+   /**
+    * Checks whether the keys from the passed iterator are contained in this hash map.
+    *
+    * The iterator must return a reference to a tc::pair<TKEY, TVALUE>
+    *
+    * @param begin
+    *       The iterator to the beginning.
+    *
+    * @param end
+    *       The iterator to the end.
+    *
+    * @return
+    *       true if all keys of 'map' are contained in this hash map.
+    *       Otherwise, false.
+    */
+    template<typename ITERATOR>
+    bool contains_all(ITERATOR begin, ITERATOR end) const;
 
-    /**
-     * 
-     */
+   /**
+    * Clears the resources associated with this hashmap.
+    */
     ~hash_map();
 
+private:
     /**
      * 
      */
-    template<typename TENTRY>
-    class iterator {
+    template<typename TENTRY, typename PAIR_T>
+    class iterator_impl {
         /**
          * 
          */
@@ -256,85 +655,96 @@ public:
         /**
          * 
          */
-        iterator(TENTRY* const* e, std::size_t length);
+        iterator_impl(TENTRY* const* e, std::size_t length);
         
         /**
          * 
          */
-        iterator(const iterator<TENTRY>&) = default;
+        iterator_impl(const iterator_impl<TENTRY, PAIR_T>&) = default;
         
         /**
          * 
          */
-        iterator(iterator<TENTRY>&&) = default;
+        iterator_impl(iterator_impl<TENTRY, PAIR_T>&&) = default;
         
         /**
          * 
          */
-        iterator<TENTRY>& operator= (const iterator<TENTRY>&) = default;
+        iterator_impl<TENTRY, PAIR_T>& operator= (const iterator_impl<TENTRY, PAIR_T>&) = default;
         
         /**
          * 
          */
-        iterator<TENTRY>& operator= (iterator<TENTRY>&&) = default;
+        iterator_impl<TENTRY, PAIR_T>& operator= (iterator_impl<TENTRY, PAIR_T>&&) = default;
         
         /**
          * 
          */
-        ~iterator() = default;
+        ~iterator_impl() = default;
 
         /**
          * 
          */
-        TENTRY& operator* () const;
+        PAIR_T& operator* ();
 
         /**
          * 
          */
-        bool operator!=(const iterator<TENTRY>&) const;
+        bool operator!=(const iterator_impl<TENTRY, PAIR_T>&) const;
         
         /**
          * 
          */
-        bool operator==(const iterator<TENTRY>&) const;
+        bool operator==(const iterator_impl<TENTRY, PAIR_T>&) const;
         
         /**
          * 
          */
-        iterator<TENTRY>& operator++ ();
+        iterator_impl<TENTRY, PAIR_T>& operator++ ();
         
         /**
          * 
          */
-        iterator<TENTRY> operator++ (int);
+        iterator_impl<TENTRY, PAIR_T> operator++ (int);
     };
+public:
 
     /**
      * 
      */
-    iterator<entry> begin() {
-        return iterator<entry>(m_buckets.data(), m_buckets.length);
+    typedef iterator_impl<const entry, const pair<TKEY, TVALUE>> const_iterator;
+    
+    /**
+     * 
+     */
+    typedef iterator_impl<entry, pair<TKEY, TVALUE>> iterator;
+
+    /**
+     * 
+     */
+    iterator begin() {
+        return iterator(m_buckets.data(), m_buckets.length);
     }
     
     /**
      * 
      */
-    iterator<entry> end() {
-        return iterator<entry>(nullptr, m_buckets.length);
+    iterator end() {
+        return iterator(nullptr, m_buckets.length);
     }
     
     /**
      * 
      */
-    iterator<const entry> begin() const {
-        return iterator<const entry>(m_buckets.data(), m_buckets.length);
+    const_iterator begin() const {
+        return const_iterator(m_buckets.data(), m_buckets.length);
     }
     
     /**
      * 
      */
-    iterator<const entry> end() const {
-        return iterator<const entry>(nullptr, m_buckets.length);
+    const_iterator end() const {
+        return const_iterator(nullptr, m_buckets.length);
     }
 };
 
@@ -377,9 +787,9 @@ public:
         hash_map(map.get_allocator()) {
         
         try {
-            for (const entry& e : map)
+            for (const pair<TKEY, TVALUE>& e : map)
             {
-                insert(e.get_key(), e.get_value());
+                insert(e.first(), e.second());
             }
         } catch (...) {
             clear();
@@ -395,13 +805,16 @@ public:
         m_load_factor(map.m_load_factor) {
         map.m_size      = 0;
     }
-    
+
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     hash_map<TKEY, TVALUE, THASHER, TEQUALER>& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::operator= (const hash_map<TKEY, TVALUE, THASHER, TEQUALER>& map) {
         if (&map != this)
         {
             hash_map<TKEY, TVALUE, THASHER, TEQUALER> tmp(m_allocator);
-            tmp.put_all(map);
+            for (const pair<TKEY, TVALUE>& e : map)
+            {
+                tmp.insert(e.first(), e.second());
+            }
             *this = std::move(tmp);
         }
         return *this;
@@ -434,17 +847,16 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename TKEY_, typename TVALUE_>
     typename hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry* hash_map<TKEY, TVALUE, THASHER, TEQUALER>::alloc_entry(TKEY_&& key, TVALUE_&& value, std::size_t hashcode) {
-        void* mem = m_allocator->allocate_align(sizeof(entry), alignof(entry));
-        if (!mem)
+        entry* entr = (entry*) m_allocator->allocate_align(sizeof(entry), alignof(entry));
+        if (!entr)
             throw_except<out_of_memory_error>("Out of memory!");
-        entry* e = nullptr;
         try {
-            e = new(mem) entry(std::forward<TKEY_>(key), std::forward<TVALUE_>(value), hashcode);
+            new(entr) entry(std::forward<TKEY_>(key), std::forward<TVALUE_>(value), hashcode);
         } catch (...) {
-            m_allocator->deallocate(mem, sizeof(entry));
+            m_allocator->deallocate(entr, sizeof(entry));
             throw;
         }
-        return e;
+        return entr;
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -455,21 +867,12 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    void hash_map<TKEY, TVALUE, THASHER, TEQUALER>::lazy_init() {
-        if (m_buckets.length == 0)
-        {
-            m_buckets = array<entry*>(16, m_allocator);
-            m_buckets.set(nullptr);
-        }
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     void hash_map<TKEY, TVALUE, THASHER, TEQUALER>::rehash() {
         std::size_t oldcap = m_buckets.length;
         std::size_t newcap = oldcap + oldcap / 2;
         newcap = newcap >= 16 ? newcap : 16;
 
-        array<entry*> _new(newcap);
+        array<entry*> _new(newcap, m_allocator);
         _new.set(nullptr);
 
         array<entry*> old   = std::move(m_buckets);
@@ -489,8 +892,12 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     void hash_map<TKEY, TVALUE, THASHER, TEQUALER>::ensure_capacity() {
-        lazy_init();
-        if (get_load_factor() > m_load_factor)
+        if (m_buckets.length == 0)
+        {
+            m_buckets = array<entry*>(16, m_allocator);
+            m_buckets.set(nullptr);
+        }
+        else if (get_load_factor() > m_load_factor)
         {
             rehash();
         }
@@ -543,9 +950,8 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename TVALUE_>
     bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::replace(const TKEY& key, TVALUE_&& value) {
-        ensure_capacity();
 
-        entry* finded   = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
+        entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
         if (finded)
         {
             finded->set_value(std::forward<TVALUE_>(value));
@@ -598,24 +1004,6 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    TVALUE& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_or_default(const TKEY& key, TVALUE& value) {
-        entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
-        if (finded)
-            return finded->get_value();
-        else
-            return value;
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    const TVALUE& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_or_default(const TKEY& key, TVALUE& value) const {
-        entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
-        if (finded)
-            return finded->get_value();
-        else
-            return value;
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::contains_key(const TKEY& key) const {
         return internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets) != nullptr;
     }
@@ -639,7 +1027,7 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     std::size_t hash_map<TKEY, TVALUE, THASHER, TEQUALER>::hashcode() const {
         if (size() > 0)
-            return objects::hashcode(begin(), end(), hash_for<entry>());
+            return objects::hashcode(begin(), end(), hash_for<pair<TKEY, TVALUE>>());
         else
             return 0;
     }
@@ -681,25 +1069,70 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename THASHER_, typename TEQUALER_>
-    void hash_map<TKEY, TVALUE, THASHER, TEQUALER>::put_all(const hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map) {
-        for (const entry& e : map) {
-            put(e.get_key(), e.get_value());
+    template<typename ITERATOR>
+    void hash_map<TKEY, TVALUE, THASHER, TEQUALER>::put_all(ITERATOR begin, ITERATOR end) {
+
+        entry* entries = nullptr;
+        
+        try {
+        
+            while (begin != end)
+            {
+                const pair<TKEY, TVALUE>& p = *begin;
+                
+                entry* tmp = alloc_entry(p.first(), p.second(), internal::map::hash_key<THASHER>(p.first()));
+                tmp->set_next(entries);
+                entries = tmp;
+                
+                ++begin;
+            }
+
+        } catch (...) {
+            for (entry* i = entries; i != nullptr;)
+            {
+                entry* current = i;
+                i = i->get_next();
+                free_entry(current);
+            }
+            throw;
+        }        
+
+        for (entry* i = entries; i != nullptr;)
+        {
+            entry* current = i;
+            i = i->get_next();
+            internal::map::append_entry(internal::map::bucket_index<THASHER>(current->get_key(), m_buckets), current, m_buckets);
         }
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename THASHER_, typename TEQUALER_>
-    bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::contains_all(const hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map) const {
-        for (const entry& e : map)
-            if (!find_entry(e.get_key()))
-                return false;
-        return true;
+    void hash_map<TKEY, TVALUE, THASHER, TEQUALER>::put_all(const hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map) {
+        put_all(map.begin(), map.end());
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TENTRY>
-    hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::iterator(TENTRY* const* e, std::size_t length) :
+    template<typename ITERATOR>
+    bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::contains_all(ITERATOR begin, ITERATOR end) const {
+        while (begin != end)
+        {
+            const pair<TKEY, TVALUE>& p = *begin;
+            if (!internal::map::find_entry<THASHER, TEQUALER>(p.first(), m_buckets) )
+                return false;
+            ++begin;
+        }
+        return begin == end;
+    }
+    
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    template<typename THASHER_, typename TEQUALER_>
+    bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::contains_all(const hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map) const {
+        return contains_all(map.begin(), map.end());
+    }
+
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    template<typename TENTRY, typename PAIR_T>
+    hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::iterator_impl(TENTRY* const* e, std::size_t length) :
         m_entries(e),
         m_node(nullptr),
         m_length(length),
@@ -709,27 +1142,27 @@ public:
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TENTRY>
-    TENTRY& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator* () const {
+    template<typename TENTRY, typename PAIR_T>
+    PAIR_T& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::operator* () {
         JSTD_DEBUG_CODE(check_non_null(m_node));
-        return *m_node;
+        return m_node->get_pair();
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TENTRY>
-    bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator!=(const iterator<TENTRY>& it) const {
+    template<typename TENTRY, typename PAIR_T>
+    bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::operator!=(const iterator_impl<TENTRY, PAIR_T>& it) const {
         return m_node != it.m_node;
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TENTRY>
-    bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator==(const iterator<TENTRY>& it) const {
+    template<typename TENTRY, typename PAIR_T>
+    bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::operator==(const iterator_impl<TENTRY, PAIR_T>& it) const {
         return m_node == it.m_node;
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TENTRY>
-    typename hash_map<TKEY, TVALUE, THASHER, TEQUALER>::template iterator<TENTRY>& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator++ () {
+    template<typename TENTRY, typename PAIR_T>
+    typename hash_map<TKEY, TVALUE, THASHER, TEQUALER>::template iterator_impl<TENTRY, PAIR_T>& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::operator++ () {
         if (m_node == nullptr || m_node->get_next() == nullptr)
         {
             for (std::size_t i = m_idx; i < m_length; ++i)
@@ -751,10 +1184,10 @@ public:
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TENTRY>
-    typename hash_map<TKEY, TVALUE, THASHER, TEQUALER>::template iterator<TENTRY> hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator++(int) {
+    template<typename TENTRY, typename PAIR_T>
+    typename hash_map<TKEY, TVALUE, THASHER, TEQUALER>::template iterator_impl<TENTRY, PAIR_T> hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::operator++(int) {
         JSTD_DEBUG_CODE(check_non_null(m_node));
-        iterator<TENTRY> it(m_entries);
+        iterator_impl<TENTRY, PAIR_T> it(m_entries);
         m_entries = m_entries->get_list_next();
         return it;
     }

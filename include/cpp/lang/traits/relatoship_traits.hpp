@@ -19,8 +19,8 @@ namespace tc
  *      The second type to compare.
  * 
  * @example
- * is_same<int, int>::value      // true
- * is_same<int, const int>::value // false
+ *      is_same<int, int>::value      // true
+ *      is_same<int, const int>::value // false
  */
 template<typename T, typename D>
 struct is_same {

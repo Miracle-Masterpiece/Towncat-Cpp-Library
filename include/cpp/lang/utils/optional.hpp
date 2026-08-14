@@ -37,6 +37,7 @@ namespace tc {
  */
 template<typename T>
 class optional {
+    
     union
     {
         T obj;

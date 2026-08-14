@@ -26,7 +26,7 @@ class tstring {
         TCHAR   inline_data[INLINE_BUFFER_SIZE];
     };
     
-    tca::allocator* allocator;
+    tca::allocator* const allocator;
     std::size_t     cap;
     std::size_t     size;
 
@@ -96,7 +96,7 @@ public:
     /**
      * 
      */
-    tstring(const tstring<TCHAR>& s, tca::allocator* allocator = tca::get_default_allocator());
+    tstring(const tstring<TCHAR>& s);
     
     /**
      * 

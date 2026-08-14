@@ -206,6 +206,18 @@ public:
      */
     template<typename TKEY_, typename TVALUE_>
     bool put(TKEY_&& key, TVALUE_&& value);
+    
+    /**
+     * 
+     */
+    template<typename TKEY_, typename TVALUE_>
+    bool insert(TKEY_&& key, TVALUE_&& value);
+    
+    /**
+     * 
+     */
+    template<typename TVALUE_>
+    bool replace(const TKEY& key, TVALUE_&& value);
 
     /**
      * @throws no_such_element_exception
@@ -222,12 +234,6 @@ public:
     /**
      * 
      */
-    template<typename TVALUE_>
-    bool replace(const TKEY& key, TVALUE_&& value);
-
-    /**
-     * 
-     */
     bool contains_key(const TKEY& key) const;
     
     /**
@@ -239,17 +245,29 @@ public:
     /**
      * 
      */
-    TVALUE& get_or_default(const TKEY& key, TVALUE& value);
+    template<typename DEFAULT_T, typename = typename enable_if<
+                                                                is_same<
+                                                                    typename remove_cv<DEFAULT_T>::type, typename remove_cv<TVALUE>::type
+                                                                >::value
+                                                                &&
+                                                                is_cv_castable<TVALUE, DEFAULT_T>::value
+                                                            >::type>
+    DEFAULT_T& get_or_default(const TKEY& key, DEFAULT_T& default_value);
+    
+   /**
+    * 
+    */
+    template<typename DEFAULT_T, typename = typename enable_if<
+                                                                is_same<
+                                                                    typename remove_cv<DEFAULT_T>::type, typename remove_cv<TVALUE>::type
+                                                                >::value
+                                                            >::type>
+    const DEFAULT_T& get_or_default(const TKEY& key, DEFAULT_T& default_value) const;
     
     /**
      * 
      */
     bool remove(const TKEY& key);
-
-    /**
-     * 
-     */
-    const TVALUE& get_or_default(const TKEY& key, const TVALUE& value) const;
     
     /**
      * 
@@ -287,11 +305,6 @@ public:
     /**
      * 
      */
-    linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER> clone(tca::allocator* allocator = nullptr) const;
-
-    /**
-     * 
-     */
     template<typename THASHER_, typename TEQUALER_>
     void put_all(const linked_hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map);
 
@@ -300,12 +313,13 @@ public:
      */
     template<typename THASHER_, typename TEQUALER_>
     bool contains_all(const linked_hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map) const;
-    
+
+private:
     /**
      * 
      */
-    template<typename TENTRY>
-    class iterator {
+    template<typename TENTRY, typename PAIR_T>
+    class iterator_impl {
         /**
          * 
          */
@@ -315,58 +329,69 @@ public:
         /**
          * 
          */
-        iterator(TENTRY* e = nullptr);
+        iterator_impl(TENTRY* e = nullptr);
         
         /**
          * 
          */
-        iterator(const iterator<TENTRY>&) = default;
+        iterator_impl(const iterator_impl<TENTRY, PAIR_T>&) = default;
         
         /**
          * 
          */
-        iterator(iterator<TENTRY>&&) = default;
+        iterator_impl(iterator_impl<TENTRY, PAIR_T>&&) = default;
         
         /**
          * 
          */
-        iterator<TENTRY>& operator= (const iterator<TENTRY>&) = default;
+        iterator_impl<TENTRY, PAIR_T>& operator= (const iterator_impl<TENTRY, PAIR_T>&) = default;
         
         /**
          * 
          */
-        iterator<TENTRY>& operator= (iterator<TENTRY>&&) = default;
+        iterator_impl<TENTRY, PAIR_T>& operator= (iterator_impl<TENTRY, PAIR_T>&&) = default;
         
         /**
          * 
          */
-        ~iterator() = default;
+        ~iterator_impl() = default;
 
         /**
          * 
          */
-        TENTRY& operator* () const;
+        PAIR_T& operator* ();
 
         /**
          * 
          */
-        bool operator!=(const iterator<TENTRY>&) const;
+        bool operator!=(const iterator_impl<TENTRY, PAIR_T>&) const;
         
         /**
          * 
          */
-        bool operator==(const iterator<TENTRY>&) const;
+        bool operator==(const iterator_impl<TENTRY, PAIR_T>&) const;
         
         /**
          * 
          */
-        iterator<TENTRY>& operator++ ();
+        iterator_impl<TENTRY, PAIR_T>& operator++ ();
         
         /**
          * 
          */
-        iterator<TENTRY> operator++ (int);
+        iterator_impl<TENTRY, PAIR_T> operator++ (int);
     };
+public:
+
+    /**
+     * 
+     */
+    typedef iterator_impl<entry, pair<TKEY, TVALUE>> iterator;
+    
+    /**
+     * 
+     */
+    typedef iterator_impl<entry, const pair<TKEY, TVALUE>> const_iterator;
 
     /**
      * 
@@ -381,29 +406,29 @@ public:
     /**
      * 
      */
-    iterator<entry> begin() {
-        return iterator<entry>(m_head);
+    iterator begin() {
+        return iterator(m_head);
     }
     
     /**
      * 
      */
-    iterator<entry> end() {
-        return iterator<entry>(nullptr);
+    iterator end() {
+        return iterator(nullptr);
     }
     
     /**
      * 
      */
-    iterator<const entry> begin() const {
-        return iterator<const entry>(m_head);
+    const_iterator begin() const {
+        return const_iterator(m_head);
     }
     
     /**
      * 
      */
-    iterator<const entry> end() const {
-        return iterator<const entry>(nullptr);
+    const_iterator end() const {
+        return const_iterator(nullptr);
     }
 };
 
@@ -666,9 +691,9 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    TVALUE& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_or_default(const TKEY& key, TVALUE& value) {
+    template<typename DEFAULT_T, typename>
+    DEFAULT_T& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_or_default(const TKEY& key, DEFAULT_T& default_value) {
         entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
-        
         if (finded)
         {
             if (m_access_order)
@@ -678,12 +703,13 @@ public:
             }
             return finded->get_value();
         }
-        
-        return value;
+        return default_value;
     }
 
+
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    const TVALUE& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_or_default(const TKEY& key, const TVALUE& value) const {
+    template<typename DEFAULT_T, typename>
+    const DEFAULT_T& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::get_or_default(const TKEY& key, DEFAULT_T& value) const {
         entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
         
         if (finded)
@@ -800,7 +826,7 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     std::size_t linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::hashcode() const {
         if (size() > 0)
-            return objects::hashcode(begin(), end(), hash_for<map::entry<TKEY, TVALUE>>());
+            return objects::hashcode(begin(), end(), hash_for<pair<TKEY, TVALUE>>());
         else
             return 0;
     }
@@ -808,7 +834,7 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename THasher>
     bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::equals(const linked_hash_map<TKEY, TVALUE, THasher, TEQUALER>& map) const {
-        return objects::equals(begin(), end(), map.begin(), map.end(), equal_to<map::entry<TKEY, TVALUE>>());
+        return objects::equals(begin(), end(), map.begin(), map.end(), equal_to<pair<TKEY, TVALUE>>());
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -822,19 +848,6 @@ public:
         m_buckets.set(nullptr);
         m_head = m_tail = nullptr;
         m_size = 0;
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER> linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::clone(tca::allocator* allocator) const {
-        if (allocator == nullptr) {
-            if (m_allocator == nullptr)
-                return linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>();
-            allocator = m_allocator;
-        }
-        linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER> result(m_buckets.length, m_load_factor, m_access_order, allocator);
-        for (const entry& e : *this)
-            result.put(e.get_key(), e.get_value());
-        return linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>(std::move(result));
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -859,44 +872,44 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TENTRY>
-    linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::iterator(TENTRY* e) :
+    template<typename TENTRY, typename PAIR_T>
+    linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::iterator_impl(TENTRY* e) :
         m_entry(e) {
 
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TENTRY>
-    TENTRY& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator* () const {
+    template<typename TENTRY, typename PAIR_T>
+    PAIR_T& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::operator* () {
         JSTD_DEBUG_CODE(check_non_null(m_entry));
         return *m_entry;
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TENTRY>
-    bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator!=(const iterator<TENTRY>& it) const {
+    template<typename TENTRY, typename PAIR_T>
+    bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::operator!=(const iterator_impl<TENTRY, PAIR_T>& it) const {
         return m_entry != it.m_entry;
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TENTRY>
-    bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator==(const iterator<TENTRY>& it) const {
+    template<typename TENTRY, typename PAIR_T>
+    bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::operator==(const iterator_impl<TENTRY, PAIR_T>& it) const {
         return m_entry == it.m_entry;
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TENTRY>
-    typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::template iterator<TENTRY>& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator++ () {
+    template<typename TENTRY, typename PAIR_T>
+    typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::template iterator_impl<TENTRY, PAIR_T>& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::operator++ () {
         JSTD_DEBUG_CODE(check_non_null(m_entry));
         m_entry = m_entry->get_list_next();
         return *this;
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TENTRY>
-    typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::template iterator<TENTRY> linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator<TENTRY>::operator++(int) {
+    template<typename TENTRY, typename PAIR_T>
+    typename linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::template iterator_impl<TENTRY, PAIR_T> linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::operator++(int) {
         JSTD_DEBUG_CODE(check_non_null(m_entry));
-        iterator<TENTRY> it(m_entry);
+        iterator_impl<TENTRY, PAIR_T> it(m_entry);
         m_entry = m_entry->get_list_next();
         return it;
     }
