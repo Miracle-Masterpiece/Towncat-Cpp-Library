@@ -85,33 +85,84 @@ public:
 } //namespace map
 } //namespace map
 
+/**
+ * Implementation of hash tables and linked lists with favorable iteration ordering.
+ * This implementation differs from the 'linked_hash_map' theme in that it preserves the order of element addition.
+ * 
+ * This implementation provides constant performance for the functions 
+ * get, insert, and put, provided that the key hashes are well distributed. 
+ * 
+ * The performance of this implementation is affected by two parameters: initial capacity and load factor. 
+ * 
+ * The initial capacity is simply the number of buckets in the hash table. 
+ * The load factor is the ratio of the number of elements to the number of buckets after which rehashing and increasing the buckets will occur. 
+ * 
+ * The default load factor is 0.75. 
+ * 
+ * This implementation is not thread-safe. 
+ * 
+ * By default, tc::hash_for<TKEY> is used for key hashing. 
+ * By default, tc::equal_to<TKEY> is used for key comparison.
+ * 
+ * @example
+ *       tc::linked_hash_map<int, tc::string> map = {
+ *           {1, "one"},
+ *           {2, "two"},
+ *           {3, "three"},
+ *           {4, "four"}
+ *       };
+ *
+ *       for (tc::pair<int, tc::string>& p : map) {
+ *           std::cout << p.first() << " = " << p.second() << "\n";
+ *       } //output:
+ *          1 = one
+ *          2 = two
+ *          3 = three
+ *          4 = four
+ * 
+ * @example 
+ *       const tc::linked_hash_map<int, tc::string> map = { 
+ *           {1, "one"}, 
+ *           {2, "two"}, 
+ *           {3, "three"}, 
+ *           {4, "four"} 
+ *       }; 
+ * 
+ *       for (const tc::pair<int, tc::string>& p : map) { 
+ *           std::cout << p.first() << " = " << p.second() << "\n"; 
+ *       } //output:
+ *          1 = one
+ *          2 = two
+ *          3 = three
+ *          4 = four
+ */
 template<typename TKEY, typename TVALUE, typename THASHER = hash_for<TKEY>, typename TEQUALER = equal_to<TKEY>>
 class linked_hash_map {
     using entry = map::internal::linked_entry<TKEY, TVALUE>;
 private:
     /**
-     * 
+     * The memory management allocator is a this map.
      */
-    tca::allocator* m_allocator;
+    tca::allocator* const m_allocator;
 
     /**
-     * 
+     * An array of pointers to linked lists of nodes storing the map values.
      */
     array<entry*> m_buckets;
 
     /**
-     * 
+     * Pointer to the first entry in the list
      */
     entry* m_head;
     
     /**
-     * 
+     * Pointer to the last entry in the list
      */
     entry* m_tail;
 
     /**
-     * 
-     */
+    * Number of elements stored in the linked_hash_map
+    */
     std::size_t m_size;
 
     /**
@@ -120,33 +171,63 @@ private:
     float m_load_factor;
 
     /**
-     * 
+     * Determines whether accessing an element will affect its position in the linked list.
      */
     bool m_access_order;
 
     /**
-     * 
-     */
+    * Allocates memory and initializes a new entry.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    *       Any copy or move constructor exception.
+    */
     template<typename TKEY_, typename TVALUE_>
     entry* alloc_entry(TKEY_&&, TVALUE_&&, std::size_t hashcode);
     
     /**
-     * 
-     */
+    * Calls the destructor and frees the memory of the passed entry.
+    */
     void free_entry(entry*);
 
     /**
+     * Attempts to increase the capacity of this linked_hash_map.
+     *
+     * First, checks that the bucket array length is not 0, then allocates a new array.
+     * Otherwise, checks that the current load factor is not greater than m_load_factor,
+     * in which case, reallocates memory for buckets.
      * 
+     * @throws out_of_memory_error
+     *      If there is not enough memory.
+     * 
+     * @see rehash()
+     * @see get_load_factor();
      */
-    void lazy_init();
+    void ensure_capacity();
 
     /**
-     * 
+     * Adds an entry to the beginning of the linked list.
+     * If this entry is already in the list, it must be removed first.
+     *
+     * @param e
+     *      A pointer to the entry to add to the beginning of the linked list.
+     *      'e' must be != nullptr
+     *
+     * @see unlink()
      */
     void link_last(entry* e);
     
     /**
-     * 
+     * Adds an entry to the ending of the linked list.
+     * If this entry is already in the list, it must be removed first.
+     *
+     * @param e
+     *      A pointer to the entry to add to the ending of the linked list.
+     *      'e' must be != nullptr
+     *
+     * @see unlink()
      */
     void link_first(entry* e);
     
@@ -156,94 +237,334 @@ private:
     void unlink(entry* e);
 
     /**
-     * 
+     * Increases the capacity of this linked_hash_map.
+     * Rehash allocates a new, larger array,
+     * and then appends all entries to it.
+     *
+     * @throws out_of_memory_error
+     *       If there is not enough memory
      */
     void rehash();
 
     /**
-     * 
+     * Returns the load factor of this linked_hash_map.
+     * The load factor is the value of size() / m_buckets.length
      */
     float get_load_factor() const;
 
 public:
     /**
-     * 
+     * Creates a map with the passed allocator.
+     *
+     * @param allocator
+     *       The allocator responsible for allocating and deallocating memory for this map.
      */
     linked_hash_map(tca::allocator* allocator = tca::get_default_allocator());
     
-    /**
+    /** 
+     * Creates a linked linked_hash_map with the initial capacity. 
      * 
+     * @param initial_capacity 
+     *       Initial capacity of the linked_hash_map. 
+     * 
+     * @param load_factor 
+     *       Map load factor. 
+     *       The value above which memory will be redistributed and the number of buckets will increase. 
+     * 
+     * @param access_order
+     *       Whether accessing an element moves it to the end of the map.
+     *       If true, accessed elements are moved to the end as if they were newly added.
+     * 
+     * @param allocator 
+     *       An allocator responsible for allocating and freeing memory for this map. 
+     * 
+     * @throws out_of_memory_error 
+     *       If there is not enough memory. 
      */
     linked_hash_map(std::size_t initial_capacity, float load_factor = 0.75f, bool access_order = false, tca::allocator* allocator = tca::get_default_allocator());
     
     /**
+     * Creates a linked_hash_map and initializes it using std::initializer_list
+     *
+     * If duplicate elements appear in std::initializer_list, only the first entry will be added.
+     *
+     * @param load_factor
+     *       The linked_hash_map load factor.
+     *       The value above which memory will be reallocated and the number of buckets will be increased.
+     *
+     * @param allocator
+     *       The allocator responsible for allocating and freeing memory for this linked_hash_map.
      * 
+     * @param access_order
+     *       Whether accessing an element moves it to the end of the map.
+     *       If true, accessed elements are moved to the end as if they were newly added.
+     * 
+     * @throws out_of_memory_error
+     *       If there is not enough memory.
+     *
+     * @throws
+     *       Any element copy constructor exception.
+     *
+     * @example
+     *       tc::linked_hash_map<int, int> map = {{1, 1}, {2, 2}};
+     *       assert(map.size() == 2);
      */
     linked_hash_map(const std::initializer_list<pair<TKEY, TVALUE>>& init_list, float load_factor = 0.75f, bool access_order = false, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
+     * Copy constructor.
+     *
+     * Copies the values ​​of the passed linked_hash_map to this linked_hash_map.
+     * The allocator of the copied linked_hash_map is used when constructing this linked_hash_map.
+     *
+     * @param map
+     *       The linked_hash_map whose values ​​will be copied.
+     *
+     * @throws out_of_memory_error
+     *       If there is not enough memory.
+     *
+     * @throws
+     *       Any element copy constructor exception.
+     *
+     * @example
+     *       tc::linked_hash_map<int, int> map = {{1, 1}, {2, 2}};
+     *       tc::linked_hash_map<int, int> copied = map;
+     *
+     *       std::cout << copied.get(1) << "\n";
+     *       std::cout << copied.get(2) << "\n"; 
      * 
+     *       assert(copied.size() == map.size()); 
+     *       assert(copied.contains_key(1)); 
+     *       assert(copied.contains_key(2)); 
+     *       assert(copied.get_allocator() == map.get_allocator()); 
      */
     linked_hash_map(const linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>& map);
     
     /**
-     * 
+     * Move constructor.
+     *
+     * Moves the resources associated with 'map' to this linked_hash_map.
+     * After moving, this linked_hash_map will use the passed linked_hash_map pointer.
+     *
+     * The allocator of 'map' is unchanged.
+     * After moving, 'map' is left in a valid but unspecified state.
+     *
+     * @param map
+     *       The linked_hash_map whose resources will be moved to this linked_hash_map.
+     *
+     * @example
+     *       tc::linked_hash_map<int, int> map = {{1, 1}, {2, 2}};
+     *       tc::linked_hash_map<int, int> moved = std::move(map);
+     *
+     *       assert(moved.get_allocator() == map.get_allocator());
+     *       assert(moved.size() == 2); 
+     *       assert(moved.contains_key(1)); 
+     *       assert(moved.contains_key(2)); 
      */
     linked_hash_map(linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>&& map);
     
     /**
-     * 
+     * Copy operator.
+     *
+     * Copies elements from the passed linked_hash_map to this linked_hash_map.
+     *
+     * This object's allocator is not modified during copying.
+     *
+     * Strong exception guarantee.
+     * If an exception is thrown during copying, the objects are not modified.
+     *
+     * @param map
+     *       The map from which the elements will be copied.
+     *
+     * @throws out_of_memory_error
+     *       If there is not enough memory.
+     *
+     * @throws
+     *       Any exception thrown by the element's copy constructor.
+     *
+     * @example
+     *       tc::linked_hash_map<int, int> map = {{1, 1}, {2, 2}};
+     *
+     *       tca::malloc_free_allocator alloc;
+     *       tc::linked_hash_map<int, int> copied(&alloc); 
+     *       
+     *       copied = map; 
+     *       
+     *       assert(copied.size() == map.size()); 
+     *       assert(copied.get_allocator() == &alloc); 
+     *       assert(map.contains_key(1)); 
+     *       assert(map.contains_key(2)); 
      */
     linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>& operator= (const linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>& map);
     
     /**
+     * Move operator.
+     *
+     * Moves elements from the passed linked_hash_map to this linked_hash_map.
+     *
+     * If the allocators are the same, ownership of the resource is simply transferred.
+     * If the allocators are different, the elements are copied.
+     *
+     * Strong exception guarantee.
+     * If an exception is thrown during copying, the objects are not modified.
+     *
+     * After moving, 'map' saves its allocator
+     * and remains in a valid but unspecified state.
+     *
+     * @param map
+     *       The map from which the elements will be moved.
+     *
+     * @throws out_of_memory_error
+     *       If there is not enough memory..
+     *
+     * @throws
+     *       Any exception thrown by the element's copy constructor. * 
      * 
+     * @example 
+     *       tc::linked_hash_map<int, int> map = {{1, 1}, {2, 2}}; 
+     *       
+     *       tca::malloc_free_allocator alloc; 
+     *       tc::linked_hash_map<int, int> moved(&alloc); 
+     *       
+     *       moved = std::move(map); //Allocators are different, so this will result in a copy 
+     *       assert(moved.get_allocator() = &alloc); 
+     * 
+     * @example 
+     *       tc::linked_hash_map<int, int> map = {{1, 1}, {2, 2}}; 
+     *       tc::linked_hash_map<int, int> moved; 
+     *       
+     *       moved = std::move(map); //Allocators are the same, fair move
+     * 
+     *       assert(moved.get_allocator() = map.get_allocator());
+     *
      */
     linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>& operator= (linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>&& map);
     
     /**
-     * 
+     * Inserts a key and value into this linked_hash_map.
+     *
+     * If the key is already mapped to a value, the value will be modified.
+     *
+     * Strong exception guarantee.
+     * If the function throws an exception, the object will be preserved unchanged.
+     *
+     * @param key
+     *       The key to be mapped to the value.
+     *
+     * @param value
+     *       The value mapped to the key.
+     *
+     * @return
+     *       If the key was successfully added to the linked_hash_map or the value was modified.
+     *       Otherwise, false.
+     *
+     * @throws out_of_memory_error
+     *       If there is not enough memory.
+     *
+     * @throws
+     *       Any exception thrown from the constructor (copy/move) of the key or value.
+     *
+     *
+     * @see insert()
+     * @see size()
+     * @see replace()
      */
     template<typename TKEY_, typename TVALUE_>
     bool put(TKEY_&& key, TVALUE_&& value);
     
     /**
-     * 
+     * Inserts a key and value into this linked_hash_map.
+     *
+     * If the key is already mapped to a value, do nothing.
+     *
+     * Strong exception guarantee.
+     * If the function throws an exception, the object is preserved unchanged.
+     *
+     * @param key
+     *       The key to be mapped to the value.
+     *
+     * @param value
+     *       The value mapped to the key.
+     *
+     * @return
+     *       If the key was successfully added to the linked_hash_map.
+     *       If this key already exists in the linked_hash_map, return false.
+     *
+     * @throws out_of_memory_error
+     *       If there is not enough memory.
+     *
+     * @throws
+     * Any exception thrown from the constructor (copy/move) of the key or value.
+     *
+     * @see put()
+     * @see size()
+     * @see replace()
      */
     template<typename TKEY_, typename TVALUE_>
     bool insert(TKEY_&& key, TVALUE_&& value);
     
     /**
+     * Replaces the value, given the key, with a new value.
+     *
+     * If an equivalent key does not exist in the linked_hash_map, the function does nothing.
+     *
+     * @return
+     *       true if the value has been modified; otherwise, false.
+     *
+     * @throw
+     *       Any exception thrown from the value's copy constructor.
      * 
+     * @see put()
+     * @see insert()
      */
     template<typename TVALUE_>
     bool replace(const TKEY& key, TVALUE_&& value);
 
     /**
+     * Returns a reference to the value associated with the passed key.
+     * If there is no equivalent key to the passed one, an exception is thrown.
+     *
      * @throws no_such_element_exception
-     *      Если значения по переданному ключу не существует.
+     *       If no value exists for the passed key.
      */
     TVALUE& get(const TKEY& key);
     
     /**
+     * Returns a constant reference to the value associated with the passed key.
+     * If there is no equivalent key to the passed one, an exception is thrown.
+     *
      * @throws no_such_element_exception
-     *      Если значения по переданному ключу не существует.
+     *       If no value exists for the passed key.
      */
     const TVALUE& get(const TKEY& key) const;
        
     /**
+     * Checks whether the linked_hash_map contains a key equivalent to the one passed.
      * 
+     * @return
+     *       true - only if the key is contained in the linked_hash_map.
+     *       Otherwise, false.
      */
     bool contains_key(const TKEY& key) const;
     
     /**
-     * 
+     * Checks whether the linked_hash_map contains a value equivalent to the one passed.
+     *
+     * @return
+     *       true - only if the value is contained in the linked_hash_map.
+     *       Otherwise, false.
      */
     template<typename TVALUE_EQUALER = equal_to<TVALUE>>
     bool contains_value(const TVALUE& value) const;
 
     /**
-     * 
+     * Returns a reference to the value associated with the key.
+     *
+     * If the hashmap does not contain a key equivalent to the one passed in,
+     * the default value passed in by the user is returned.
+     *
+     * @return
+     *       A reference to the value from the hashmap, or a reference to the default value if the value does not exist in the hashmap.
      */
     template<typename DEFAULT_T, typename = typename enable_if<
                                                                 is_same<
@@ -255,7 +576,13 @@ public:
     DEFAULT_T& get_or_default(const TKEY& key, DEFAULT_T& default_value);
     
    /**
-    * 
+    * Returns a constant reference to the value associated with the key.
+    *
+    * If the linked_hash_map does not contain a key equivalent to the one passed in,
+    * the default value passed in by the user is returned.
+    *
+    * @return
+    *       A reference to the value from the linked_hash_map, or a reference to the default value if the value does not exist in the linked_hash_map.
     */
     template<typename DEFAULT_T, typename = typename enable_if<
                                                                 is_same<
@@ -265,54 +592,173 @@ public:
     const DEFAULT_T& get_or_default(const TKEY& key, DEFAULT_T& default_value) const;
     
     /**
-     * 
+     * Removes a key-value from the linked_hash_map.
+     *
+     * @return
+     *      true if the deletion was successful.
+     *      Otherwise, false.
      */
     bool remove(const TKEY& key);
     
     /**
-     * 
+     * Returns the allocator responsible for allocating
+     * and deallocating memory for this linked_hash_map.
      */
     tca::allocator* get_allocator() const;
 
     /**
      * @return
-     *      Размер этой карты.
+     *       The number of elements this linked_hash_map stores.
      */
     std::size_t size() const;
 
     /**
      * @return
-     *      Является ли карта пустой.
+     *       Whether the map is empty.
+     *       Returns true only if size() returns 0.
+     *       Otherwise, returns false.
      */
     bool is_empty() const;
 
-    /**
+    /** 
+     * Returns the hash code of this hash-map. 
+     * The hash code is generated based on all stored elements. 
      * 
+     * tca::hash_for<TKEY> and tca::hash_for<TVALUE> is used to generate the hash code of elements. 
+     * 
+     * @return 
+     *       The hash code of this list. 
      */
     std::size_t hashcode() const;
 
     /**
+     * Checks if this hash-map is equal to the passed 'map'.
+     *
+     * tc::equal_to<TKEY> and tc::equal_to<TVALUE> is used for comparison.
+     *
+     * @param map
+     *       Another hash-map to check.
+     *
+     * @return
+     *       true - only if the hash-map have the same sizes,
+     *       and the same element contents. False - otherwise.
+     *
+     * @example
+     *       tc::linked_hash_map<int, int> ints_1 = {{1, 1}, {2, 2}};
+     *       tc::linked_hash_map<int, int> ints_2 = {{1, 1}, {2, 2}};
+     *       tc::linked_hash_map<int, int> ints_3 = {{1, 1}, {5, 5}};
+     * 
+     *       std::cout << ints_1.equals(ints_2) << "\n"; //output true 
+     *       std::cout << ints_1.equals(ints_3) << "\n"; //output false 
      * 
      */
     template<typename THasher>
     bool equals(const linked_hash_map<TKEY, TVALUE, THasher, TEQUALER>& map) const;
 
-    /**
-     * 
-     */
+   /**
+    * Clears this linked_hash_map.
+    * After calling size(), size() will be 0.
+    */
     void clear();
 
-    /**
-     * 
-     */
+   /**
+    * Inserts elements from the passed linked_hash_map into this linked_hash_map.
+    * If the key already exists in this linked_hash_map, its value will be replaced.
+    *
+    * Basic exception safety guarantee.
+    * If an exception occurs while adding one of the elements,
+    * elements successfully added before the exception occurs remain in the map.
+    *
+    * @param map
+    *       The linked_hash_map from which to insert values ​​into this linked_hash_map.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    *       Any exception thrown by the constructor (copy or move) of the key or value.
+    *
+    */
     template<typename THASHER_, typename TEQUALER_>
     void put_all(const linked_hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map);
 
     /**
-     * 
-     */
+    * Inserts elements from the passed iterator into this linked_hash_map.
+    * If the key already exists in this linked_hash_map, its value will be replaced.
+    *
+    * The iterator must return a reference to a tc::pair<TKEY, TVALUE>
+    *
+    * Basic exception safety guarantee.
+    * If an exception occurs while adding one of the elements,
+    * elements successfully added before the exception occurs remain in the map.
+    *
+    * @param begin
+    *       The iterator to the beginning.
+    *
+    * @param end
+    *       The iterator to the end.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    *       Any exception thrown by the constructor (copy or move) of the key or value.
+    *
+    */
+    template<typename ITERATOR>
+    void put_all(ITERATOR begin, ITERATOR end);
+
+    /**
+    * Inserts elements from the passed hash map into this hash map.
+    * If the key already exists in the map, this element is ignored.
+    *
+    * Basic exception safety guarantee.
+    * If an exception occurs while adding one of the elements,
+    * elements successfully added before the exception occurs remain in the map.
+    *
+    * @param map
+    *       The hash map from which to insert values ​​into this hash map.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    *       Any exception thrown by the constructor (copy or move) of the key or value.
+    *
+    */
+    template<typename ITERATOR>
+    void insert_all(ITERATOR begin, ITERATOR end);
+
+   /**
+    * Checks whether the keys of the passed linked_hash_map are contained in this linked_hash_map.
+    *
+    * @param map
+    *       The linked_hash_map whose keys will be checked.
+    *
+    * @return
+    *       true if all keys of 'map' are contained in this linked_hash_map.
+    *       Otherwise, false.
+    */
     template<typename THASHER_, typename TEQUALER_>
     bool contains_all(const linked_hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map) const;
+
+   /**
+    * Checks whether the keys from the passed iterator are contained in this linked_hash_map.
+    *
+    * The iterator must return a reference to a tc::pair<TKEY, TVALUE>
+    *
+    * @param begin
+    *       The iterator to the beginning.
+    *
+    * @param end
+    *       The iterator to the end.
+    *
+    * @return
+    *       true if all keys of 'map' are contained in this linked_hash_map.
+    *       Otherwise, false.
+    */
+    template<typename ITERATOR>
+    bool contains_all(ITERATOR begin, ITERATOR end) const;
 
 private:
     /**
@@ -460,10 +906,7 @@ public:
     ) : m_allocator(allocator), m_buckets(), m_head(nullptr), m_tail(nullptr), m_size(0), m_load_factor(load_factor), m_access_order(access_order) {
         m_buckets.set(nullptr);
         try {
-            for (const pair<TKEY, TVALUE>& p : init_list)
-            {
-                put(p.first(), p.second());
-            }
+            insert_all(init_list.begin(), init_list.end());
         } catch (...) {
             clear();
             throw;
@@ -473,7 +916,12 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::linked_hash_map(const linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>& map) :
         linked_hash_map() {
-        (*this) = std::move(map.clone());
+        try {
+            insert_all(map.begin(), map.end());
+        } catch (...) {
+            clear();
+            throw;
+        }
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -485,7 +933,6 @@ public:
         m_size(map.m_size),
         m_load_factor(map.m_load_factor),
         m_access_order(map.m_access_order) {
-        map.m_allocator = nullptr;
         map.m_head      = nullptr;
         map.m_tail      = nullptr;
         map.m_size      = 0;
@@ -493,10 +940,11 @@ public:
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::operator= (const linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>& map) {
-        if (&map != this) {
-            linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER> tmp = map.clone(m_allocator);
-            clear();
-            (*this) = std::move(tmp);
+        if (&map != this)
+        {
+            linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER> tmp(0, m_load_factor, m_access_order, m_allocator);
+            tmp.insert_all(map.begin(), map.end());
+            *this = std::move(tmp);
         }
         return *this;
     }
@@ -505,19 +953,19 @@ public:
     linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::operator= (linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>&& map) {
         if (&map != this) {
             
-            clear();
-            m_allocator = map.m_allocator;
-            m_buckets   = std::move(map.m_buckets);
-            m_head      = map.m_head;
-            m_tail      = map.m_tail;
-            m_size          = map.m_size;
-            m_load_factor   = map.m_load_factor;
-            m_access_order  = map.m_access_order;
-
-            map.m_allocator = nullptr;
-            map.m_head      = nullptr;
-            map.m_tail      = nullptr;
-            map.m_size      = 0;
+            if (get_allocator() == map.get_allocator())
+            {
+                std::swap(m_buckets,        map.m_buckets);
+                std::swap(m_head,           map.m_head);
+                std::swap(m_tail,           map.m_tail);
+                std::swap(m_size,           map.m_size);
+                std::swap(m_load_factor,    map.m_load_factor);
+                std::swap(m_access_order,   map.m_access_order);
+            }
+            else
+            {
+                *this = map;
+            }
         }
         return *this;
     }
@@ -547,14 +995,19 @@ public:
     void linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::free_entry(entry* e) {
         assert(e != nullptr);
         e->~entry();
-        m_allocator->deallocate(e, sizeof(entry));
+        m_allocator->deallocate(e);
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    void linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::lazy_init() {
-        if (m_buckets.length == 0) {
+    void linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::ensure_capacity() {
+        if (m_buckets.length == 0)
+        {
             m_buckets = array<entry*>(16, m_allocator);
             m_buckets.set(nullptr);
+        }
+        else if (get_load_factor() >= m_load_factor)
+        {
+            rehash();
         }
     }
 
@@ -592,10 +1045,8 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename TKEY_, typename TVALUE_>
     bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::put(TKEY_&& key, TVALUE_&& value) {
-        lazy_init();
-
-        if (get_load_factor() > m_load_factor) 
-            rehash();
+        
+        ensure_capacity();
 
         entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
         if (finded)
@@ -622,6 +1073,34 @@ public:
 
             return true;
         }
+    }
+
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    template<typename TKEY_, typename TVALUE_>
+    bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::insert(TKEY_&& key, TVALUE_&& value) {
+        
+        ensure_capacity();
+
+        entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
+        if (!finded)
+        {
+            entry* e = alloc_entry(std::forward<TKEY_>(key), std::forward<TVALUE_>(value), internal::map::hash_key<THASHER>(key));
+            
+            std::size_t idx = internal::map::bucket_index<THASHER>(key, m_buckets);
+            internal::map::append_entry(idx, e, m_buckets);
+            
+            ++m_size;
+            link_last(e);
+            
+            if (remove_eldest_entry(m_head))
+            {
+                remove(m_head->get_key());
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -660,6 +1139,7 @@ public:
         if (finded)
         {
             finded->set_value(std::forward<TVALUE_>(value));
+            return true;
         }
         return false;
     }
@@ -727,8 +1207,8 @@ public:
     template<typename TVALUE_EQUALER>
     bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::contains_value(const TVALUE& value) const {
         TVALUE_EQUALER equals;
-        for (const entry& e: *this) {
-            if (equals(e.get_value(), e.get_value()))
+        for (const pair<TKEY, TVALUE>& e: *this) {
+            if (equals(e.get_value(), value))
                 return true;
         }
         return false;
@@ -851,19 +1331,50 @@ public:
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    template<typename ITERATOR>
+    void linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::put_all(ITERATOR begin, ITERATOR end) {
+        while (begin != end)
+        {
+            const pair<TKEY, TVALUE>& p = *begin;
+            put(p.first(), p.second());
+            ++begin;
+        }
+    }
+    
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    template<typename ITERATOR>
+    void linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::insert_all(ITERATOR begin, ITERATOR end) {
+        while (begin != end)
+        {
+            const pair<TKEY, TVALUE>& p = *begin;
+            insert(p.first(), p.second());
+            ++begin;
+        }
+    }
+
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename THASHER_, typename TEQUALER_>
     void linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::put_all(const linked_hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map) {
-        for (const entry& e : map)
-            put(e.get_key(), e.get_value());
+        put_all(map.begin(), map.end());
+    }
+
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    template<typename ITERATOR>
+    bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::contains_all(ITERATOR begin, ITERATOR end) const {
+        while (begin != end)
+        {
+            const pair<TKEY, TVALUE>& p = *begin;
+            if (!internal::map::find_entry<THASHER, TEQUALER>(p.first(), m_buckets) )
+                return false;
+            ++begin;
+        }
+        return begin == end;
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename THASHER_, typename TEQUALER_>
     bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::contains_all(const linked_hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map) const {
-        for (const entry& e : map)
-            if (!internal::map::find_entry<THASHER, TEQUALER>(e.get_key(), m_buckets))
-                return false;
-        return true;
+        return contains_all(map.begin(), map.end());
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -882,7 +1393,7 @@ public:
     template<typename TENTRY, typename PAIR_T>
     PAIR_T& linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::operator* () {
         JSTD_DEBUG_CODE(check_non_null(m_entry));
-        return *m_entry;
+        return m_entry->get_pair();
     }
     
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>

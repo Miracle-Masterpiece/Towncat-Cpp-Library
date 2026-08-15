@@ -93,7 +93,7 @@ public:
                                                         typename remove_cv<T_>::type
                                                 >::value
                                             >::type>
-    unique_ptr(T_&& obj, tca::allocator* allocator = tca::get_scoped_or_default());
+    unique_ptr(T_&& obj, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * 
@@ -260,7 +260,7 @@ public:
                                                                         typename remove_cv<T_>::type
                                                                 >::value
                                                             >::type>
-    unique_ptr<T> make_unique(T_&& obj = T(), tca::allocator* allocator = tca::get_scoped_or_default()) {
+    unique_ptr<T> make_unique(T_&& obj = T(), tca::allocator* allocator = tca::get_default_allocator()) {
         return unique_ptr<T>(std::forward<T_>(obj), allocator);
     }
 
@@ -372,7 +372,7 @@ public:
     /**
      * 
      */
-    unique_ptr(std::size_t len, tca::allocator* allocator = tca::get_scoped_or_default());
+    unique_ptr(std::size_t len, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * 
@@ -511,7 +511,7 @@ public:
     }
 
     template<typename T>
-    unique_ptr<T[]> make_unique_array(std::size_t len, tca::allocator* allocator = tca::get_scoped_or_default()) {
+    unique_ptr<T[]> make_unique_array(std::size_t len, tca::allocator* allocator = tca::get_default_allocator()) {
         return unique_ptr<T[]>(len, allocator);
     }
 }

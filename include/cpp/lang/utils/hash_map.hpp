@@ -30,7 +30,6 @@ namespace tc
  * By default, tc::hash_for<TKEY> is used for key hashing.
  * By default, tc::equal_to<TKEY> is used for key comparison.
  *
- *
  * For iteration, the tc::pair<TKEY, TVALUE> class is used.
  *
  * @example
@@ -90,23 +89,6 @@ private:
     float m_load_factor;
 
    /**
-    * Allocates memory and initializes a new entry.
-    *
-    * @throws out_of_memory_error
-    *       If there is not enough memory.
-    *
-    * @throws
-    *       Any copy or move constructor exception.
-    */
-    template<typename TKEY_, typename TVALUE_>
-    entry* alloc_entry(TKEY_&&, TVALUE_&&, std::size_t hashcode);
-    
-   /**
-    * Calls the destructor and frees the memory of the passed entry.
-    */
-    void free_entry(entry* e);
-
-   /**
     * Increases the capacity of this hash map.
     * Rehash allocates a new, larger array,
     * and then appends all entries to it.
@@ -129,6 +111,9 @@ private:
     * Otherwise, checks that the current load factor is not greater than m_load_factor,
     * in which case, reallocates memory for buckets.
     *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    * 
     * @see rehash()
     * @see get_load_factor();
     */
@@ -186,7 +171,6 @@ public:
     hash_map(const std::initializer_list<const pair<TKEY, TVALUE>>& init_list, float load_factor = 0.75f, tca::allocator* allocator = tca::get_default_allocator());
 
    /**
-    *
     * Copy constructor.
     *
     * Copies the values ​​of the passed hash map to this hash map.
@@ -480,7 +464,8 @@ public:
     * Removes a key-value from the hash map.
     *
     * @return
-    *       true if the deletion was successful. Otherwise, false.
+    *       true if the deletion was successful.
+    *       Otherwise, false.
     */
     bool remove(const TKEY& key);
 
@@ -549,8 +534,9 @@ public:
     * Inserts elements from the passed hash map into this hash map.
     * If the key already exists in this hash map, its value will be replaced.
     *
-    * Strong exception guarantee.
-    * If the function throws an exception, the object will be left unchanged.
+    * Basic exception safety guarantee.
+    * If an exception occurs while adding one of the elements,
+    * elements successfully added before the exception occurs remain in the map.
     *
     * @param map
     *       The hash map from which to insert values ​​into this hash map.
@@ -565,14 +551,36 @@ public:
     template<typename THASHER_, typename TEQUALER_>
     void put_all(const hash_map<TKEY, TVALUE, THASHER_, TEQUALER_>& map);
     
+    /**
+    * Inserts elements from the passed hash map into this hash map.
+    * If the key already exists in the map, this element is ignored.
+    *
+    * Basic exception safety guarantee.
+    * If an exception occurs while adding one of the elements,
+    * elements successfully added before the exception occurs remain in the map.
+    *
+    * @param map
+    *       The hash map from which to insert values ​​into this hash map.
+    *
+    * @throws out_of_memory_error
+    *       If there is not enough memory.
+    *
+    * @throws
+    *       Any exception thrown by the constructor (copy or move) of the key or value.
+    *
+    */
+    template<typename ITERATOR>
+    void insert_all(ITERATOR begin, ITERATOR end);
+    
    /**
     * Inserts elements from the passed iterator into this hash map.
     * If the key already exists in this hash map, its value will be replaced.
     *
     * The iterator must return a reference to a tc::pair<TKEY, TVALUE>
     *
-    * Strong exception guarantee.
-    * If the function throws an exception, the object will be left unchanged.
+    * Basic exception safety guarantee.
+    * If an exception occurs while adding one of the elements,
+    * elements successfully added before the exception occurs remain in the map.
     *
     * @param begin
     *       The iterator to the beginning.
@@ -772,10 +780,7 @@ public:
     ) : m_allocator(allocator), m_buckets(), m_size(0), m_load_factor(load_factor) {
         m_buckets.set(nullptr);
         try {
-            for (const pair<TKEY, TVALUE>& p : init_list)
-            {
-                insert(p.first(), p.second());
-            }
+            insert_all(init_list.begin(), init_list.end());
         } catch (...) {
             clear();
             throw;
@@ -785,12 +790,8 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     hash_map<TKEY, TVALUE, THASHER, TEQUALER>::hash_map(const hash_map<TKEY, TVALUE, THASHER, TEQUALER>& map) :
         hash_map(map.get_allocator()) {
-        
         try {
-            for (const pair<TKEY, TVALUE>& e : map)
-            {
-                insert(e.first(), e.second());
-            }
+            insert_all(map.begin(), map.end());
         } catch (...) {
             clear();
             throw;
@@ -810,11 +811,8 @@ public:
     hash_map<TKEY, TVALUE, THASHER, TEQUALER>& hash_map<TKEY, TVALUE, THASHER, TEQUALER>::operator= (const hash_map<TKEY, TVALUE, THASHER, TEQUALER>& map) {
         if (&map != this)
         {
-            hash_map<TKEY, TVALUE, THASHER, TEQUALER> tmp(m_allocator);
-            for (const pair<TKEY, TVALUE>& e : map)
-            {
-                tmp.insert(e.first(), e.second());
-            }
+            hash_map<TKEY, TVALUE, THASHER, TEQUALER> tmp(0, m_load_factor, m_allocator);
+            tmp.insert_all(map.begin(), map.end());
             *this = std::move(tmp);
         }
         return *this;
@@ -842,28 +840,6 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     hash_map<TKEY, TVALUE, THASHER, TEQUALER>::~hash_map() {
         clear();
-    }
-
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    template<typename TKEY_, typename TVALUE_>
-    typename hash_map<TKEY, TVALUE, THASHER, TEQUALER>::entry* hash_map<TKEY, TVALUE, THASHER, TEQUALER>::alloc_entry(TKEY_&& key, TVALUE_&& value, std::size_t hashcode) {
-        entry* entr = (entry*) m_allocator->allocate_align(sizeof(entry), alignof(entry));
-        if (!entr)
-            throw_except<out_of_memory_error>("Out of memory!");
-        try {
-            new(entr) entry(std::forward<TKEY_>(key), std::forward<TVALUE_>(value), hashcode);
-        } catch (...) {
-            m_allocator->deallocate(entr, sizeof(entry));
-            throw;
-        }
-        return entr;
-    }
-    
-    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
-    void hash_map<TKEY, TVALUE, THASHER, TEQUALER>::free_entry(entry* e) {
-        assert(e != nullptr);
-        e->~entry();
-        m_allocator->deallocate(e, sizeof(entry));
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
@@ -917,7 +893,12 @@ public:
         }
         else
         {
-            entry* e = alloc_entry(std::forward<TKEY_>(key), std::forward<TVALUE_>(value), internal::map::hash_key<THASHER>(key));
+            entry* e = internal::map::alloc_entry<entry>(
+                                                            std::forward<TKEY_>(key),
+                                                            std::forward<TVALUE_>(value),
+                                                            internal::map::hash_key<THASHER>(key),
+                                                            m_allocator
+                                                        );
             
             std::size_t idx = internal::map::bucket_index<THASHER>(key, m_buckets);
             internal::map::append_entry(idx, e, m_buckets);
@@ -932,14 +913,15 @@ public:
     bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::insert(TKEY_&& key, TVALUE_&& value) {
         ensure_capacity();
 
-        entry* finded   = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
-        if (!finded)
+        entry* added = internal::map::insert<THASHER, TEQUALER>(
+                                                std::forward<TKEY_>(key),
+                                                std::forward<TVALUE_>(value),
+                                                m_buckets,
+                                                m_allocator
+                                            );
+
+        if (added)
         {
-            entry* e = alloc_entry(std::forward<TKEY_>(key), std::forward<TVALUE_>(value), internal::map::hash_key<THASHER>(key));
-            
-            std::size_t idx = internal::map::bucket_index<THASHER>(key, m_buckets);
-            internal::map::append_entry(idx, e, m_buckets);
-            
             ++m_size;
             return true;
         }
@@ -979,11 +961,12 @@ public:
                 {
                     m_buckets[idx] = i->get_next();
                 }
-                free_entry(i);
+                internal::map::free_entry(i, m_allocator);
                 --m_size;
                 return true;
             }
         }
+        
         return false;
     }
 
@@ -1012,8 +995,8 @@ public:
     template<typename TVALUE_EQUALER>
     bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::contains_value(const TVALUE& value) const {
         TVALUE_EQUALER equals;
-        for (const entry& e: *this) {
-            if (equals(e.get_value(), e.get_value()))
+        for (const pair<TKEY, TVALUE>& e: *this) {
+            if (equals(e.get_value(), value))
                 return true;
         }
         return false;
@@ -1055,53 +1038,29 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     void hash_map<TKEY, TVALUE, THASHER, TEQUALER>::clear() {
-        for (std::size_t i = 0; i < m_buckets.length; ++i) {
-            entry* e = m_buckets[i];
-            while (e)
-            {
-                entry* current = e;
-                e = e->get_next();
-                free_entry(current);
-            }
-        }
-        m_buckets.set(nullptr);
+        internal::map::clear(m_buckets, m_allocator);
         m_size = 0;
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename ITERATOR>
     void hash_map<TKEY, TVALUE, THASHER, TEQUALER>::put_all(ITERATOR begin, ITERATOR end) {
-
-        entry* entries = nullptr;
-        
-        try {
-        
-            while (begin != end)
-            {
-                const pair<TKEY, TVALUE>& p = *begin;
-                
-                entry* tmp = alloc_entry(p.first(), p.second(), internal::map::hash_key<THASHER>(p.first()));
-                tmp->set_next(entries);
-                entries = tmp;
-                
-                ++begin;
-            }
-
-        } catch (...) {
-            for (entry* i = entries; i != nullptr;)
-            {
-                entry* current = i;
-                i = i->get_next();
-                free_entry(current);
-            }
-            throw;
-        }        
-
-        for (entry* i = entries; i != nullptr;)
+        while (begin != end)
         {
-            entry* current = i;
-            i = i->get_next();
-            internal::map::append_entry(internal::map::bucket_index<THASHER>(current->get_key(), m_buckets), current, m_buckets);
+            const pair<TKEY, TVALUE>& p = *begin;
+            put(p.first(), p.second());
+            ++begin;
+        }
+    }
+    
+    template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
+    template<typename ITERATOR>
+    void hash_map<TKEY, TVALUE, THASHER, TEQUALER>::insert_all(ITERATOR begin, ITERATOR end) {
+        while (begin != end)
+        {
+            const pair<TKEY, TVALUE>& p = *begin;
+            insert(p.first(), p.second());
+            ++begin;
         }
     }
 

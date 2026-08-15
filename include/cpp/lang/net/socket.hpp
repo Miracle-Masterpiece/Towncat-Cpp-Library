@@ -1065,6 +1065,7 @@ public:
         
         if (!is_created())
             create(address.get_family());
+        
         _impl.connect(address, port);
         set_config(IS_CONNECTED, true);
     }
@@ -1213,7 +1214,7 @@ public:
     }
 
     template<typename SOCK_T>
-    void tsocket<SOCK_T>::set_tos(int32_t value) {
+    void tsocket<SOCK_T>::set_tos(int value) {
         check_state_or_except();
         socket_option opt;
         opt.int_value = value;
@@ -1221,7 +1222,7 @@ public:
     }
     
     template<typename SOCK_T>
-    int32_t tsocket<SOCK_T>::get_tos() const {
+    int tsocket<SOCK_T>::get_tos() const {
         check_state_or_except();
         return _impl.get_socket_option(socket_option::bsd::IP_TOS_).int_value;
     }
