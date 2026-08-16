@@ -327,9 +327,9 @@ template class tc::array<int>;
 template class tc::array_list<int>;
 template class tc::linked_list<int>;
 template class tc::hash_map<int, int>;
-// template class tc::hash_map<int, const tc::string>;
+template class tc::hash_map<int, const tc::string>;
 template class tc::hash_map<int, tc::string>;
-// template class tc::linked_hash_map<int, const tc::string>;
+template class tc::linked_hash_map<int, const tc::string>;
 template class tc::linked_hash_map<int, tc::string>;
 
 int main() {
@@ -393,4 +393,10 @@ int main() {
         move_assign_test();
     }
     #endif
+
+    tc::string s = "Hellooo, World, привет, мирoo";
+    std::cout << s << std::endl;
+
+    s.replace(0, 2, "1fffffffffffffffffffffffffffffffffffffffffffffffff");
+    std::cout << s << std::endl;
 }

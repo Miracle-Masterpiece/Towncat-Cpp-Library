@@ -1,4 +1,5 @@
 #include <internal/img_utils.hpp>
+#include <cpp/lang/utils/array_view.hpp>
 #include <cpp/lang/array.hpp>
 #include <cpp/lang/math.hpp>
 #include <cassert>
@@ -215,7 +216,7 @@ static void calc_weights(tc::array<float>& weights, float center, int start, int
  *      Mitchell-Netravali uses radius 2 (support of 4 pixels on each side).
  *      This provides good quality with reasonable performance.
  */
-static void init_contribution(contribution* contrib_param, int w_in, int w_out, tca::allocator* alloc) {
+static void init_contribution(array_view<contribution>& contrib_param, int w_in, int w_out, tca::allocator* alloc) {
 
     // The ratio of the new to the old one
     float wscale    = static_cast<float>(w_out) / static_cast<float>(w_in);
@@ -244,15 +245,15 @@ static void init_contribution(contribution* contrib_param, int w_in, int w_out, 
                 static_cast<int>( math::ceil (center + xrad) ), 0, w_in - 1
             );
             
-            contribution* contrib = contrib_param + x;
+            contribution& contrib = contrib_param[x];
 
             int count         = end - start + 1;
-            contrib->start    = start;
-            contrib->end      = end;
-            contrib->weights  = array<float>(count, alloc);
+            contrib.start    = start;
+            contrib.end      = end;
+            contrib.weights  = array<float>(count, alloc);
 
             // Calculate actual weights for all contributing input pixels
-            calc_weights(contrib->weights, center, start, count, wscale);
+            calc_weights(contrib.weights, center, start, count, wscale);
         }
     }
 }
@@ -327,20 +328,19 @@ static void init_contribution(contribution* contrib_param, int w_in, int w_out, 
  *      calc_weights
  */
 int resize_image(const unsigned char* in, int w_in, int h_in, unsigned char* out, int w_out, int h_out, int channels, tca::allocator* alloc) {
-    #if 0
-    tc::array<const unsigned char>  input (in, static_cast<std::size_t> (w_in * h_in * channels));
-    tc::array<unsigned char>        output(out, static_cast<std::size_t>(w_out * h_out * channels));
+    tc::array_view<const unsigned char>  input (in, static_cast<std::size_t> (w_in * h_in * channels));
+    tc::array_view<unsigned char>        output(out, static_cast<std::size_t>(w_out * h_out * channels));
     
     tc::array<float> tmp (w_out * h_in * channels, alloc);
 
     // An attempt to reduce the number of selections. One large array is allocated that stores data for rows and columns.
     tc::array<contribution> contributes(w_out + h_out, alloc);
     
-    tc::array<contribution> contrib_x (contributes.data(),  w_out);    
-    tc::array<contribution> contrib_y (contributes.data() + w_out, h_out);
+    tc::array_view<contribution> contrib_x (contributes.data(),  w_out);    
+    tc::array_view<contribution> contrib_y (contributes.data() + w_out, h_out);
 
-    init_contribution(contrib_x.data(), w_in, w_out, alloc);
-    init_contribution(contrib_y.data(), h_in, h_out, alloc);
+    init_contribution(contrib_x, w_in, w_out, alloc);
+    init_contribution(contrib_y, h_in, h_out, alloc);
 
     {// width
         for (int y = 0; y < h_in; ++y)
@@ -388,7 +388,6 @@ int resize_image(const unsigned char* in, int w_in, int h_in, unsigned char* out
         }
     }
     return 0;
-    #endif 
 }
 
 /**
@@ -458,25 +457,24 @@ int resize_image(const unsigned char* in, int w_in, int h_in, unsigned char* out
  * to the final result.
  */
 int resize_image_alpha(const unsigned char* in, int w_in, int h_in, unsigned char* out, int w_out, int h_out, int channels, int alpha_index, tca::allocator* alloc) {
-    #if 0
     const std::size_t MAX_CHANNELS = 4;
 
     if (alpha_index >= channels)
         return EINVAL;
         
-    tc::array<const unsigned char>  input (in, static_cast<std::size_t> (w_in * h_in * channels));
-    tc::array<unsigned char>        output(out, static_cast<std::size_t>(w_out * h_out * channels));
+    tc::array_view<const unsigned char>  input (in, static_cast<std::size_t> (w_in * h_in * channels));
+    tc::array_view<unsigned char>        output(out, static_cast<std::size_t>(w_out * h_out * channels));
     
     tc::array<float> tmp (w_out * h_in * channels, alloc);
 
     // An attempt to reduce the number of selections. One large array is allocated that stores data for rows and columns.
     tc::array<contribution> contributes(w_out + h_out, alloc);
     
-    tc::array<contribution> contrib_x (contributes.data(),  w_out);    
-    tc::array<contribution> contrib_y (contributes.data() + w_out, h_out);
+    tc::array_view<contribution> contrib_x (contributes.data(),         w_out);    
+    tc::array_view<contribution> contrib_y (contributes.data() + w_out, h_out);
 
-    init_contribution(contrib_x.data(), w_in, w_out, alloc);
-    init_contribution(contrib_y.data(), h_in, h_out, alloc);
+    init_contribution(contrib_x, w_in, w_out, alloc);
+    init_contribution(contrib_y, h_in, h_out, alloc);
 
     {// width
         for (int y = 0; y < h_in; ++y)
@@ -557,7 +555,6 @@ int resize_image_alpha(const unsigned char* in, int w_in, int h_in, unsigned cha
         }
     }
     return 0;
-    #endif 
 }
 
 } //namespace internal

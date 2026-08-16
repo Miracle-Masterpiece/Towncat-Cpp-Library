@@ -90,6 +90,29 @@ namespace map
         return nullptr;
     }
 
+    template<typename THASHER, typename TEQUALER, typename ENTRY>
+    void rehash(array<ENTRY*>& buckets, std::size_t newcap) {
+        if (buckets.length == newcap)
+            return;
+
+        array<ENTRY*> new_(newcap, buckets.get_allocator());
+        new_.set(nullptr);
+
+        array<ENTRY*> old   = std::move(buckets);
+        buckets             = std::move(new_);
+        
+        for (std::size_t i = 0, len = old.length; i < len; ++i)
+        {
+            for (ENTRY* e = old[i]; e != nullptr; )
+            {
+                ENTRY* current = e;
+                internal::map::append_entry(current->get_hash() % newcap, current, new_);
+                e = e->get_next();
+            }
+        }
+
+    }
+
     template<typename THASHER, typename TKEY>
     std::size_t hash_key(const TKEY& k) {
         return THASHER()(k);

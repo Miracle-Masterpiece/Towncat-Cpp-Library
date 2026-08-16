@@ -4,6 +4,9 @@
 #include <cstdio>
 #include <cwchar>
 
+#warning IOSTREAM
+#include <iostream>
+
 namespace tc
 {
     template<typename TCHAR>
@@ -120,6 +123,9 @@ namespace tc
     template<typename TCHAR>
     void tstring<TCHAR>::ensure_cap(std::size_t new_size) {
         std::size_t new_cap = new_size + 1;
+        if (new_cap <= INLINE_BUFFER_SIZE)
+            return;
+
         TCHAR* new_data     = static_cast<TCHAR*>( allocator->allocate_align(sizeof(TCHAR) * new_cap, alignof(TCHAR)) );
         if (!new_data)
             throw_except<out_of_memory_error>("Out of memory");
@@ -220,19 +226,6 @@ namespace tc
         return *this;
     }
 
-
-    template<typename TCHAR>
-    tstring<TCHAR>& tstring<TCHAR>::append(const tstring<TCHAR>& s) {
-        append(s.cstr(), s.length());
-        return *this;
-    }
-
-    template<typename TCHAR>
-    TCHAR tstring<TCHAR>::char_at(std::size_t idx) const {
-        check_index(idx, size);
-        return cstr()[idx];
-    }
-    
     template<typename TCHAR>
     std::size_t tstring<TCHAR>::index_of(const TCHAR* s, std::size_t from_index, std::size_t len) const {
         JSTD_DEBUG_CODE(
@@ -288,7 +281,7 @@ namespace tc
 
     template<typename TCHAR>
     void tstring<TCHAR>::clear() {
-        cstr()[0]   = '\0';
+        cstr()[0]   = 0;
         size        = 0;
     }
 
@@ -364,20 +357,98 @@ namespace tc
     }
 
     template<typename TCHAR>
+    std::size_t count_match(const TCHAR* str, std::size_t slen, const TCHAR* match, std::size_t mlen) {
+        if (slen < mlen)
+            return 0;
+        
+        std::size_t count = 0;
+        for (std::size_t i = 0; i <= slen - mlen;)
+        {
+            
+            bool matched = true;
+            for (std::size_t j = 0; j < mlen; ++j)
+            {
+                assert(i + j < slen);
+                assert(j < mlen);
+                if (str[i + j] != match[j])
+                {
+                    matched = false;
+                    break;
+                }
+            }
+
+            if (matched)
+            {
+                i += mlen;
+                ++count;
+            }
+            else
+            {
+                ++i;
+            }
+            
+        }
+
+        return count;
+    }
+
+    template<typename TCHAR>
+    std::size_t unsafe_append(TCHAR* str, std::size_t slen, std::size_t idx, const TCHAR* a, std::size_t alen) {
+        std::size_t rem = slen - idx;
+        if (rem > 0)
+        {
+            std::memmove(str + idx + alen, str + idx, rem * sizeof(TCHAR));
+        }
+        std::memcpy(str + idx, a, sizeof(TCHAR) * alen);
+
+        std::size_t newlen = slen + alen;
+
+        str[newlen] = 0;
+
+        return newlen;
+    }
+    
+    template<typename TCHAR>
+    std::size_t unsafe_remove(TCHAR* str, std::size_t slen, std::size_t start, std::size_t end) {
+        assert(start < end);
+        std::size_t rem = slen - end;
+        if (rem > 0)
+        {
+            std::memmove(str + start, str + end, sizeof(TCHAR) * rem);
+        }
+
+        std::size_t newlen = slen - (end - start);
+        str[newlen] = 0;
+
+        return newlen;
+    }
+
+    template<typename TCHAR>
     tstring<TCHAR>& tstring<TCHAR>::replace_all(const TCHAR* matcher, const TCHAR* replacement) {
         std::size_t matcher_len     = str_len(matcher);
         std::size_t replacement_len = str_len(replacement);
+
+        std::size_t count = count_match(cstr(), length(), matcher, matcher_len);
         
+        std::size_t newlen = (length() - (matcher_len * count)) + (replacement_len * count);
+
+        if (newlen >= capacity())
+        {
+            reserve(newlen);
+        }
+
         if (matcher_len == 0 || matcher_len > length())
             return *this;
 
-        for (std::size_t i = 0; i <= length() - matcher_len; )
+        std::size_t len = length();
+
+        for (std::size_t i = 0; i <= len - matcher_len; )
         {
             bool matched = match(cstr() + i, matcher, matcher_len);
             if (matched)
             {
-                remove(i, i + matcher_len);
-                append(i, replacement, replacement_len);
+                len = unsafe_remove(cstr(), len, i, i + matcher_len);
+                len = unsafe_append(cstr(), len, i, replacement, replacement_len);
                 i += replacement_len;
             }
             else
@@ -385,6 +456,9 @@ namespace tc
                 ++i;
             }
         }
+
+        assert(len == newlen);
+        size = newlen;
 
         return *this;
     }
@@ -396,8 +470,24 @@ namespace tc
             if (end   >  length())  throw_except<illegal_argument_exception>("end can't be greater length()");
             if (end   <  start)     throw_except<illegal_argument_exception>("end can't be less start");
         );
-        remove(start, end);
-        append(start, replacement);
+
+        std::size_t rep_len = str_len(replacement);
+        std::size_t newlen = (length() - (end - start)) + rep_len;
+        if (newlen >= capacity())
+        {
+            reserve(newlen);
+        }
+
+        std::size_t len = length();
+
+        len = unsafe_remove(cstr(), len, start, end);
+        len = unsafe_append(cstr(), len, start, replacement, rep_len);
+
+        size = len;
+        cstr()[len] = 0;
+
+        assert(len == newlen);
+
         return *this;
     }
 
@@ -491,7 +581,7 @@ namespace tc
 
     template<typename TCHAR>
     void tstring<TCHAR>::set_length(std::size_t newlen, const TCHAR& ch) {
-        if (newlen >= capacity() - 1)
+        if (newlen >= capacity())
         {
             reserve(newlen);
         }

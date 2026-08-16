@@ -847,23 +847,7 @@ public:
         std::size_t oldcap = m_buckets.length;
         std::size_t newcap = oldcap + oldcap / 2;
         newcap = newcap >= 16 ? newcap : 16;
-
-        array<entry*> _new(newcap, m_allocator);
-        _new.set(nullptr);
-
-        array<entry*> old   = std::move(m_buckets);
-        m_buckets           = std::move(_new);
-        
-        for (std::size_t i = 0, len = old.length; i < len; ++i)
-        {
-            for (entry* e = old[i]; e != nullptr; )
-            {
-                entry* current = e;
-                internal::map::append_entry(current->get_hash() % newcap, current, m_buckets);
-                e = e->get_next();
-            }
-        }
-
+        internal::map::rehash<THASHER, TEQUALER>(m_buckets, newcap);
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>

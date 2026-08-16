@@ -1013,33 +1013,10 @@ public:
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     void linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::rehash() {
-        array<entry*> _new((std::size_t) (m_buckets.length + (m_buckets.length >> 1)));
-        _new.set(nullptr);
-        array<entry*> old = std::move(m_buckets);
-        m_buckets = std::move(_new);
-        
-        THASHER hashcode;
-        for (std::size_t i = 0, len = old.length; i < len; ++i) {
-            for (entry* e = old[i]; e != nullptr; ) {
-                entry* current = e;
-                e = e->get_next();
-                std::size_t hash   = hashcode(current->get_key());
-                std::size_t idx    = hash % m_buckets.length;
-                
-                current->set_next(nullptr);
-                if (!m_buckets[idx])
-                {
-                    m_buckets[idx] = current;
-                }
-                else
-                {
-                    entry* entr = m_buckets[idx];
-                    while (entr->get_next())
-                        entr = entr->get_next();
-                    entr->set_next(current);
-                }
-            }
-        }
+        std::size_t oldcap = m_buckets.length;
+        std::size_t newcap = oldcap + oldcap / 2;
+        newcap = newcap >= 16 ? newcap : 16;
+        internal::map::rehash<THASHER, TEQUALER>(m_buckets, newcap);
     }
 
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
