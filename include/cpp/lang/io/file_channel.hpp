@@ -1,7 +1,7 @@
 #ifndef JSD_CPP_LANG_IO_FILE_MAPPED_BYTE_BUFFER_H
 #define JSD_CPP_LANG_IO_FILE_MAPPED_BYTE_BUFFER_H
 
-#include <cpp/lang/io/bytebuffer.hpp>
+#include <cpp/lang/io/basebuf.hpp>
 #include <internal/io/file_descriptor.hpp>
 #include <cpp/lang/utils/cond_compile.hpp>
 #include <cpp/lang/io/file.hpp>
@@ -34,7 +34,7 @@ class file_channel;
 /**
  * @version 1.1
  */
-class mapped_byte_buffer : public byte_buffer {
+class mappedbuf : public basebuf {
     
     /**
      * 
@@ -59,12 +59,12 @@ class mapped_byte_buffer : public byte_buffer {
     /**
      * 
      */
-    mapped_byte_buffer(const mapped_byte_buffer&)               = delete;
+    mappedbuf(const mappedbuf&)               = delete;
     
     /**
      * 
      */
-    mapped_byte_buffer& operator= (const mapped_byte_buffer&)   = delete;
+    mappedbuf& operator= (const mappedbuf&)   = delete;
     
     /**
      * @internal
@@ -83,7 +83,7 @@ class mapped_byte_buffer : public byte_buffer {
      * @param mode
      *      Режим открытия.
      */
-    mapped_byte_buffer(void* page_base, void* base, std::size_t capacity, fmap_mode mode);
+    mappedbuf(void* page_base, void* base, std::size_t capacity, fmap_mode mode);
     
     /**
      * @internal
@@ -96,13 +96,13 @@ public:
      * Создаёт пустой сопоставляемый байтовый буфер,
      * не привязывая к конкретному файлу.
      */
-    mapped_byte_buffer();    
+    mappedbuf();    
     
     /**
      * Перемещает данные из другого сопоставляемого байтового буфера в этот.
      * При этом другой объект становится невалидным.
      */
-    mapped_byte_buffer(mapped_byte_buffer&&);
+    mappedbuf(mappedbuf&&);
     
     /**
      * Отменяет текущее сопоставление файла на память 
@@ -113,12 +113,12 @@ public:
      * @return
      *      Этот объект.
      */
-    mapped_byte_buffer& operator= (mapped_byte_buffer&&);
+    mappedbuf& operator= (mappedbuf&&);
     
     /**
      * Отменяет сопоставление файла на память.
      */
-    ~mapped_byte_buffer();
+    ~mappedbuf();
 
     /**
      * Принудительно записывает все изменения, внесенные в содержимое этого буфера, 
@@ -130,7 +130,7 @@ public:
      * @throws io_exception
      *      Если произошла ошибка ввода/вывода.
      */
-    mapped_byte_buffer& force();
+    mappedbuf& force();
 };
 
 /**
@@ -269,7 +269,7 @@ public:
      * @throws io_exception
      *      Если произошла ошибка ввода/вывода.
      */
-    mapped_byte_buffer map(fmap_mode mode, std::size_t offset, std::size_t length);
+    mappedbuf map(fmap_mode mode, std::size_t offset, std::size_t length);
     
     /**
      * Проверяет, является ли этот дескриптор, дескриптором открытого файла.

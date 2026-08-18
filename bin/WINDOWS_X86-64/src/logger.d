@@ -4,6 +4,7 @@ bin/WINDOWS_X86-64/src/logger.o: src/logger.cpp \
  include/cpp/lang/utils/comparator.hpp include/cpp/lang/utils/objects.hpp \
  include/cpp/lang/utils/hash.hpp \
  include/cpp/lang/traits/primitive_traits.hpp \
+ include/cpp/lang/traits/SFINAE.hpp \
  include/cpp/lang/traits/pointer_traits.hpp \
  include/cpp/lang/traits/cv_traits.hpp include/cpp/lang/numbers.hpp \
  include/cpp/lang/math/math.hpp include/cpp/lang/exceptions.hpp \

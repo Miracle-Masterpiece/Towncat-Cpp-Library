@@ -5,10 +5,12 @@
 #include <climits>
 #include <cpp/lang/math/math.hpp>
 #include <cpp/lang/exceptions.hpp>
+#include <cpp/lang/traits/primitive_traits.hpp>
 
 namespace tc 
 {
 
+#if 0
 #if __SIZEOF_FLOAT__ == __SIZEOF_INT__
  typedef unsigned int uint_float_bits;
  typedef signed   int sint_float_bits;
@@ -34,6 +36,17 @@ namespace tc
 #else
  #error None of the integer types are suitable for storing 'double' bits.
 #endif
+#endif
+
+/**
+ * A type no less than sizeof(float) to provide a bit representation of float.
+ */
+typedef typename int_of<sizeof(float) * CHAR_BIT>::utype  uint_float_bits;
+
+/**
+ * A type no less than sizeof(double) to provide a bit representation of double.
+ */
+typedef typename int_of<sizeof(double) * CHAR_BIT>::utype uint_double_bits;
 
 namespace num 
 {

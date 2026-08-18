@@ -4,7 +4,7 @@
 #include <cpp/lang/net/socket_option.hpp>
 #include <cpp/lang/net/inetaddr.hpp>
 #include <internal/bsd_socket_class.hpp>
-#include <cpp/lang/io/bytebuffer.hpp>
+#include <cpp/lang/io/basebuf.hpp>
 #include <cstddef>
 
 namespace tc {
@@ -265,7 +265,7 @@ public:
      * @throw connect_exception
      *      Если соединение было разорвано.
      */
-    std::size_t write(byte_buffer& buff);
+    std::size_t write(basebuf& buff);
 
     /**
      * @throws illegal_state_exception
@@ -303,7 +303,7 @@ public:
      * @throw connect_exception
      *      Если соединение было разорвано.
      */
-    std::size_t read(byte_buffer& buff);
+    std::size_t read(basebuf& buff);
 
     /**
      * @throws illegal_state_exception
@@ -313,7 +313,7 @@ public:
      * @throws socket_exception 
      *      Если произошла ошибка при приняти клиента.
      */
-    bool accept(tsocket<SOCK_T>* client);
+    bool accept(tsocket<SOCK_T>& client);
 
     /**
      * @internal TCP_NODELAY
@@ -1124,14 +1124,14 @@ public:
     }
     
     template<typename SOCK_T>
-    std::size_t tsocket<SOCK_T>::write(byte_buffer& buff) {
-        std::size_t rem = buff.remaining();
+    std::size_t tsocket<SOCK_T>::write(basebuf& buf) {
+        std::size_t rem = buf.remaining();
         if (rem > 0)
         {
-            std::size_t writed = write(buff.data() + buff.position(), buff.remaining());
+            std::size_t writed = write(buf.data() + buf.position(), buf.remaining());
             if (writed > 0)
             {
-                buff.position(buff.position() + writed);
+                buf.position(buf.position() + writed);
             }
             return writed;
         }
@@ -1149,14 +1149,14 @@ public:
     }
 
     template<typename SOCK_T>
-    std::size_t tsocket<SOCK_T>::read(byte_buffer& buff) {
-        std::size_t rem = buff.remaining();
+    std::size_t tsocket<SOCK_T>::read(basebuf& buf) {
+        std::size_t rem = buf.remaining();
         if (rem > 0)
         {
-            std::size_t readed = read(buff.data(), rem);
+            std::size_t readed = read(buf.data(), rem);
             if (readed > 0)
             {
-                buff.position(buff.position() + readed);
+                buf.position(buf.position() + readed);
             }
             return readed;
         }
@@ -1164,12 +1164,8 @@ public:
     }
 
     template<typename SOCK_T>
-    bool tsocket<SOCK_T>::accept(tsocket<SOCK_T>* client) {
-        JSTD_DEBUG_CODE(
-            if (client == nullptr)
-                throw_except<null_pointer_exception>("client is null");
-        );
-        
+    bool tsocket<SOCK_T>::accept(tsocket<SOCK_T>& client) {
+
         if (get_config(IS_CLOSED))     throw_except<illegal_state_exception>("Socket is closed");
         if (!get_config(IS_BINDED))    throw_except<illegal_state_exception>("Socket is not bound");
         if (!get_config(IS_LISTENING)) throw_except<illegal_state_exception>("Socket is not listening");
@@ -1178,9 +1174,9 @@ public:
         bool accepted = _impl.accept(&client_impl);
         if (accepted)
         {
-            client->_impl = std::move(client_impl);
-            client->set_config(IS_CREATED,      true);
-            client->set_config(IS_CONNECTED,    true);
+            client._impl = std::move(client_impl);
+            client.set_config(IS_CREATED,      true);
+            client.set_config(IS_CONNECTED,    true);
             return true;
         }
         

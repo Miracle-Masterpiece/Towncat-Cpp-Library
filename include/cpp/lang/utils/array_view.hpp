@@ -11,38 +11,38 @@ namespace tc
 {
 
 /**
- * Шаблонный класс для представления массива.
- * 
- * Класс предоставляет функции для безопасного доступа с проверкой границ в DEBUG сборке.
+ * A template class for representing an array.
+ *
+ * The class provides functions for safe access with bounds checking in the DEBUG build.
  */
 template<typename T>
 class array_view {
     /**
-     * Указатель на первый элемент массива.
+     * Pointer to an existing array.
      */
     T* m_data;
     
     /**
-     * Размер массива.
+     * Array size.
      */
     std::size_t m_length;
 public:
 
     /**
-     * Инициализирует этот view значениями по-умолчанию.
-     * Указатель устанавливается в nullptr, а длина 0.
+     * Initializes this view with default values.
+     * The pointer is set to nullptr and the length is 0.
      */
     array_view() : m_data(nullptr), m_length(0) {}
 
     /**
-     * Создаёт view над существующим массивом элементов.
+     * Creates a view over an existing array of elements.
      *
      * @param p
-     *      Указатель на первый элемент массива.
+     *      Pointer to the first element of the array.
      *
      * @param length
-     *      Количество элементов массива.
-     * 
+     *      Number of elements in the array.
+     *
      * @example
      *      int ints[] = {1, 2, 3, 4}
      *      tc::array_view<int> arr(ints, sizeof(ints) / sizeof(*ints));
@@ -52,26 +52,26 @@ public:
 
     /**
      * @return
-     *     Длина view массива.
+     *       Length of the view array.
      */
     std::size_t length() const {
         return m_length;
     }
 
     /**
-     * Оператор доступа по индексу.
-     * 
+     * Index access operator.
+     *
      * @param idx
-     *      Индекс элемента.
-     * 
+     *      Element index.
+     *
      * @return
-     *      Ссылка на элемент массива.
-     * 
-     * @throws index_out_of_bound_exception (в DEBUG сборке)
-     *      Если idx >= length()
-     * 
-     * @throws null_pointer_exception
-     *      Если view не содержит указатель на массив.
+     *      Reference to the array element.
+     *
+     * @throws index_out_of_bound_exception (in DEBUG build)
+     *      If idx >= length()
+     *
+     * @throws null_pointer_exception (in DEBUG build)
+     *      If view does not contain a pointer to an array.
      */
     T& operator[] (std::size_t idx) {
         JSTD_DEBUG_CODE(
@@ -81,20 +81,20 @@ public:
         return m_data[idx];
     }
     
-    /**
-     * Оператор доступа по индексу.
+    /** 
+     * Index access operator. 
      * 
-     * @param idx
-     *      Индекс элемента.
+     * @param idx 
+     *      Element index. 
      * 
-     * @return
-     *      Константная ссылка на элемент массива.
+     * @return 
+     *      Constant reference to an array element. 
      * 
-     * @throws index_out_of_bound_exception (в DEBUG сборке)
-     *      Если idx >= length()
+     * @throws index_out_of_bound_exception (in DEBUG build) 
+     *      If idx >= length() 
      * 
-     * @throws null_pointer_exception
-     *      Если view не содержит указатель на массив.
+     * @throws null_pointer_exception (in DEBUG build)
+     *      If view does not contain a pointer to an array. 
      */
     const T& operator[] (std::size_t idx) const {
         JSTD_DEBUG_CODE(

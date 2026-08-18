@@ -110,6 +110,7 @@ TEMPLATE__EXCEPT_CLASS_IMPL(stack_overflow_error,                error)
  */
 TEMPLATE__EXCEPT_CLASS_IMPL(illegal_argument_exception,          runtime_exception)
 TEMPLATE__EXCEPT_CLASS_IMPL(illegal_state_exception,             runtime_exception)
+TEMPLATE__EXCEPT_CLASS_IMPL(invalid_mark_exception,              illegal_state_exception)
 TEMPLATE__EXCEPT_CLASS_IMPL(unsupported_operation_exception,             exception)
 TEMPLATE__EXCEPT_CLASS_IMPL(utf_format_exception,                runtime_exception)
 TEMPLATE__EXCEPT_CLASS_IMPL(invalid_data_format_exception,       runtime_exception)

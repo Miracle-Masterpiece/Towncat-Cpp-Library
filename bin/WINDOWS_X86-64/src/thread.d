@@ -3,6 +3,7 @@ bin/WINDOWS_X86-64/src/thread.o: src/thread.cpp \
  include/cpp/lang/stacktrace/stacktrace.hpp \
  include/cpp/lang/utils/cond_compile.hpp \
  include/cpp/lang/traits/primitive_traits.hpp \
+ include/cpp/lang/traits/SFINAE.hpp \
  include/cpp/lang/concurrency/mutex.hpp \
  include/cpp/lang/concurrency/runnable.hpp \
  include/cpp/lang/utils/arrays.hpp include/cpp/lang/traits/cv_traits.hpp \

@@ -152,7 +152,7 @@ namespace tc {
                 int w_image = img_original.get_width();
                 int h_image = img_original.get_height();
 
-                image rescaled_image; 
+                image rescaled_image(m_allocator_for_tmp_resized_image); 
                 if (m_rescale > 1 && m_allocator_for_tmp_resized_image != nullptr)
                     rescaled_image = img_original.resize(w_image / m_rescale, h_image / m_rescale, m_allocator_for_tmp_resized_image);
 
@@ -167,107 +167,17 @@ namespace tc {
                 const int w = n->get_rect().w     / m_rescale;
                 const int h = n->get_rect().h     / m_rescale;
                 
-                if (m_atlas->get_channels() == 4) {
-                    for (int yo = 0; yo < h; ++yo) {
-                        for (int xo = 0; xo < w; ++xo) {
-                            
-                            const int xx = xo + x;
-                            const int yy = yo + y;
-                            
-                            if (img.get_channels() == 4)
-                            {
-                                m_atlas->get_rgba(xx, yy) = img.get_rgba(xo, yo);   
-                            } 
-                            else if (img.get_channels() == 3)
-                            {
-                                const image::rgb& col = img.get_rgb(xo, yo);
-                                m_atlas->get_rgba(xx, yy) = image::rgba(col.r, col.g, col.b, 0xff);
-                            }
-                            else if (img.get_channels() == 1)
-                            {
-                                unsigned char col = img.get_gray(xo, yo).brightness;
-                                m_atlas->get_rgba(xx, yy) = image::rgba(col, col, col, 0xff);
-                            }
-                            else 
-                            {
-                                throw_except<illegal_state_exception>("");
-                            }  
-                        }
-                    }
-                } 
-
-                else if (m_atlas->get_channels() == 3)
+                // xo & yo - это позиции resized изображении.
+                for (int xo = 0; xo < w; ++xo)
                 {
-                    for (int yo = 0; yo < h; ++yo) {
-                        for (int xo = 0; xo < w; ++xo) {
-                            
-                            const int xx = xo + x;
-                            const int yy = yo + y;
-                            
-                            if (img.get_channels() == 4)
-                            {
-                                const image::rgba& col = img.get_rgba(xo, yo);
-                                m_atlas->get_rgb(xx, yy) = image::rgb(col.r, col.g, col.b);   
-                            } 
-                            else if (img.get_channels() == 3)
-                            {
-                                m_atlas->get_rgb(xx, yy) = img.get_rgb(xo, yo);
-                            }
-                            else if (img.get_channels() == 1)
-                            {
-                                unsigned char col = img.get_gray(xo, yo).brightness;
-                                m_atlas->get_rgb(xx, yy) = image::rgb(col, col, col);
-                            }
-                            else
-                            {
-                                throw_except<illegal_state_exception>("");
-                            }  
-                        }
-                    }
-                } 
-                
-                else if (m_atlas->get_channels() == 1)
-                {
-                    
-                    const float r_gamma = 0.30f;
-                    const float g_gamma = 0.59f;
-                    const float b_gamma = 0.11f;
-                    unsigned char gray    = 0;                            
-
                     for (int yo = 0; yo < h; ++yo)
                     {
-                        for (int xo = 0; xo < w; ++xo)
-                        {
-                            
-                            const int xx = xo + x;
-                            const int yy = yo + y;
-                            
-                            if (img.get_channels() == 4)
-                            {
-                                const image::rgba& rgba = img.get_rgba(xo, yo);
-                                gray = (unsigned char) ( (rgba.r * r_gamma + rgba.g * g_gamma + rgba.b * b_gamma) / 3.0f );
-                            } 
-                            else if (img.get_channels() == 3)
-                            {
-                                const image::rgb& rgb = img.get_rgb(xo, yo);
-                                gray = (unsigned char) ( (rgb.r * r_gamma + rgb.g * g_gamma + rgb.b * b_gamma) / 3.0f );
-                            }
-                            else if (img.get_channels() == 1)
-                            {
-                                gray = img.get_gray(xo, yo).brightness;
-                            }
-                            else
-                            {
-                                throw_except<illegal_state_exception>("");
-                            }  
-                            m_atlas->get_gray(xx, yy).brightness = gray;   
-                        }
+                        // xx & yy - это позиция в атласе
+                        int xx = x + xo;
+                        int yy = y + yo;
+                        image::pixel from_resized = img.get_pixel(xo, yo);
+                        m_atlas->set_pixel(xx, yy, from_resized);
                     }
-                }
-
-                else
-                {
-                    throw_except<illegal_state_exception>();
                 }
 
                 if (m_allocator_for_tmp_resized_image != nullptr)

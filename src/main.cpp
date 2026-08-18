@@ -15,6 +15,7 @@
  #define HASH_MAP_TEST
  #define LINKED_HASH_MAP_TEST
  #define STRING_TEST
+ #define BYTEBUF_TEST
 
 void assert_fail(bool expr, const char* msg, const char* func, int line) {
     if (!expr)
@@ -323,6 +324,56 @@ namespace string_test
 }
 #endif
 
+#ifdef BYTEBUF_TEST
+#include <cpp/lang/io/bytebuf.hpp>
+#include <allocators/malloc_free_allocator.hpp>
+#include <cpp/lang/net/inetaddr.hpp>
+#include <iostream>
+
+namespace bytebuf_test
+{
+    void copy_test() {
+        tc::bytebuf buf0(16);
+        tc::bytebuf buf1 = buf0;
+        TC_ASSERT(buf1.get_allocator() == buf0.get_allocator());
+        TC_ASSERT(buf1.remaining()     == buf0.remaining());
+        TC_ASSERT(buf1.capacity()      == buf0.capacity());
+        TC_ASSERT(buf1.limit()         == buf0.limit());
+    }
+    
+    void move_test() {
+        tc::bytebuf buf0(16);
+        tc::bytebuf buf1 = std::move(buf0);
+        TC_ASSERT(buf1.get_allocator() == buf0.get_allocator());
+    }
+
+    void assign_copy_test() {
+        tc::bytebuf buf0(16);
+        
+        tca::malloc_free_allocator alloc;
+        tc::bytebuf buf1(4, &alloc);
+        
+        buf1 = buf0;
+
+        TC_ASSERT(buf1.get_allocator() == &alloc);
+        TC_ASSERT(buf1.remaining()     == buf0.remaining());
+        TC_ASSERT(buf1.capacity()      == buf0.capacity());
+        TC_ASSERT(buf1.limit()         == buf0.limit());
+    }
+
+    void move_assign_test() {
+        tc::bytebuf buf0(16);
+        
+        tca::malloc_free_allocator alloc;
+        tc::bytebuf buf1(4, &alloc);
+        
+        buf1 = std::move(buf0);
+
+        TC_ASSERT(buf1.get_allocator() == &alloc);
+    }
+}
+#endif
+
 template class tc::array<int>;
 template class tc::array_list<int>;
 template class tc::linked_list<int>;
@@ -332,6 +383,8 @@ template class tc::hash_map<int, tc::string>;
 template class tc::linked_hash_map<int, const tc::string>;
 template class tc::linked_hash_map<int, tc::string>;
 
+
+#if 0
 int main() {
 
     #ifdef ARRAY_TEST
@@ -393,10 +446,71 @@ int main() {
         move_assign_test();
     }
     #endif
+    
+    #ifdef BYTEBUF_TEST
+    {
+        using namespace bytebuf_test;
+        copy_test();
+        move_test();
+        assign_copy_test();
+        move_assign_test();
+    }
+    #endif
+}
+#endif
 
-    tc::string s = "Hellooo, World, привет, мирoo";
-    std::cout << s << std::endl;
 
-    s.replace(0, 2, "1fffffffffffffffffffffffffffffffffffffffffffffffff");
-    std::cout << s << std::endl;
+#include <cpp/lang/utils/images/imageio.hpp>
+#include <cpp/lang/utils/images/image.hpp>
+#include <cpp/lang/utils/images/image_packer.hpp>
+#include <cpp/lang/utils/arrays.hpp>
+
+class png_filter : public tc::file_filter {
+public:
+    bool apply(const char* name, std::size_t len) const {
+        return tc::string(name).ends_with(".png");
+    }
+};
+
+template<>
+struct tc::compare_to<tc::image> {
+    int operator()(const tc::image& a, const tc::image& b) {
+        int asize = a.get_width() * a.get_height();
+        int bsize = b.get_width() * b.get_height();
+        return bsize - asize;
+    }
+};
+
+tc::array_list<tc::image> load_all_image(const char* images) {
+    
+    tc::file dir = images;
+    tc::array<tc::file> files = dir.list_files(png_filter());
+    tc::array_list<tc::image> list(files.length);
+
+    for (std::size_t i = 0; i < files.length; ++i)
+    {
+        list.add(
+            tc::imageio::load_image(files[i])
+        );
+    }
+
+    tc::quick_sort(list.data(), list.size());
+
+    return list;
+}
+
+int main() {
+    const char* image_folder = "images";
+    tca::free_list_allocator free_list(tca::get_default_allocator(), 1 << 24);
+    tca::set_default_allocator(&free_list);
+    try {
+        tc::array_list<tc::image> images = load_all_image(image_folder);
+        tc::image_packer packer(images.data(), images.size(), 1024, 1024);
+        tc::image atlas = packer.pack(1);
+        tc::imageio::write_image(tc::file("build/atlas.png"), &atlas, "png");
+    } catch (const tc::throwable& t) {
+        std::cout << t.cause() << "\n";
+        t.print_stack_trace();
+    }
+    free_list.print_log();
 }

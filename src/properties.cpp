@@ -72,11 +72,6 @@ namespace tc {
 
     void properties::load(istream& in)
     {
-        JSTD_DEBUG_CODE(
-            if (m_allocator == nullptr)
-                throw_except<illegal_state_exception>("allocator must be != null");
-        )
-
         enum struct state {KEY, VALUE, COMMENT};
         
         int reader;

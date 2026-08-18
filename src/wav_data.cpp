@@ -1,6 +1,6 @@
 #include <cpp/lang/utils/audio/wav_data.hpp>
 #include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/io/bytebuffer.hpp>
+#include <cpp/lang/io/bytebuf.hpp>
 #include <cpp/lang/utils/unique_ptr.hpp>
 #include <cpp/lang/io/ifstream.hpp>
 #include <cpp/lang/io/iostream.hpp>
@@ -13,15 +13,12 @@
 namespace tc 
 {
 
-    wav_data::wav_data() : m_allocator(nullptr), data(nullptr) {
+    wav_data::wav_data(tca::allocator* alloc) : m_allocator(alloc), data(nullptr) {
 
     }
 
-    wav_data::wav_data(const wav_data& wav) {
-        m_allocator = wav.m_allocator;
-        
+    wav_data::wav_data(const wav_data& wav) : m_allocator(wav.m_allocator) {
         data = (char*) m_allocator->allocate( static_cast<std::size_t>(wav.subchunk2Size) );
-        
         if (!data)
             throw_except<out_of_memory_error>("Out of memory");
         
@@ -43,8 +40,7 @@ namespace tc
         std::memcpy(subchunk2Id, wav.subchunk2Id, sizeof(subchunk2Id));
     }
     
-    wav_data::wav_data(wav_data&& wav) : wav_data() {
-        std::swap(m_allocator, wav.m_allocator);
+    wav_data::wav_data(wav_data&& wav) : wav_data(wav.m_allocator) {
         std::swap(data, wav.data);
         std::swap(chunk_size, wav.chunk_size);
         std::swap(subchunk1Size, wav.subchunk1Size);
@@ -64,16 +60,15 @@ namespace tc
     wav_data& wav_data::operator=(const wav_data& wav) {
         if (&wav != this)
         {
-            char* new_data = (char*) wav.m_allocator->allocate( static_cast<std::size_t>(wav.subchunk2Size) );
+            char* new_data = (char*) m_allocator->allocate( static_cast<std::size_t>(wav.subchunk2Size) );
             if (!new_data)
                 throw_except<out_of_memory_error>("Out of memory");
                 
             std::memcpy(new_data, wav.data, wav.subchunk2Size);
             
-            if (data && m_allocator)
+            if (data)
                 m_allocator->deallocate(data);
-            
-            m_allocator     = wav.m_allocator;
+        
             data            = new_data;
             chunk_size      = wav.chunk_size;
             subchunk1Size   = wav.subchunk1Size;
@@ -96,36 +91,35 @@ namespace tc
     wav_data& wav_data::operator=(wav_data&& wav) {
         if (&wav != this)
         {
-            std::swap(m_allocator, wav.m_allocator);
-            std::swap(data, wav.data);
-            std::swap(chunk_size, wav.chunk_size);
-            std::swap(subchunk1Size, wav.subchunk1Size);
-            std::swap(sampleRate, wav.sampleRate);
-            std::swap(byteRate, wav.byteRate);
-            std::swap(subchunk2Size, wav.subchunk2Size);
-            std::swap(block_align, wav.block_align);
-            std::swap(audioFormat, wav.audioFormat);
-            std::swap(numChannels, wav.numChannels);
-            std::swap(bits_per_sample, wav.bits_per_sample);
-            std::memcpy(chunk_id, wav.chunk_id, sizeof(chunk_id));
-            std::memcpy(format, wav.format, sizeof(format));
-            std::memcpy(subchunk1Id, wav.subchunk1Id, sizeof(subchunk1Id));
-            std::memcpy(subchunk2Id, wav.subchunk2Id, sizeof(subchunk2Id));
+            if (get_allocator() == wav.get_allocator())
+            {
+                std::swap(data, wav.data);
+                std::swap(chunk_size, wav.chunk_size);
+                std::swap(subchunk1Size, wav.subchunk1Size);
+                std::swap(sampleRate, wav.sampleRate);
+                std::swap(byteRate, wav.byteRate);
+                std::swap(subchunk2Size, wav.subchunk2Size);
+                std::swap(block_align, wav.block_align);
+                std::swap(audioFormat, wav.audioFormat);
+                std::swap(numChannels, wav.numChannels);
+                std::swap(bits_per_sample, wav.bits_per_sample);
+                std::memcpy(chunk_id, wav.chunk_id, sizeof(chunk_id));
+                std::memcpy(format, wav.format, sizeof(format));
+                std::memcpy(subchunk1Id, wav.subchunk1Id, sizeof(subchunk1Id));
+                std::memcpy(subchunk2Id, wav.subchunk2Id, sizeof(subchunk2Id));
+            }
+            else
+            {
+                *this = wav;
+            }
         }
         return *this;
     }
 
-    wav_data::wav_data(const file& path, tca::allocator* allocator) {
-        JSTD_DEBUG_CODE(
-            if (allocator == nullptr)
-                throw_except<illegal_argument_exception>("allocator must be != null");
-        );
-        
+    wav_data::wav_data(const file& path, tca::allocator* allocator) : m_allocator(allocator) {    
         if (!path.exists())
-            throw_except<file_not_found_exception>("File not found!");
+            throw_except<file_not_found_exception>("file not found!");
 
-        m_allocator = allocator;
-        
         ifstream in(path);
         try {
             load_from(&in);
@@ -137,14 +131,11 @@ namespace tc
 
     }
 
-    wav_data::wav_data(istream* in, tca::allocator* allocator) : wav_data() {
+    wav_data::wav_data(istream* in, tca::allocator* allocator) : wav_data(allocator) {
         JSTD_DEBUG_CODE(
             if (in == nullptr)
                 throw_except<illegal_argument_exception>("in must be != null");
-            if (allocator == nullptr)
-                throw_except<illegal_argument_exception>("allocator must be != null");
         );
-        m_allocator = allocator;
         load_from(in);
     }
 

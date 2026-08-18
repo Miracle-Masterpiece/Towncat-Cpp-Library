@@ -2,7 +2,7 @@
 #define _ALLOCATORS_UTILS_H_
 
 #include <cpp/lang/utils/cond_compile.hpp>
-#include <cpp/lang/traits/primitive_traits.hpp>
+#include <cpp/lang/numbers.hpp>
 #include <cpp/lang/system.hpp>
 #include <cstdint>
 #include <utility>
@@ -72,43 +72,43 @@ namespace internal
     template<typename T>
     T bswap(T x) {
         typedef typename make_unsigned<T>::type U;
-        return static_cast<T>(internal::bswap<T, sizeof(U)>(static_cast<U>(x)));
+        return static_cast<T>(internal::bswap<U, sizeof(U)>(static_cast<U>(x)));
     }
-
+    
     /**
-     * Копирует блок памяти с изменением порядка байт в каждом элементе.
+     * Byte-swaps an float value.
+     * 
+     * @param x
+     *      The float value to byte-swap.
      *
-     * Функция копирует данные из исходного буфера в целевой буфер,
-     * меняя порядок байт в каждом элементе типа T.
-     *
-     * @tparam T 
-     *      Тип элементов, для которых меняется порядок байт.
-     * 
-     * @param dst 
-     *      Указатель на буфер в который будет происходить копирование.
-     * 
-     * @param src 
-     *      Указатель на буфер из которого будет происходить копирование.
-     * 
-     * @param n 
-     *      Количество элементов типа T.
-     * 
-     * @since 1.1
-     * 
-     * @IntrinsicCandidate
+     * @return
+     *      Byte-swapped float value.
      */
-    template<typename T>
-    void copy_swap_memory(void* dst, const void* src, std::size_t n) {
-        T tmp;
-        unsigned char* dest         = reinterpret_cast<unsigned char*>(dst);
-        const unsigned char* source = reinterpret_cast<const unsigned char*>(src);
-        for (std::size_t i = 0; i < n; ++i) {
-            std::memcpy(&tmp, source, sizeof(T));
-            tmp = bswap<T>(tmp);
-            std::memcpy(dest, &tmp, sizeof(T));
-            dest    += sizeof(T);
-            source  += sizeof(T);
-        }
+    template<>
+    inline float bswap(float x) {
+        uint_float_bits fbits;
+        std::memcpy(&fbits, &x, sizeof(float));
+        fbits = bswap<uint_float_bits>(fbits);
+        std::memcpy(&x, &fbits, sizeof(float));
+        return x;
+    }
+    
+    /**
+     * Byte-swaps an double value.
+     * 
+     * @param x
+     *      The double value to byte-swap.
+     *
+     * @return
+     *      Byte-swapped double value.
+     */
+    template<>
+    inline double bswap(double x) {
+        uint_double_bits dbits;
+        std::memcpy(&dbits, &x, sizeof(double));
+        dbits = bswap<uint_double_bits>(dbits);
+        std::memcpy(&x, &dbits, sizeof(double));
+        return x;
     }
 
     /**
@@ -135,28 +135,48 @@ namespace internal
     }
 
     /**
-     * Читает значение из указателя с преобразованием порядка байт.
-     * 
-     * @warning Данная функция работает только с примитивами!
-     * 
-     * Для типов размером больше 1 байта выполняет преобразование порядка байт,
-     * если целевой порядок (out_order) не совпадает с порядком системы.
-     * Для однобайтовых типов возвращает значение без изменений.
-     * 
-     * @tparam T 
-     *      Тип читаемого значения.
-     * 
-     * @param ptr 
-     *      Указатель на читаемое значение.
-     * 
-     * @param out_order 
-     *      Порядок байт возвращаемого значения.
-     * 
-     * @return 
-     *      Прочитанное значение, преобразованное в передаваемый порядок байт.
-     * 
+     * Copies the T type from one memory location to another, reversing the byte order.
+     * Memory locations may overlap.
+     *
+     * Used to reorder the byte order during copying.
+     *
+     * @param d
+     *      Pointer to the memory location where the type will be copied.
+     *
+     * @param s
+     *      Pointer to the source from which to copy the type.
+     */
+    template<typename T>
+    void swap_copy(void* d, const void* s) {
+        T tmp;
+        std::memcpy(&tmp, s, sizeof(T));
+        tmp = bswap(tmp);
+        std::memcpy(d, &tmp, sizeof(T));
+    }
+
+    /**
+     * Reads a value from a pointer with byte order conversion.
+     *
+     * @warning This function only works with primitives!
+     *
+     * For types larger than 1 byte, performs byte order conversion
+     * if the target order (out_order) does not match the system order.
+     * For single-byte types, returns the value unchanged.
+     *
+     * @tparam T
+     * The type of the value to read.
+     *
+     * @param ptr
+     * A pointer to the value to read.
+     *
+     * @param out_order
+     * The byte order of the returned value.
+     *
+     * @return
+     * The read value, converted to the transmitted byte order.
+     *
      * @since 1.0
-     * 
+     *
      * @IntrinsicCandidate
      */
     template<typename T>
@@ -170,28 +190,28 @@ namespace internal
     }
     
     /**
-     * Записывает значение по указателю с преобразованием порядка байт.
-     * 
-     * @warning Данная функция работает только с примитивами!
-     * 
-     * Для типов размером больше 1 байта выполняет преобразование порядка байт,
-     * если целевой порядок (out_order) не совпадает с порядком системы.
-     * Для однобайтовых типов записывает значение без изменений.
-     * 
-     * @tparam T 
-     *      Тип записываемого значения.
-     * 
-     * @param ptr 
-     *      Указатель, по которому будет записано значение.
-     * 
-     * @param v 
-     *      Значение для записи.
-     * 
-     * @param out_order 
-     *      Порядок байт для записи.
-     * 
+     * Writes the value at the pointer, converting the byte order.
+     *
+     * @warning This function only works with primitives!
+     *
+     * For types larger than 1 byte, performs a byte order conversion
+     * if the target order (out_order) does not match the system order.
+     * For single-byte types, writes the value unchanged.
+     *
+     * @tparam T
+     * The type of the value to write.
+     *
+     * @param ptr
+     * The pointer to which the value will be written.
+     *
+     * @param v
+     * The value to write.
+     *
+     * @param out_order
+     * The byte order to write.
+     *
      * @since 1.0
-     * 
+     *
      * @IntrinsicCandidate
      */
     template<typename T>

@@ -2,6 +2,7 @@
 #define JSTD_CPP_LANG_BASE_SOCKET_H
 #include <cpp/lang/net/inetaddr.hpp>
 #include <cpp/lang/net/socket_option.hpp>
+#include <cpp/lang/string.hpp>
 #include <cstdint>
 
 namespace tc
@@ -181,17 +182,8 @@ protected:
 
     /**
      * Преобразует информацию о сокете в строку.
-     * 
-     * @param buf 
-     *      Буфер для записи строки.
-     * 
-     * @param bufsize 
-     *      Размер буфера.
-     * 
-     * @return 
-     *      Длина записанной строки.
      */
-    virtual int to_string(char buf[], std::size_t bufsize) const;
+    string to_string(tca::allocator* alloc = tca::get_default_allocator()) const;
 
     /**
      * Читает данные из сокета.
@@ -412,10 +404,14 @@ public:
     }
     
     template<typename SOCKET_T>
-    int base_socket<SOCKET_T>::to_string(char buf[], std::size_t bufsize) const {
-        char ipbuf[64];
-        address.to_string(ipbuf, sizeof(ipbuf));
-        return std::snprintf(buf, bufsize, "[addr=/%s, port=%i, localport=%i]", ipbuf, port, localport);
+    string base_socket<SOCKET_T>::to_string(tca::allocator* alloc) const {
+        string result(alloc);
+        result
+            .append("[addr=").append(address.to_string(alloc))
+            .append(", port=").append(tc::to_string(port, alloc))
+            .append(", localport=").append(tc::to_string(localport, alloc))
+            .append(']');
+        return result;
     }
 }
 #endif //JSTD_CPP_LANG_BASE_SOCKET_H

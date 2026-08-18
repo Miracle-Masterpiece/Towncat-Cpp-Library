@@ -183,7 +183,7 @@ namespace tc
         return *this;
     }
     
-    mapped_byte_buffer file_channel::map(fmap_mode mode, std::size_t offset, std::size_t length) {
+    mappedbuf file_channel::map(fmap_mode mode, std::size_t offset, std::size_t length) {
         require_fd();
         
         if (mode == fmap_mode::READ_WRITE && !(m_oflags & open_option::WRITE))
@@ -262,10 +262,10 @@ namespace tc
                 
                 file_view = reinterpret_cast<char*>(page_base) + offset_for_view;
 
-                mapped_byte_buffer buf = mapped_byte_buffer(page_base, file_view, length, mode);
+                mappedbuf buf = mappedbuf(page_base, file_view, length, mode);
                 buf.m_mapped_hanle = map;
 
-                return mapped_byte_buffer(std::move(buf));
+                return mappedbuf(std::move(buf));
             }
         );}
 
@@ -287,10 +287,10 @@ namespace tc
 
             file_view = reinterpret_cast<char*>(page_base) + offset_for_view;
 
-            return mapped_byte_buffer(page_base, file_view, length, mode);
+            return mappedbuf(page_base, file_view, length, mode);
         );}
 
-        return mapped_byte_buffer(NULL, NULL, 0, fmap_mode::READ_ONLY);        
+        return mappedbuf(NULL, NULL, 0, fmap_mode::READ_ONLY);        
     }
 }
 
@@ -301,28 +301,29 @@ namespace tc
  */
 namespace tc
 {
-    mapped_byte_buffer::mapped_byte_buffer() : byte_buffer(), m_base(nullptr) {
+    mappedbuf::mappedbuf() : basebuf(), m_base(nullptr) {
         JSTD_WIN_CODE(
             m_mapped_hanle = NULL;
         );
     }
 
-    mapped_byte_buffer::mapped_byte_buffer(mapped_byte_buffer&& buf) : 
-    byte_buffer(std::move(buf)),
+    mappedbuf::mappedbuf(mappedbuf&& buf) : basebuf(),
     m_base(buf.m_base) {
-        JSTD_WIN_CODE(
+        JSTD_WIN_CODE
+        (
             m_mapped_hanle      = buf.m_mapped_hanle;
             buf.m_mapped_hanle  = NULL;
         );
     }
 
-    mapped_byte_buffer& mapped_byte_buffer::operator= (mapped_byte_buffer&& buf) {
-        if (&buf != this) {
+    mappedbuf& mappedbuf::operator= (mappedbuf&& buf) {
+        if (&buf != this)
+        {
             cleanup();
-            byte_buffer::operator=(std::move(buf));
             m_base      = buf.m_base;
             buf.m_base  = nullptr;
-            JSTD_WIN_CODE(
+            JSTD_WIN_CODE
+            (
                 m_mapped_hanle      = buf.m_mapped_hanle;
                 buf.m_mapped_hanle  = NULL;
             );
@@ -330,30 +331,33 @@ namespace tc
         return *this;
     }
 
-    mapped_byte_buffer::mapped_byte_buffer(void* page_base, void* base, std::size_t capacity, fmap_mode mode) : 
-    byte_buffer(reinterpret_cast<char*>(base), capacity, mode == fmap_mode::READ_ONLY), 
-    m_base(base) {
-
+    mappedbuf::mappedbuf(void* page_base, void* base, std::size_t capacity, fmap_mode mode) : basebuf(), m_base(base) {
+        m_readonly  = mode == fmap_mode::READ_ONLY;
+        m_data      = static_cast<char*>(base);
+        m_base      = page_base;
+        m_capacity  = capacity;
+        m_limit     = capacity;
     }
 
-    void mapped_byte_buffer::cleanup() {
+    void mappedbuf::cleanup() {
         if (m_base == nullptr)
             return;
-        JSTD_WIN_CODE(
+        JSTD_WIN_CODE
+        (
             UnmapViewOfFile(m_base);
             CloseHandle(m_mapped_hanle);
         );
-        JSTD_POSIX_CODE(
-            //int munmap(void *start, size_t length);
+        JSTD_POSIX_CODE
+        (
             munmap(m_base, m_capacity);
         );
     }
 
-    mapped_byte_buffer::~mapped_byte_buffer() {
+    mappedbuf::~mappedbuf() {
         cleanup();
     }
 
-    mapped_byte_buffer& mapped_byte_buffer::force() {
+    mappedbuf& mappedbuf::force() {
         JSTD_DEBUG_CODE(
             if (m_data == nullptr)
                 throw_except<illegal_state_exception>("buffer is not mapped");

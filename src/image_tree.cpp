@@ -37,20 +37,16 @@ namespace texturing
     m_right(std::move(n.m_right)),
     m_rect(n.m_rect),
     m_ID(n.m_ID) {
-        n.m_allocator   = nullptr;
         n.m_ID          = NULL_ID;
     }
     
     node& node::operator= (node&& n) {
         if (&n != this) {
-            m_allocator = n.m_allocator;
             m_left      = std::move(n.m_left);
             m_right     = std::move(n.m_right);
             m_rect      = n.m_rect;
             m_ID        = n.m_ID;
-            
-            n.m_allocator   = nullptr;
-            n.m_ID          = NULL_ID;
+            n.m_ID      = NULL_ID;
         }
         return *this;
     }

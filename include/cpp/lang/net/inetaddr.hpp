@@ -393,7 +393,6 @@ public:
      */
     bool equals(const socket_address& sock_addr) const;
 
-    static const int32_t TO_STRING_MIN_BUFFER_SIZE = 64;
     /**
      * Преобразует адрес сокета в строку.
      *
@@ -406,7 +405,7 @@ public:
      * @return 
      *      Количество записанных символов (не считая '\0').
      */
-    int to_string(char buf[], std::size_t bufsize);
+    string to_string(tca::allocator* alloc = tca::get_default_allocator()) const;
 };
 
 
@@ -425,7 +424,7 @@ struct equal_to<inet_address> {
 
 template<>
 struct hash_for<inet_address> {
-    uint64_t operator() (const inet_address& i) {
+    std::size_t operator() (const inet_address& i) {
         return i.hashcode();
     }
 };
@@ -439,7 +438,7 @@ struct equal_to<socket_address> {
 
 template<>
 struct hash_for<socket_address> {
-    uint64_t operator() (const socket_address& i) {
+    std::size_t operator() (const socket_address& i) {
         return i.hashcode();
     }
 };

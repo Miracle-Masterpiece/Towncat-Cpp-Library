@@ -255,13 +255,6 @@ namespace tc
         return false;
     }
 
-    int inet_address::to_string(char buf[], std::size_t bufsize) const {
-        if (family == inet_family::IPV4)
-            return IPv4ToString(buf, bufsize, *this);
-        else
-            return IPv6ToString(buf, bufsize, *this);
-    }
-
     inet_family inet_address::get_family() const {
         return family;
     }
@@ -425,7 +418,7 @@ namespace tc
 
         result.append(buf);
 
-        return tc::string( std::move(result) );
+        return result;
     }
 
     socket_address::socket_address() : m_address(), m_port(0) {
@@ -480,15 +473,13 @@ namespace tc
         return m_port == sock_addr.m_port && m_address.equals(sock_addr.m_address);
     }
 
-    int socket_address::to_string(char buf[], std::size_t bufsize) {
-        int off = m_address.to_string(buf, bufsize);
-        if (off > 0)
-        {
-            std::size_t offset = (std::size_t) off;
-            if (bufsize >= offset && bufsize - offset > 0)
-                off += snprintf(buf + offset, bufsize - offset, "/%i", m_port);
-        }
-        return off;
+    string socket_address::to_string(tca::allocator* alloc) const {
+        string result(alloc);
+        result
+            .append("[addr=").append(m_address.to_string(alloc))
+            .append(", port=").append(tc::to_string(m_port, alloc))
+            .append(']');
+        return result;
     }
     
 }

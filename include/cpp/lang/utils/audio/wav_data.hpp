@@ -13,7 +13,7 @@ class file;
 class wav_data {
     
     // Allocator used for data storage.
-    tca::allocator* m_allocator;
+    tca::allocator* const m_allocator;
     
     // Raw audio data
     char* data;
@@ -89,7 +89,7 @@ public:
      * Constructs an empty wav_data object.
      * 
      */
-    wav_data();
+    wav_data(tca::allocator* alloc = tca::get_default_allocator());
 
     /**
      * Loads WAV data from a file.
@@ -165,6 +165,13 @@ public:
      * 
      */
     ~wav_data();
+
+    /**
+     * 
+     */
+    tca::allocator* get_allocator() const {
+        return m_allocator;
+    }
 
     /**
      * Returns a pointer to the raw PCM audio data.

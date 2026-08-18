@@ -32,7 +32,7 @@ public:
 private:
     
     // Аллокатор, используемый для управления памятью узлов.
-    tca::allocator*     m_allocator;
+    tca::allocator* const m_allocator;
 
     // Левый дочерний узел.
     unique_ptr<node>    m_left;

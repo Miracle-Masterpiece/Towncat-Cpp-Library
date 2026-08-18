@@ -15,48 +15,19 @@ namespace tc
  */
 class image {
 public:
-    struct rgba {
-        unsigned char r, g, b, a;
-        rgba(unsigned char r = 0, unsigned char g = 0, unsigned char b = 0, unsigned char a = 0) : r(r), g(g), b(b), a(a) {}
-        rgba(const rgba&)               = default;
-        rgba(rgba&&)                    = default;
-        rgba& operator=(const rgba&)    = default;
-        rgba& operator=(rgba&&)         = default;
-        ~rgba()                         = default;
-        int to_string(char buf[], std::size_t bufsize) const;
-    };
-    struct rgb {
-        unsigned char r, g, b;
-        rgb(unsigned char r = 0, unsigned char g = 0, unsigned char b = 0) : r(r), g(g), b(b) {}
-        rgb(const rgb&)             = default;
-        rgb(rgb&&)                  = default;
-        rgb& operator=(const rgb&)  = default;
-        rgb& operator=(rgb&&)       = default;
-        ~rgb()                      = default;
-        int to_string(char buf[], std::size_t bufsize) const;
-    };
-    struct gray {
-        unsigned char brightness;
-        gray(unsigned char brightness = 0) : brightness(brightness) {}
-        gray(const gray&)               = default;
-        gray(gray&&)                    = default;
-        gray& operator=(const gray&)    = default;
-        gray& operator=(gray&&)         = default;
-        ~gray()                         = default;
-        int to_string(char buf[], std::size_t bufsize) const;
+    struct pixel {
+        unsigned char red, green, blue, alpha;
     };
 private:
     /**
      * Аллокатор, используемый для управления памятью.
      */
-    tca::allocator* m_allocator;
+    tca::allocator* const m_allocator;
 
-    union {
-        unsigned char* m_pixels;                    // Указатель на массив пикселей изображения.
-        rgba*   m_rgba;
-        rgb*    m_rgb;
-        gray*   m_gray;
-    };
+    /**
+     * Указатель на данные пикселей.
+     */
+    unsigned char* m_pixels;
     
     /**
      * Ширина изображения в пикселях.
@@ -74,11 +45,6 @@ private:
     int m_channels;
 
     /**
-     * Освобождает ресурсы, связанные с изображением.
-     */
-    void cleanup();
-
-    /**
      * Для создания view на массив байтов.
      */
     image(unsigned char* data, int w, int h, int channels);
@@ -93,7 +59,7 @@ public:
      * Конструктор по умолчанию.
      * Создаёт пустое изображение без выделения памяти.
      */
-    image();
+    image(tca::allocator* alloc = tca::get_default_allocator());
 
     /**
      * Создаёт изображение заданного размера и количества каналов с использованием указанного аллокатора.
@@ -165,12 +131,29 @@ public:
     unsigned char* pixels();
 
     /**
+     * 
+     */
+    pixel get_pixel(int x, int y) const;
+    
+    /**
+     * 
+     */
+    void set_pixel(int x, int y, const pixel& p);
+
+    /**
      * Возвращает указатель на пиксели изображения (константная версия).
      *
      * @return 
      *      Указатель на первый байт массива пикселей (только для чтения).
      */
     const unsigned char* pixels() const;
+
+    /**
+     * Возвращает аллокатор, управляющий памятью этого изображения.
+     */
+    tca::allocator* get_allocator() const {
+        return m_allocator;
+    }
 
     /**
      * Возвращает ширину изображения.
@@ -208,88 +191,19 @@ public:
      * @param newh 
      *      Новая высота.
      * 
-     * @param allocator 
-     *      Необязательный аллокатор; если не указан, используется текущий.
+     * @param alloc
+     *      Аллокатор, используемый для выделения памяти под уменьшенное изображение.
      * 
      * @return 
      *      Новое масштабированное изображение.
      */
-    image resize(int neww, int newh, tca::allocator* allocator = nullptr) const;
-
-    /**
-     * 
-     */
-    rgb& get_rgb(int x, int y);
-
-    /**
-     * 
-     */
-    const rgb& get_rgb(int x, int y) const;
-
-    /**
-     * 
-     */
-    rgba& get_rgba(int x, int y);
-
-    /**
-     * 
-     */
-    const rgba& get_rgba(int x, int y) const;
-
-    /**
-     * 
-     */
-    gray& get_gray(int x, int y);
-    
-    /**
-     * 
-     */
-    const gray& get_gray(int x, int y) const;
+    image resize(int neww, int newh, tca::allocator* alloc = nullptr) const;
 
     /**
      * Возвращает краткое строковое представление изображения.
      */
     string to_string(tca::allocator* = tca::get_default_allocator()) const;
-
-    /**
-     * Создаёт копию изображения.
-     * 
-     * @note
-     *      Если передаваемый аллокатор равен nullptr и текущее изображение является view, то функция вернёт пустое изображение.
-     * 
-     * @param allocator 
-     *      Необязательный аллокатор. 
-     *      Eсли не указан, используется текущий.
-     * 
-     * @return 
-     *      Новое изображение, содержащее копию пикселей.
-     */
-    image clone(tca::allocator* allocator = nullptr) const;
-
-    /**
-     * Создаёт view изображения на передаваемую память.
-     * 
-     * @note
-     *      Данная функция создаёт только view на массив, при этом объект не становится владельцем памяти!
-     * 
-     * @param data
-     *      Указатель на массив байтов изображения.
-     * 
-     * @param width
-     *      Ширина изображения.
-     * 
-     * @param height
-     *      Высота изображения.
-     * 
-     * 
-     * @param channles
-     *      Количество каналов изображения.
-     * 
-     * @throw null_pointer_exception
-     *      Если data равна nullptr.
-     */
-    static image make_view(unsigned char* data, int width, int height, int channels);
-
+    
     /**
      * Захватывает указатель на массив изображения в своё владение. 
      * 

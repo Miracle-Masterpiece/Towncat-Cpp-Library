@@ -2,6 +2,7 @@
 #define EC12E84B_2C4A_448B_AA66_F927509E8ECF
 
 #include <climits>
+#include <cpp/lang/traits/SFINAE.hpp>
 
 namespace tc
 {
@@ -155,6 +156,77 @@ template<> struct make_signed<unsigned short>       {typedef signed short type;}
 template<> struct make_signed<unsigned int>         {typedef signed int type;};
 template<> struct make_signed<unsigned long>        {typedef signed long type;};
 template<> struct make_signed<unsigned long long>   {typedef signed long long type;};
+
+/**
+ * Compile-time type selection trait for integer types of a specific bit size.
+ * 
+ * Provides the signed and unsigned integer types that have exactly `SIZE` bits
+ * from the set of fundamental integer types (`char`, `short`, `int`, `long`, `long long`).
+ * 
+ * @tparam SIZE
+ *      The required bit size (must match the size of a fundamental integer type).
+ * 
+ * @note The selection is performed in descending order of type size.
+ *       Larger types are considered first to ensure the most suitable type is chosen
+ *       when multiple types have the same size (e.g., `int` and `long` on some platforms).
+ * 
+ * @note This trait is intended for use in low-level memory manipulation,
+ *       serialization, or fixed-size buffer implementations where exact
+ *       integer sizes are required.
+ * 
+ * @invariant The selected type is guaranteed to have exactly `SIZE` bits.
+ * 
+ * @static_assert SIZE must be equal to the bit size of one of the fundamental
+ *                integer types. Otherwise, compilation fails with a diagnostic
+ *                message.
+ * 
+ * @example
+ *      // Get types for a 32-bit integer
+ *      using signed_32 = int_of_size<32>::stype;   // Typically 'int' or 'long'
+ *      using unsigned_32 = int_of_size<32>::utype; // Typically 'unsigned int' or 'unsigned long'
+ * 
+ *      // Get types for an 8-bit integer
+ *      using signed_8 = int_of_size<8>::stype;     // 'signed char'
+ *      using unsigned_8 = int_of_size<8>::utype;   // 'unsigned char'
+ * 
+ *      static_assert(sizeof(signed_32) * CHAR_BIT == 32);
+ *      static_assert(sizeof(unsigned_8) * CHAR_BIT == 8);
+ * 
+ * @example
+ *      // Using with template metaprogramming
+ *      template<std::size_t Bits>
+ *      struct fixed_integer {
+ *          using type = typename int_of_size<Bits>::stype;
+ *      };
+ * 
+ *      fixed_integer<16>::type value = 0x7FFF; // 16-bit signed integer
+ * 
+ */
+template<std::size_t SIZE> 
+struct int_of {
+private:
+    static_assert(
+        SIZE == sizeof(char)        * CHAR_BIT        ||
+        SIZE == sizeof(short)       * CHAR_BIT       ||
+        SIZE == sizeof(int)         * CHAR_BIT         ||
+        SIZE == sizeof(long)        * CHAR_BIT        ||
+        SIZE == sizeof(long long)   * CHAR_BIT,
+        "SIZE must be equvalent fundamental types"
+    );
+    typedef typename select_if<SIZE == sizeof(signed long long) * CHAR_BIT,     signed long long,   long>::type         signed_0;
+    typedef typename select_if<SIZE == sizeof(signed long)      * CHAR_BIT,     signed long,        signed_0>::type     signed_1;
+    typedef typename select_if<SIZE == sizeof(signed int)       * CHAR_BIT,     signed int,         signed_1>::type     signed_2;
+    typedef typename select_if<SIZE == sizeof(signed short)     * CHAR_BIT,     signed short,       signed_2>::type     signed_3;
+    
+    typedef typename select_if<SIZE == sizeof(unsigned long long) * CHAR_BIT,   unsigned long long, long>::type         unsigned_0;
+    typedef typename select_if<SIZE == sizeof(unsigned long)      * CHAR_BIT,   unsigned long,      unsigned_0>::type   unsigned_1;
+    typedef typename select_if<SIZE == sizeof(unsigned int)       * CHAR_BIT,   unsigned int,       unsigned_1>::type   unsigned_2;
+    typedef typename select_if<SIZE == sizeof(unsigned short)     * CHAR_BIT,   unsigned short,     unsigned_2>::type   unsigned_3;
+public:
+    typedef typename select_if<SIZE == sizeof(signed char)      * CHAR_BIT,     signed char,    signed_3>::type     stype;
+    typedef typename select_if<SIZE == sizeof(unsigned char)    * CHAR_BIT,     unsigned char,  unsigned_3>::type   utype;
+};
+
 
 }
 

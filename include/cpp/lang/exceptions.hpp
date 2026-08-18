@@ -120,6 +120,8 @@ MAKE_EXCEPT_CLASS__(stack_overflow_error,                error)
  */
 MAKE_EXCEPT_CLASS__(illegal_argument_exception,          runtime_exception)
 MAKE_EXCEPT_CLASS__(illegal_state_exception,             runtime_exception)
+MAKE_EXCEPT_CLASS__(invalid_mark_exception,              illegal_state_exception)
+
 MAKE_EXCEPT_CLASS__(unsupported_operation_exception,             exception)
 MAKE_EXCEPT_CLASS__(utf_format_exception,                runtime_exception)
 MAKE_EXCEPT_CLASS__(invalid_data_format_exception,       runtime_exception)
