@@ -1,0 +1,4 @@
+#ifndef A347E287_C742_4348_B186_4D222668EB32
+#define A347E287_C742_4348_B186_4D222668EB32
+#include <cpp/lang/utils/comparator.hpp>
+#endif /* A347E287_C742_4348_B186_4D222668EB32 */

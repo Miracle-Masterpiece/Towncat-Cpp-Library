@@ -1,0 +1,4 @@
+#ifndef D4C3E8C4_C2B5_4957_9FE1_19C619941686
+#define D4C3E8C4_C2B5_4957_9FE1_19C619941686
+#include <cpp/lang/utils/linked_hash_map.hpp>
+#endif /* D4C3E8C4_C2B5_4957_9FE1_19C619941686 */

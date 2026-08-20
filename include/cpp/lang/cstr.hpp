@@ -5,16 +5,17 @@
 #include <cpp/lang/utils/hash.hpp>
 #include <cpp/lang/utils/objects.hpp>
 
-namespace tc {
+namespace tc
+{
 
 /**
  * Представляет собой неизменяемую строку в стиле C (null-terminated), с кэшируемой длиной и удобными методами доступа.
  *
- * Класс cstr предоставляет обёртку над const char*, позволяя безопасно и удобно работать со строками, 
+ * Класс c_str предоставляет обёртку над const char*, позволяя безопасно и удобно работать со строками, 
  * не копируя данные. Длина строки кэшируется после первого запроса, что ускоряет повторные вызовы length().
  * Поддерживает сравнение, хеширование и доступ к символам по индексу.
  */
-class cstr {
+class c_str {
     const char* m_cstr;             // Указатель на C-строку (null-terminated).
     mutable std::size_t m_length;   // Кэшированная длина строки. Вычисляется при первом вызове length().
 public:
@@ -25,11 +26,11 @@ public:
      *      Указатель на null-terminated строку. 
      *      Должен быть действительным на всё время жизни объекта.
      */
-    cstr(const char* s);
+    c_str(const char* s);
 
     /**
      * Неявное преобразование к const char*.
-     * Позволяет использовать объект cstr в контексте, где ожидается C-строка, например при передаче в стандартные функции C.
+     * Позволяет использовать объект c_str в контексте, где ожидается C-строка, например при передаче в стандартные функции C.
      *
      * @return 
      *      Указатель на исходную C-строку.
@@ -71,7 +72,7 @@ public:
      * @return 
      *      true, если строки идентичны, иначе — false.
      */
-    bool equals(const cstr& s) const;
+    bool equals(const c_str& s) const;
 
     /**
      * Оператор сравнения на равенство.
@@ -84,7 +85,7 @@ public:
      * @return 
      *      true, если строки равны, иначе false.
      */
-    bool operator==(const cstr& s) const;
+    bool operator==(const c_str& s) const;
 
     /**
      * @brief Оператор сравнения на неравенство.
@@ -97,7 +98,7 @@ public:
      * @return 
      *      true, если строки не равны, иначе false.
      */
-    bool operator!=(const cstr& s) const;
+    bool operator!=(const c_str& s) const;
 
     /**
      * Вычисляет хеш-код строки.
@@ -123,15 +124,15 @@ public:
 };
 
 template<>
-struct hash_for<cstr> {
-    std::size_t operator ()(const cstr& s) const {
+struct hash_for<c_str> {
+    std::size_t operator ()(const c_str& s) const {
         return s.hashcode();
     }
 };
 
 template<>
-struct equal_to<cstr> {
-    bool operator ()(const cstr& s0, const cstr& s1) const {
+struct equal_to<c_str> {
+    bool operator ()(const c_str& s0, const c_str& s1) const {
         return s0.equals(s1);
     }
 };

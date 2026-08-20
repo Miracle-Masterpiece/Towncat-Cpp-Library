@@ -2,19 +2,12 @@
 #define JSTD_CPP_LANG_IO_FILE_H
 #include <cpp/lang/array.hpp>
 #include <cpp/lang/types.hpp>
-#include <cpp/lang/io/utility.hpp>
 #include <cpp/lang/string.hpp>
+#include <cpp/lang/io/file_filter.hpp>
 #include <cstdint>
-
-namespace tca
-{
-    class base_allocator;
-}
 
 namespace tc
 {
-
-class file_filter;
 
 class file {
     
@@ -22,14 +15,7 @@ class file {
      * UTF-8 path
      */
     char _path[io::constants::MAX_LENGTH_PATH];
-
-    /**
-     * 
-     */
-    static std::size_t npos() {
-        return (~(std::size_t) 0);
-    }
-
+    
 public:
     /**
      * 
@@ -39,7 +25,7 @@ public:
     /**
      * 
      */
-    file(const tc::string& path) : file(path.cstr(), path.length()) {}
+    file(const tc::string& path) : file(path.c_str(), path.length()) {}
     
     /**
      * 
@@ -282,7 +268,7 @@ public:
      * @return 
      *      Указатель на строку, содержащее значение пути.
      */
-    const char* cstr() const;
+    const char* c_str() const;
     
     /**
      * Возвращает строку названия файла.

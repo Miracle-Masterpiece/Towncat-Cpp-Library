@@ -40,7 +40,7 @@ namespace tc {
         {//store date
             date now = date::now();
             string date = now.to_string(m_allocator);
-            out.write(date.cstr(), date.length() + 1);
+            out.write(date.c_str(), date.length() + 1);
             out.write(&NEW_LINE, 1);
         }
 
@@ -49,11 +49,11 @@ namespace tc {
             const string& key     = e.first();
             const string& value   = e.second();
             
-            out.write(key.cstr(), key.length());
+            out.write(key.c_str(), key.length());
          
             out.write(&ASSIGN, 1);                      //add "="
          
-            out.write(value.cstr(), value.length());
+            out.write(value.c_str(), value.length());
          
             out.write(&NEW_LINE, 1);                    //add "\n"
         }

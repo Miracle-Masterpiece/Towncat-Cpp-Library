@@ -20,7 +20,7 @@ namespace tc
     }
     
     template<typename TCHAR>
-    tstring<TCHAR>::tstring(const tstring<TCHAR>& s) : tstring<TCHAR>(s.cstr(), s.get_allocator()) {
+    tstring<TCHAR>::tstring(const tstring<TCHAR>& s) : tstring<TCHAR>(s.c_str(), s.get_allocator()) {
         
     }
     
@@ -52,7 +52,7 @@ namespace tc
                 
                 assert(s.length() < INLINE_BUFFER_SIZE);
                 
-                std::memcpy(cstr(), s.cstr(), (s.length() + 1) * sizeof(TCHAR));
+                std::memcpy(c_str(), s.c_str(), (s.length() + 1) * sizeof(TCHAR));
                 cap  = INLINE_BUFFER_SIZE;
                 size = s.length();
             }
@@ -67,7 +67,7 @@ namespace tc
                 if (!new_data)
                     throw_except<out_of_memory_error>("Out of memory");
                 
-                std::memcpy(new_data, s.cstr(), (s.length() + 1) * sizeof(TCHAR));
+                std::memcpy(new_data, s.c_str(), (s.length() + 1) * sizeof(TCHAR));
 
                 if (!is_inline_string())
                     allocator->deallocate(data);
@@ -93,7 +93,7 @@ namespace tc
             
             if (s.is_inline_string())
             {
-                std::memcpy(cstr(), s.cstr(), s.length());
+                std::memcpy(c_str(), s.c_str(), s.length());
                 cap  = s.cap;
                 size = s.length();
             }
@@ -130,7 +130,7 @@ namespace tc
         if (!new_data)
             throw_except<out_of_memory_error>("Out of memory");
 
-        std::memcpy(new_data, cstr(), (size + 1) * sizeof(TCHAR));
+        std::memcpy(new_data, c_str(), (size + 1) * sizeof(TCHAR));
 
         //Если предыдущий буфер строки не встроен в строку, освобождаем
         if (!is_inline_string())
@@ -149,12 +149,12 @@ namespace tc
     }
 
     template<typename TCHAR>
-    TCHAR* tstring<TCHAR>::cstr() {
+    TCHAR* tstring<TCHAR>::c_str() {
         return is_inline_string() ? inline_data : data;
     }
 
     template<typename TCHAR>
-    const TCHAR* tstring<TCHAR>::cstr() const {
+    const TCHAR* tstring<TCHAR>::c_str() const {
         return is_inline_string() ? inline_data : data;
     }
 
@@ -169,7 +169,7 @@ namespace tc
             if (!new_data)
                 throw_except<out_of_memory_error>("Out of memory");
             
-            std::memcpy(new_data, cstr(), len * sizeof(TCHAR));
+            std::memcpy(new_data, c_str(), len * sizeof(TCHAR));
             new_data[len] = 0;
             
             if (!is_inline_string())
@@ -183,7 +183,7 @@ namespace tc
         {
             if (!is_inline_string())
             {
-                TCHAR* data = cstr();
+                TCHAR* data = c_str();
                 std::memcpy(inline_data, data, math::min(static_cast<std::size_t>(INLINE_BUFFER_SIZE), size) * sizeof(TCHAR));
                 cap = static_cast<std::size_t>(INLINE_BUFFER_SIZE);
                 allocator->deallocate(data);
@@ -206,7 +206,7 @@ namespace tc
         if (rem() <= len)
             ensure_cap(size + len);
         
-        TCHAR* str = cstr();
+        TCHAR* str = c_str();
         
         std::memmove(
                     str + (idx + len), 
@@ -242,7 +242,7 @@ namespace tc
             {
                 assert(j < len);
                 assert(i + j < size);
-                if (cstr()[i + j] != s[j])
+                if (c_str()[i + j] != s[j])
                 {
                     match = false;
                     break;
@@ -266,7 +266,7 @@ namespace tc
             bool match = true;
             for (std::size_t j = 0; j < len; ++j)
             {
-                if (cstr()[i + j] != s[j])
+                if (c_str()[i + j] != s[j])
                 {
                     match = false;
                     break;
@@ -281,7 +281,7 @@ namespace tc
 
     template<typename TCHAR>
     void tstring<TCHAR>::clear() {
-        cstr()[0]   = 0;
+        c_str()[0]   = 0;
         size        = 0;
     }
 
@@ -297,7 +297,7 @@ namespace tc
             if (end > length()) throw_except<illegal_argument_exception>("'end' must be less or equal 'length' where [start: %zu, length: %zu]", start, length());
         )
         std::size_t len = end - start;
-        TCHAR* str      = cstr();
+        TCHAR* str      = c_str();
         
         std::size_t s = start;                          //start
         std::size_t e = end;                            //end
@@ -334,7 +334,7 @@ namespace tc
                 (offset < length()) && 
                 (i < length() - offset) 
             );
-            if (cstr()[i + offset] != s[i])
+            if (c_str()[i + offset] != s[i])
                 return false;
         }
 
@@ -350,7 +350,7 @@ namespace tc
         std::size_t start   = length() - len;
     
         for (std::size_t i = start, j = 0; j < len; ++i, ++j)
-            if (cstr()[i] != s[j])
+            if (c_str()[i] != s[j])
                 return false;
 
         return true;
@@ -428,7 +428,7 @@ namespace tc
         std::size_t matcher_len     = str_len(matcher);
         std::size_t replacement_len = str_len(replacement);
 
-        std::size_t count = count_match(cstr(), length(), matcher, matcher_len);
+        std::size_t count = count_match(c_str(), length(), matcher, matcher_len);
         
         std::size_t newlen = (length() - (matcher_len * count)) + (replacement_len * count);
 
@@ -444,11 +444,11 @@ namespace tc
 
         for (std::size_t i = 0; i <= len - matcher_len; )
         {
-            bool matched = match(cstr() + i, matcher, matcher_len);
+            bool matched = match(c_str() + i, matcher, matcher_len);
             if (matched)
             {
-                len = unsafe_remove(cstr(), len, i, i + matcher_len);
-                len = unsafe_append(cstr(), len, i, replacement, replacement_len);
+                len = unsafe_remove(c_str(), len, i, i + matcher_len);
+                len = unsafe_append(c_str(), len, i, replacement, replacement_len);
                 i += replacement_len;
             }
             else
@@ -480,11 +480,11 @@ namespace tc
 
         std::size_t len = length();
 
-        len = unsafe_remove(cstr(), len, start, end);
-        len = unsafe_append(cstr(), len, start, replacement, rep_len);
+        len = unsafe_remove(c_str(), len, start, end);
+        len = unsafe_append(c_str(), len, start, replacement, rep_len);
 
         size = len;
-        cstr()[len] = 0;
+        c_str()[len] = 0;
 
         assert(len == newlen);
 
@@ -502,7 +502,7 @@ namespace tc
 
         tstring<TCHAR> sub(allocator);
         sub.reserve(len);
-        sub.append(cstr() + start, len);
+        sub.append(c_str() + start, len);
         
         return tstring<TCHAR>(std::move(sub));
     }
@@ -521,27 +521,27 @@ namespace tc
 
     template<typename TCHAR>
     TCHAR* tstring<TCHAR>::begin() {
-        return cstr();
+        return c_str();
     }
     
     template<typename TCHAR>
     TCHAR* tstring<TCHAR>::end() {
-        return cstr() + length();
+        return c_str() + length();
     }
 
     template<typename TCHAR>
     const TCHAR* tstring<TCHAR>::begin() const {
-        return cstr();
+        return c_str();
     }
     
     template<typename TCHAR>
     const TCHAR* tstring<TCHAR>::end() const {
-        return cstr() + length();
+        return c_str() + length();
     }
 
     template<typename TCHAR>
     std::size_t tstring<TCHAR>::hashcode() const {
-        return objects::hashcode(cstr(), cstr() + length(), hash_for<TCHAR>());
+        return objects::hashcode(c_str(), c_str() + length(), hash_for<TCHAR>());
     }
     
     template<typename TCHAR>
@@ -571,10 +571,10 @@ namespace tc
         const std::size_t len = end - start;
 
         if (start != 0 && len != 0)
-            std::memmove(cstr(), cstr() + start, len * sizeof(TCHAR));
+            std::memmove(c_str(), c_str() + start, len * sizeof(TCHAR));
 
         size = len;
-        cstr()[size] = 0;
+        c_str()[size] = 0;
 
         return *this;
     }
@@ -589,12 +589,12 @@ namespace tc
         if (newlen > length())
         {
             while (size < newlen)
-                cstr()[size++] = ch;
-            cstr()[size] = 0;
+                c_str()[size++] = ch;
+            c_str()[size] = 0;
         }
         else
         {
-            cstr()[newlen] = 0;
+            c_str()[newlen] = 0;
             size = newlen;
         }
     }

@@ -1,0 +1,4 @@
+#ifndef FA5E456B_4A1C_41A2_A5D5_7997953DBCEA
+#define FA5E456B_4A1C_41A2_A5D5_7997953DBCEA
+#include <cpp/lang/compress/lz4_decompressor.hpp>
+#endif /* FA5E456B_4A1C_41A2_A5D5_7997953DBCEA */

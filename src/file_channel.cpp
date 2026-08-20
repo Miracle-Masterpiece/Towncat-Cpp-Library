@@ -111,7 +111,7 @@ namespace tc
                 }
             };
             
-            m_fd = internal::file_descriptor(path.cstr(), o_prot, _S_IRUSR | _S_IWUSR);
+            m_fd = internal::file_descriptor(path.c_str(), o_prot, _S_IRUSR | _S_IWUSR);
         );
 
         JSTD_POSIX_CODE(
@@ -126,7 +126,7 @@ namespace tc
                     o_prot |= O_WRONLY;
                 else o_prot |= O_RDWR;
             };
-            m_fd = internal::file_descriptor(path.cstr(), o_prot, S_IRUSR | S_IWUSR);
+            m_fd = internal::file_descriptor(path.c_str(), o_prot, S_IRUSR | S_IWUSR);
         );
     }
     

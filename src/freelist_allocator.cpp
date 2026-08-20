@@ -279,7 +279,17 @@ namespace tca
         align   = tc::math::max( align, static_cast<std::size_t>(MIN_ALIGN) );
         sz      = tc::math::max(sz, static_cast<std::size_t>(HDR_DIFF));
         sz      = align_up( sz, static_cast<std::size_t>(MIN_ALIGN) );
-        memsize_t min_need_size = static_cast<memsize_t>(HDR_SIZE + sz + align - 1);
+        memsize_t min_need_size;
+        
+        if (align > MIN_ALIGN)
+        {
+            min_need_size = static_cast<memsize_t>(HDR_SIZE + sz + align - 1);
+        }
+        else
+        {
+            min_need_size = static_cast<memsize_t>(HDR_SIZE + sz);
+        }
+
         
         if (min_need_size >= mmap_threshold())
         {
@@ -317,13 +327,6 @@ namespace tca
             // Общий размер блока (Включая заголовок)
             memsize_t block_size = memblock_get_size(block);
 
-            // std::printf("align          %zu\n", align);
-            // std::printf("start:         %zu\n", (std::uintptr_t) start_block);
-            // std::printf("user:          %zu\n", (std::uintptr_t) user_ptr);
-            // std::printf("HDR_SIZE       %zu\n", (std::size_t) HDR_SIZE);
-            // std::printf("hdr_with_padd  %zu\n", hdr_with_padd);
-            // std::printf("padding        %zu\n", padding);
-
             /*
                 [[HDR]..............................................]
                 ^    ^    ^          ^
@@ -344,22 +347,27 @@ namespace tca
                 link(front);
             }
             
-            // Количество байт, занимаемое этим блоком. В целом header + padding + usersize
             memsize_t used = static_cast<memsize_t>(user_ptr + sz - start_block);
 
             assert(block_size >= used);
 
-            // Сколько свободных байт остаётся впереди
-            memsize_t rem  = block_size - used;
+            // Максимум между реальным задействованным объемом и пессимистичным запросом
+            memsize_t raw_target = tc::math::max(used, min_need_size);
 
-            // Разделение, если размер текущего блока слишком большой
+            // Округление вверх до выравнивания заголовка блока
+            memsize_t target_size = align_up<memsize_t>(raw_target, alignof(internal::memblock));
+
+            // Сколько реально остаётся под следующий блок
+            memsize_t rem = (block_size > target_size) ? (block_size - target_size) : 0;
+
+            // Разделение, если остаток достаточно велик для нового блока
             if (rem >= MIN_BLOCK_SIZE)
             {
-                memblock* next  = reinterpret_cast<memblock*>(user_ptr + sz);
-                TC_ALIGN_ASSERT(next, alignof(memblock));
+                memblock* next = reinterpret_cast<memblock*>(start_block + target_size);
+                TC_ALIGN_ASSERT(next, alignof(internal::memblock));
                 
                 memblock_set_size(next, rem);
-                block_size      -= rem;
+                block_size -= rem;
                 link(next);
             }
 

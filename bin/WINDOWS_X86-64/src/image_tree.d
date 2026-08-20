@@ -8,4 +8,7 @@ bin/WINDOWS_X86-64/src/image_tree.o: src/image_tree.cpp \
  include/cpp/lang/traits/SFINAE.hpp include/cpp/lang/utils/arrays.hpp \
  include/cpp/lang/traits/cv_traits.hpp \
  include/cpp/lang/utils/comparator.hpp include/cpp/lang/common.hpp \
- include/cpp/lang/traits/relatoship_traits.hpp
+ include/cpp/lang/traits/sfinae.hpp \
+ include/cpp/lang/traits/relatoship_traits.hpp \
+ include/cpp/lang/traits/type_properties.hpp \
+ include/cpp/lang/traits/pure_traits.hpp

@@ -47,6 +47,18 @@ template<typename T>
 struct pure_type<const T> : base_pure_type<typename pure_type<T>::type> {};
 
 /**
+ * Removes the array qualifier.
+ */
+template<typename T>
+struct pure_type<T[]> : base_pure_type<typename pure_type<T>::type> {};
+
+/**
+ * Removes the array qualifier.
+ */
+template<typename T>
+struct pure_type<const T[]> : base_pure_type<typename pure_type<T>::type> {};
+
+/**
  * Removes the pointer qualifier.
  */
 template<typename T>

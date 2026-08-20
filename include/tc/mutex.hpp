@@ -1,0 +1,4 @@
+#ifndef D7DC3695_B3C1_4E46_B7B8_95DB8119198A
+#define D7DC3695_B3C1_4E46_B7B8_95DB8119198A
+#include <cpp/lang/concurrency/mutex.hpp>
+#endif /* D7DC3695_B3C1_4E46_B7B8_95DB8119198A */

@@ -459,6 +459,7 @@ int main() {
 }
 #endif
 
+#if 1
 
 #include <cpp/lang/utils/images/imageio.hpp>
 #include <cpp/lang/utils/images/image.hpp>
@@ -475,9 +476,9 @@ public:
 template<>
 struct tc::compare_to<tc::image> {
     int operator()(const tc::image& a, const tc::image& b) {
-        int asize = a.get_width() * a.get_height();
-        int bsize = b.get_width() * b.get_height();
-        return bsize - asize;
+        int a_area = a.get_width() * a.get_height();
+        int b_area = b.get_width() * b.get_height();
+        return b_area - a_area;
     }
 };
 
@@ -506,7 +507,7 @@ int main() {
     try {
         tc::array_list<tc::image> images = load_all_image(image_folder);
         tc::image_packer packer(images.data(), images.size(), 1024, 1024);
-        tc::image atlas = packer.pack(1);
+        tc::image atlas = packer.pack(4);
         tc::imageio::write_image(tc::file("build/atlas.png"), &atlas, "png");
     } catch (const tc::throwable& t) {
         std::cout << t.cause() << "\n";
@@ -514,3 +515,60 @@ int main() {
     }
     free_list.print_log();
 }
+#endif
+
+#include <tc/unique_ptr.hpp>
+#include <tc/shared_ptr.hpp>
+
+struct animal{
+    double x, y, z;
+    float xo, yo, zo;
+    bool on_ground;
+
+    virtual void say() = 0;
+    virtual ~animal() {
+        // std::cout << "~animal()\n";
+    }
+};
+
+struct cat : animal {
+    void say() {
+        std::cout << "meow\n";
+    }
+    ~cat() {
+        // std::cout << "~cat()\n";
+    }
+};
+
+#include <cpp/lang/math.hpp>
+#include <allocators/helpers.hpp>
+#include <cpp/lang/traits/primitive_traits.hpp>
+#include <cpp/lang/traits/pure_traits.hpp>
+
+#include <memory>
+
+template class tc::shared_ptr<cat>;
+
+struct test {
+    test() { std::cout << "test()\n"; }
+    test(const test&) { std::cout << "test(const test&)\n"; }
+    test(test&&) { std::cout << "test(test&&)\n"; }
+    test& operator= (const test&) { std::cout << "test& operator= (const test&)\n"; return *this;}
+    test& operator= (test&&) { std::cout << "test& operator= (test&&)\n"; return *this;}
+    ~test() {std::cout << "~test()\n";}
+};
+
+#if 0
+int main() {
+    
+    tca::free_list_allocator alloc(tca::get_default_allocator());
+
+    tc::unique_ptr<const animal> a = tc::make_unique<cat>(&alloc);
+    
+    tc::unique_ptr<animal> b = tc::const_pointer_cast<animal>(std::move(a));
+
+    b->say();
+
+    alloc.print_log();
+}
+#endif

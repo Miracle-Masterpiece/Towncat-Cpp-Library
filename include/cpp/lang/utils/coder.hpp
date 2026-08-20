@@ -302,12 +302,12 @@ namespace utf32
     
     template<typename U8>
     class utf8::iterator<U8> u8_begin(const tstring<U8>& str) {
-        return utf8::iterator<U8>(str.cstr(), str.length());
+        return utf8::iterator<U8>(str.c_str(), str.length());
     }
     
     template<typename U8>
     class utf8::iterator<U8> u8_end(const tstring<U8>& str) {
-        return utf8::iterator<U8>(str.cstr(), str.length(), str.length());
+        return utf8::iterator<U8>(str.c_str(), str.length(), str.length());
     }
 
     template<typename U16>
@@ -322,12 +322,12 @@ namespace utf32
     
     template<typename U16>
     class utf16::iterator<U16> u16_begin(const tstring<U16>& str, byte_order order = system::native_byte_order()) {
-        return utf16::iterator<U16>(str.cstr(), str.length(), order);
+        return utf16::iterator<U16>(str.c_str(), str.length(), order);
     }
     
     template<typename U16>
     class utf16::iterator<U16> u16_end(const tstring<U16>& str, byte_order order = system::native_byte_order()) {
-        return utf16::iterator<U16>(str.cstr(), str.length(), str.length(), order);
+        return utf16::iterator<U16>(str.c_str(), str.length(), str.length(), order);
     }
 
     template<typename U32>
@@ -342,12 +342,12 @@ namespace utf32
     
     template<typename U32>
     class utf32::iterator<U32> u32_begin(const tstring<U32>& str, byte_order order = system::native_byte_order()) {
-        return utf32::iterator<U32>(str.cstr(), str.length(), order);
+        return utf32::iterator<U32>(str.c_str(), str.length(), order);
     }
     
     template<typename U32>
     class utf32::iterator<U32> u32_end(const tstring<U32>& str, byte_order order = system::native_byte_order()) {
-        return utf32::iterator<U32>(str.cstr(), str.length(), str.length(), order);
+        return utf32::iterator<U32>(str.c_str(), str.length(), str.length(), order);
     }
 
     template<typename U8, typename U16>

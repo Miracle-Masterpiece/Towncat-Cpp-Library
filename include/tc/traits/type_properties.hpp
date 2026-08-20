@@ -1,0 +1,4 @@
+#ifndef FACEBD00_B297_451C_AD25_2D78CDFE632F
+#define FACEBD00_B297_451C_AD25_2D78CDFE632F
+#include <cpp/lang/traits/type_properties.hpp>
+#endif /* FACEBD00_B297_451C_AD25_2D78CDFE632F */

@@ -303,7 +303,7 @@ public:
     * @return
     *       A pointer to the string.
     */
-    TCHAR* cstr();
+    TCHAR* c_str();
     
     /**
      * Returns a constant pointer to a c-string.
@@ -314,7 +314,7 @@ public:
      * @return
      *      A pointer to the string.
      */
-    const TCHAR* cstr() const;
+    const TCHAR* c_str() const;
 
     /**
      * Reserves space for a string of length 'sz'.
@@ -375,7 +375,7 @@ public:
      *      If there is not enough memory.
      */
     tstring<TCHAR>& replace_all(const tstring<TCHAR>& target, const tstring<TCHAR>& replacement) {
-        return replace_all(target.cstr(), replacement.cstr());
+        return replace_all(target.c_str(), replacement.c_str());
     }
 
     /**
@@ -435,7 +435,7 @@ public:
      *      If there is not enough memory.
      */
     tstring<TCHAR>& replace(std::size_t start, std::size_t end, const tstring<TCHAR>& replacement) {
-        return replace(start, end, replacement.cstr());
+        return replace(start, end, replacement.c_str());
     }
     
     /**
@@ -506,7 +506,7 @@ public:
      *      If there is not enough memory.
      */
     tstring<TCHAR>& append(const tstring<TCHAR>& s) {
-        return append(s.cstr(), s.length());
+        return append(s.c_str(), s.length());
     }
     
     /**
@@ -603,7 +603,7 @@ public:
      *       If there is not enough memory.
      */
     tstring<TCHAR>& operator<< (const tstring<TCHAR>& s) {
-        return append(s.cstr(), s.length());
+        return append(s.c_str(), s.length());
     }
 
     /**
@@ -620,7 +620,7 @@ public:
      */
     TCHAR& operator[] (std::size_t idx) {
         JSTD_DEBUG_CODE(check_index(idx, length()));
-        return cstr()[idx];
+        return c_str()[idx];
     }
     
     /**
@@ -637,7 +637,7 @@ public:
      */
     const TCHAR& operator[] (std::size_t idx) const {
         JSTD_DEBUG_CODE(check_index(idx, length()));
-        return cstr()[idx];
+        return c_str()[idx];
     }
 
     /**
@@ -706,7 +706,7 @@ public:
      */
     TCHAR char_at(std::size_t idx) const {
         JSTD_DEBUG_CODE(check_index(idx, size));
-        return cstr()[idx];
+        return c_str()[idx];
     }
     
     /**
@@ -813,7 +813,7 @@ public:
      *      true if the substring begins with the input string; otherwise, false.
      */
     bool starts_with(std::size_t offset, const tstring<TCHAR>& s) const {
-        return starts_with(offset, s.cstr());
+        return starts_with(offset, s.c_str());
     }
     
     /**
@@ -829,7 +829,7 @@ public:
      *      true if the substring starts with the input string; otherwise, false.
      */
     bool starts_with(const tstring<TCHAR>& s) const {
-        return starts_with(s.cstr(), s.length());
+        return starts_with(s.c_str(), s.length());
     }
     
     /**
@@ -856,7 +856,7 @@ public:
      *      Whether this string ends with the input substring.
      */
     bool ends_with(const tstring<TCHAR>& s) const {
-        return ends_with(s.cstr(), s.length());
+        return ends_with(s.c_str(), s.length());
     }
 
     /**
@@ -1186,12 +1186,12 @@ struct compare_to<tstring<T>> {
 #include <iosfwd>
 
 inline std::ostream& operator<<(std::ostream& out, const tc::string& s) {
-    out << s.cstr();
+    out << s.c_str();
     return out;
 }
 
 inline std::wostream& operator<<(std::wostream& out, const tc::wstring& s) {
-    out << s.cstr();
+    out << s.c_str();
     return out;
 }
 

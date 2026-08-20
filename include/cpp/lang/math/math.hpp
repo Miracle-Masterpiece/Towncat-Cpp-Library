@@ -346,6 +346,27 @@ namespace math
     inline long double ceil(long double x) {
         return ::ceill(x);
     }
+    
+    /**
+     * 
+     */
+    inline float round(float x) {
+        return ::roundf(x);
+    }
+    
+    /**
+     * 
+     */
+    inline double round(double x) {
+        return ::round(x);
+    }
+    
+    /**
+     * 
+     */
+    inline long double round(long double x) {
+        return ::roundl(x);
+    }
 
     /**
      * 

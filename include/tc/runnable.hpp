@@ -1,0 +1,4 @@
+#ifndef A18DA696_FD72_4B75_9759_7C03FAAE0CA1
+#define A18DA696_FD72_4B75_9759_7C03FAAE0CA1
+#include <cpp/lang/concurrency/runnable.hpp>
+#endif /* A18DA696_FD72_4B75_9759_7C03FAAE0CA1 */

@@ -1,4 +1,5 @@
 #include <cpp/lang/io/file.hpp>
+#include <cpp/lang/io/file_filter.hpp>
 #include <internal/io/filesystem.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/objects.hpp>
@@ -139,7 +140,7 @@ namespace tc
         return filesystem::set_writable(_path, on_off);
     }
 
-    const char* file::cstr() const {
+    const char* file::c_str() const {
         return _path;
     }
 

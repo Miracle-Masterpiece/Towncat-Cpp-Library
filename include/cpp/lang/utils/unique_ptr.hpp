@@ -3,8 +3,10 @@
 
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/arrays.hpp>
-#include <cpp/lang/traits/SFINAE.hpp>
+#include <cpp/lang/traits/sfinae.hpp>
 #include <cpp/lang/traits/relatoship_traits.hpp>
+#include <cpp/lang/traits/type_properties.hpp>
+#include <cpp/lang/traits/pure_traits.hpp>
 #include <typeinfo>
 
 namespace tc
@@ -254,16 +256,6 @@ public:
         return m_allocator;
     }
 
-    template<typename T, typename T_ = T, typename = typename enable_if<
-                                                                is_same<
-                                                                        typename remove_cv<T>::type,
-                                                                        typename remove_cv<T_>::type
-                                                                >::value
-                                                            >::type>
-    unique_ptr<T> make_unique(T_&& obj = T(), tca::allocator* allocator = tca::get_default_allocator()) {
-        return unique_ptr<T>(std::forward<T_>(obj), allocator);
-    }
-
     template<typename T>
     bool unique_ptr<T>::operator== (const unique_ptr<T>& p) const {
         return m_object == p.m_object;
@@ -328,6 +320,13 @@ namespace tc
 
 template<typename T>
 class unique_ptr<T[]> {
+
+    /**
+     * 
+     */
+    typedef typename remove_cv<T>::type Tvalue;
+
+
     /**
      * 
      */
@@ -336,7 +335,7 @@ class unique_ptr<T[]> {
     /**
      * 
      */
-    T* m_array;
+    Tvalue* m_array;
 
     /**
      * 
@@ -372,7 +371,7 @@ public:
     /**
      * 
      */
-    unique_ptr(std::size_t len, tca::allocator* allocator = tca::get_default_allocator());
+    unique_ptr(std::size_t len, const T& v = T(), tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * 
@@ -421,7 +420,7 @@ public:
     }
 
     template<typename T>
-    unique_ptr<T[]>::unique_ptr(std::size_t len, tca::allocator* allocator) :
+    unique_ptr<T[]>::unique_ptr(std::size_t len, const T& v, tca::allocator* allocator) :
     m_allocator(allocator), 
     m_array(nullptr), 
     m_length(len) {
@@ -429,9 +428,8 @@ public:
         if (!mem)
             throw_except<out_of_memory_error>("Out of memory!");
         try {
-            using NON_CONST_T = typename remove_cv<T>::type;
-            uninitialized_construct_n<NON_CONST_T>(const_cast<NON_CONST_T*>(static_cast<T*>(mem)), len);
-            m_array = static_cast<T*>(mem);
+            m_array = static_cast<Tvalue*>(mem);
+            uninitialized_construct_n(m_array, len, v);
         } catch (...) {
             allocator->deallocate(mem, sizeof(T) * len);
             throw;
@@ -464,7 +462,8 @@ public:
 
     template<typename T>
     void unique_ptr<T[]>::cleanup() const {
-        if (m_allocator != nullptr && m_array != nullptr) {
+        if (m_allocator != nullptr && m_array != nullptr)
+        {
             destroy_n(m_array, m_length);
             m_allocator->deallocate(m_array);
         }
@@ -509,10 +508,29 @@ public:
     unique_ptr<T[]>::operator T*() const {
         return m_array;
     }
+}
+
+namespace tc
+{
+
+    template<typename T, typename T_ = T, typename = typename enable_if<is_same<typename pure_type<T>::type, typename pure_type<T_>::type>::value>::type>
+    typename enable_if< !is_array<T>::value, unique_ptr<T> >::type make_unique(T_&& v = T(), tca::allocator* allocator = tca::get_default_allocator()) {
+        return unique_ptr<T>(std::forward<T_>(v), allocator);
+    }
+    
+    template<typename T, typename T_ = T>
+    typename enable_if< !is_array<T>::value, unique_ptr<T> >::type make_unique(tca::allocator* allocator) {
+        return unique_ptr<T>(T(), allocator);
+    }
 
     template<typename T>
-    unique_ptr<T[]> make_unique_array(std::size_t len, tca::allocator* allocator = tca::get_default_allocator()) {
-        return unique_ptr<T[]>(len, allocator);
+    typename enable_if< is_array<T>::value, unique_ptr<T> >::type make_unique(std::size_t len, const typename pure_type<T>::type& val = typename pure_type<T>::type(), tca::allocator* allocator = tca::get_default_allocator()) {
+        return unique_ptr<T>(len, val, allocator);
+    }
+    
+    template<typename T>
+    typename enable_if< is_array<T>::value, unique_ptr<T> >::type make_unique(std::size_t len, tca::allocator* allocator = tca::get_default_allocator()) {
+        return unique_ptr<T>(len, typename pure_type<T>::type(), allocator);
     }
 }
 

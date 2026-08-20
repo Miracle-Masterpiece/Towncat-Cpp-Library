@@ -57,6 +57,24 @@ namespace tc
             throw;
         }
     }
+    
+    /**
+     * 
+     */
+    template<typename T>
+    void uninitialized_construct_n(T* array, std::size_t length, const T& val) {
+        JSTD_DEBUG_CODE(check_non_null(array, "'array' is null"));
+
+        std::size_t constructed = 0;
+        try {
+            for (;constructed < length; ++constructed)
+                new (array + constructed) T(val);
+        } catch (...) {
+            while (constructed > 0)
+                array[--constructed].~T();
+            throw;
+        }
+    }
 
     /**
      * Allocates memory and default-initializes objects.

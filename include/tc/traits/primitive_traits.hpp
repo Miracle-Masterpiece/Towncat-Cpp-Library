@@ -1,0 +1,4 @@
+#ifndef A680C9B8_AB99_4636_B8EF_65F056273A3E
+#define A680C9B8_AB99_4636_B8EF_65F056273A3E
+#include <cpp/lang/traits/primitive_traits.hpp>
+#endif /* A680C9B8_AB99_4636_B8EF_65F056273A3E */

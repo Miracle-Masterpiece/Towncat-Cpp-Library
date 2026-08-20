@@ -48,19 +48,19 @@ namespace tc
 
             switch (lvl) {
                 case level::INFO : {
-                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[INFO] (%s) %s\n", strdate.cstr(), msg);
+                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[INFO] (%s) %s\n", strdate.c_str(), msg);
                     break;
                 }
                 case level::WARN : {
-                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[WARNING] (%s) %s\n", strdate.cstr(), msg);
+                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[WARNING] (%s) %s\n", strdate.c_str(), msg);
                     break;
                 }
                 case level::ERROR : {
-                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[ERROR] (%s) %s\n", strdate.cstr(), msg);
+                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[ERROR] (%s) %s\n", strdate.c_str(), msg);
                     break;
                 }
                 case level::EXCEPT : {
-                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[EXCEPTION] (%s) %s\n", strdate.cstr(), msg);
+                    result_size = std::snprintf(result, RESULT_BUFFER_SIZE, "[EXCEPTION] (%s) %s\n", strdate.c_str(), msg);
                     break;
                 }
             }

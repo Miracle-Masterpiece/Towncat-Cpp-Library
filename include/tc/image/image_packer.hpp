@@ -1,0 +1,4 @@
+#ifndef B93EAD7D_9072_4092_9B64_05919DDE6B35
+#define B93EAD7D_9072_4092_9B64_05919DDE6B35
+#include <cpp/lang/utils/images/image_packer.hpp>
+#endif /* B93EAD7D_9072_4092_9B64_05919DDE6B35 */

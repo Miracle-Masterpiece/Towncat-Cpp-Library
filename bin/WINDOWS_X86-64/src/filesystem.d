@@ -1,7 +1,7 @@
 bin/WINDOWS_X86-64/src/filesystem.o: src/filesystem.cpp \
  include/internal/io/filesystem.hpp \
  include/cpp/lang/utils/cond_compile.hpp \
- include/cpp/lang/io/constants.hpp include/cpp/lang/io/utility.hpp \
+ include/cpp/lang/io/constants.hpp include/cpp/lang/io/file_filter.hpp \
  include/cpp/lang/types.hpp include/allocators/allocator.hpp \
  include/allocators/base_allocator.hpp include/cpp/lang/string.hpp \
  include/cpp/lang/utils/comparator.hpp include/cpp/lang/utils/objects.hpp \

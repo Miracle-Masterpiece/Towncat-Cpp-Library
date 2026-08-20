@@ -382,7 +382,7 @@ int resize_image(const unsigned char* in, int w_in, int h_in, unsigned char* out
                         int from_idx = (x + from_y * w_out) * channels;
                         result += tmp[from_idx + c] * contrib.weights[i];
                     }
-                    output[idx + c] = static_cast<unsigned char>(math::clamp(result, 0.0f, 255.0f));
+                    output[idx + c] = static_cast<unsigned char>(math::round(math::clamp(result, 0.0f, 255.0f)));
                 }
             }
         }
@@ -548,7 +548,7 @@ int resize_image_alpha(const unsigned char* in, int w_in, int h_in, unsigned cha
                             pixel = 0.0f;
                         }
                     }
-                    output[idx + c] = static_cast<unsigned char>(math::clamp(pixel, 0.0f, 255.0f));
+                    output[idx + c] = static_cast<unsigned char>(math::round(math::clamp(pixel, 0.0f, 255.0f)));
                 }
                 
             }

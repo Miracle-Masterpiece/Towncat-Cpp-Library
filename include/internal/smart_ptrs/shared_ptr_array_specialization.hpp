@@ -1,9 +1,34 @@
+
+
 #ifndef JSTD_INTERNAL_SMART_PTRS_SHARED_PTR_ARRAY_SPECIALIZATION_H
 #define JSTD_INTERNAL_SMART_PTRS_SHARED_PTR_ARRAY_SPECIALIZATION_H
 #include <internal/smart_ptrs/shared_ptr_t.hpp>
+#include <cpp/lang/utils/arrays.hpp>
 
 namespace tc
 {
+
+namespace internal
+{
+    template<typename T, typename T_>
+    T* allocate_memory_for_shared_ptr_array(std::size_t len, tca::allocator* alloc, const T_& val) {
+        void* mem = alloc_control_block(sizeof(T) * len, alignof(T), alloc);
+        
+        if(!mem)
+        {
+            throw_except<out_of_memory_error>("out of memory");
+        }
+        
+        try {
+            uninitialized_construct_n<T>(static_cast<T*>(mem), len, val);
+        } catch (...) {
+            free_ctrlblock(mem);
+            throw;
+        }
+        
+        return static_cast<T*>(mem);
+    }
+}
 
 template<typename T>
 class shared_ptr<T[]>;
@@ -12,10 +37,12 @@ template<typename T>
 class weak_ptr<T[]> {
     friend class shared_ptr<T[]>;
     
+    typedef typename remove_cv<T>::type Tvalue;
+
     /**
-     * Указатель на управляющий блок.
+     * Указатель на первый элемент массива.
      */
-    internal::sptr::shared_control_block* m_block;
+    Tvalue* m_arr;
 
     /**
      * Размер массива, на который указывает этот слабый указатель.
@@ -25,15 +52,15 @@ class weak_ptr<T[]> {
     /**
      * Конструктор для внутреннего API!
      * 
-     * @param ctr_block
-     *      Указатель на блок памяти, владеть которым будет этот shared_ptr или nullptr.
+     * @param arr
+     *      Указатель на первый элемент массива, владеть которым будет этот shared_ptr.
      * 
      * @param length
      *      Длина массива, на будет указывать эта слабая ссылка.
      * 
      * Данный конструктор должен увеличивать счётчик weak-reference.
      */
-    weak_ptr(internal::sptr::shared_control_block* ctrl_block, std::size_t length);
+    weak_ptr(Tvalue* arr, std::size_t length);
     
     /**
      * Выполняет очищение объекта.
@@ -109,14 +136,27 @@ public:
 
 template<typename T>
 class shared_ptr<T[]> {
+    
+    /**
+     * 
+     */
+    typedef typename remove_cv<T>::type Tvalue;
+
+    /**
+     * 
+     */
     template<typename A>
     friend class shared_ptr;
+    
+    /**
+     * 
+     */
     friend class weak_ptr<T[]>;
     
     /**
      * Указатель на управляющий блок.
      */
-    internal::sptr::shared_control_block* m_block;
+    Tvalue* m_arr;
     
     /**
      * Размер массива.
@@ -148,26 +188,29 @@ public:
     /**
      * Создаёт shared_ptr, выделяет память и инициализирует объекты.
      * 
-     * 
-     * @param allocator
-     *      Распределитель для выделения памяти.
+     * @param val
+     *      Значение по-умолчанию для всех элементов массива.
      * 
      * @param length
      *      Длина массива объектов.
+     * 
+     * @param allocator
+     *      Аллокатор для выделения памяти.
+     * 
      */
-    shared_ptr(tca::allocator* allocator, std::size_t length);
+    shared_ptr(std::size_t length, const T& val, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * !@internal
      * 
      * Конструктор для внутреннего API!
      * 
-     * @param ctr_block
-     *      Указатель на блок памяти, владеть которым будет этот shared_ptr.
+     * @param arr
+     *      Указатель на первый элемент массива, владеть которым будет этот shared_ptr.
      * 
      * Данный конструктор увеличивает счётчик strong-reference, если ctrl_block != nullptr
      */
-    explicit shared_ptr(internal::sptr::shared_control_block* ctrl_block, std::size_t len);
+    explicit shared_ptr(Tvalue* arr, std::size_t len);
 
     /**
      * Конструктор копирования. 
@@ -293,57 +336,60 @@ public:
 };
 
     template<typename T>
-    shared_ptr<T[]>::shared_ptr() : m_block(nullptr), m_len(0) {
+    shared_ptr<T[]>::shared_ptr() : m_arr(nullptr), m_len(0) {
 
     }
 
     template<typename T>
-    shared_ptr<T[]>::shared_ptr(tca::allocator* allocator, std::size_t length) : m_block(nullptr), m_len(length) {
-        m_block = internal::sptr::make_control_block_array<T>(allocator, length);
-        if (m_block == nullptr)
-            throw_except<out_of_memory_error>("Out of memory");
-        m_block->inc_strong_ref();
+    shared_ptr<T[]>::shared_ptr(std::size_t length, const T& val, tca::allocator* allocator) : m_arr(nullptr), m_len(length) {
+        m_arr = internal::allocate_memory_for_shared_ptr_array<Tvalue>(length, allocator, val);
+        internal::get_ctrlblock(m_arr)->m_strong++;
     }
 
     template<typename T>
-    shared_ptr<T[]>::shared_ptr(internal::sptr::shared_control_block* ctrl_block, std::size_t len) : m_block(ctrl_block), m_len(len) {
-        if (m_block)
-            m_block->inc_strong_ref();
+    shared_ptr<T[]>::shared_ptr(Tvalue* arr, std::size_t len) : m_arr(arr), m_len(len) {
+        if (m_arr)
+        {
+            internal::get_ctrlblock(m_arr)->m_strong++;
+        }
     }
 
     template<typename T>
-    shared_ptr<T[]>::shared_ptr(const shared_ptr<T[]>& other) : m_block(other.m_block), m_len(other.m_len) {
-        if (m_block)
-            m_block->inc_strong_ref();
+    shared_ptr<T[]>::shared_ptr(const shared_ptr<T[]>& other) : shared_ptr<T[]>(other.m_arr, other.m_len) {
+        
     }
 
     template<typename T>
-    shared_ptr<T[]>::shared_ptr(shared_ptr<T[]>&& other) : m_block(other.m_block), m_len(other.m_len) {
-        other.m_block   = nullptr;
-        other.m_len     = 0;
+    shared_ptr<T[]>::shared_ptr(shared_ptr<T[]>&& other) : m_arr(other.m_arr), m_len(other.m_len) {
+        other.m_arr = nullptr;
+        other.m_len = 0;
     }
 
 
     template<typename T>
     shared_ptr<T[]>& shared_ptr<T[]>::operator=(const shared_ptr<T[]>& other) {
-        if (&other != this) {
+        if (&other != this)
+        {
             cleanup();
-            m_block = other.m_block;
-            m_len   = other.m_len;
-            if (m_block)
-                m_block->inc_strong_ref();
+            m_arr = other.m_arr;
+            m_len = other.m_len;
+            if (m_arr)
+            {
+                internal::get_ctrlblock(m_arr)->m_strong++;
+            }
         }
         return *this;
     }
 
     template<typename T>
     shared_ptr<T[]>& shared_ptr<T[]>::operator=(shared_ptr<T[]>&& other) {
-        if (&other != this) {
+        if (&other != this)
+        {
             cleanup();
-            m_block = other.m_block;
-            m_len   = other.m_len;
-            other.m_block   = nullptr;
-            other.m_len     = 0;
+            m_arr = other.m_arr;
+            m_len = other.m_len;
+            other.m_arr = nullptr;
+            other.m_len = 0;
         }
         return *this;
     }
@@ -355,17 +401,20 @@ public:
 
     template<typename T>
     void shared_ptr<T[]>::cleanup() {
-        if (!m_block)
-            return;
-        m_block->dec_strong_ref();
-        if (m_block->strong_count() == 0) {
-            T* obj = reinterpret_cast<T*>(m_block->m_object);
-            assert(obj != nullptr);
-            destroy_n(obj, m_len);
-            if (m_block->weak_count() == 0) {
-                tca::allocator* allocator = m_block->m_allocator;
-                if (allocator != nullptr) //если распределитель равен null, значит за выделение контрол блока отвечает shared_ptr
-                    allocator->deallocate(m_block, m_block->m_blocksize);
+        if (m_arr)
+        {
+            internal::ctrl_block* block = internal::get_ctrlblock(m_arr);
+            
+            assert(block->m_strong > 0);
+            block->m_strong--;
+        
+            if (block->m_strong == 0)
+            {
+                destroy_n(m_arr, m_len);
+                if (block->m_weak == 0)
+                {
+                    internal::free_ctrlblock(m_arr);
+                }
             }
         }
     }
@@ -373,42 +422,44 @@ public:
     template<typename T>
     void shared_ptr<T[]>::check_access() const {
         JSTD_DEBUG_CODE(
-            if (m_block == nullptr)
+            if (m_arr == nullptr)
                 throw_except<null_pointer_exception>("pointer must be != null");
         );
     }
 
     template<typename T>
-    T* shared_ptr<T[]>::get() const {
-        check_access();
-        return reinterpret_cast<T*>(m_block->m_object);
-    }
-
-    template<typename T>
     shared_ptr<T[]>::operator bool() const {
-        return m_block != nullptr;
+        return m_arr != nullptr;
     }
     
     template<typename T>
     T& shared_ptr<T[]>::operator[] (std::size_t idx) const {
-        check_access();
-        check_index(idx, m_len);
-        return reinterpret_cast<T*>(m_block->m_object)[idx];
+        JSTD_DEBUG_CODE
+        (
+            check_access();
+            check_index(idx, m_len);
+        )
+        return m_arr[idx];
     }
 
     template<typename T>
     shared_ptr<T[]>::operator T*() const {
-        check_access();
-        return reinterpret_cast<T*>(m_block->m_object);
+        JSTD_DEBUG_CODE(
+            check_access();
+        )
+        return m_arr;
     }
 
     template<typename T>
     template<typename E>
     shared_ptr<E> shared_ptr<T[]>::const_pointer_cast() const {
         static_assert(is_same<typename remove_cv<T[]>::type, typename remove_cv<E>::type>::value, "=== Type cast error! ===");
-        if (!m_block || !m_block->m_object)
-            return shared_ptr<E>();
-        return shared_ptr<E>(m_block, m_len);
+        if (m_arr)
+        {
+        
+            return shared_ptr<E>(m_arr, m_len);
+        }
+        return shared_ptr<E>();
     }
 
     template<typename T>
@@ -418,15 +469,20 @@ public:
 
     template<typename T>
     weak_ptr<T[]> shared_ptr<T[]>::get_weak() const {
-        if (!m_block)
-            return weak_ptr<T[]>();
-        return weak_ptr<T[]>(m_block, m_len);
+        if (m_arr)
+        {
+            return weak_ptr<T[]>(m_arr, m_len);
+        }
+        return weak_ptr<T[]>();
     }
 
     template<typename T>
     std::size_t shared_ptr<T[]>::use_count() const {
-        if (!m_block) return 0;
-        return m_block->m_strong_refs;
+        if (m_arr)
+        {
+            internal::get_ctrlblock(m_arr)->m_strong;
+        }
+        return 0;
     }
 
     template<typename T>
@@ -441,40 +497,46 @@ public:
      */
 
     template<typename T>
-    weak_ptr<T[]>::weak_ptr(internal::sptr::shared_control_block* ctrl_block, std::size_t length) :
-    m_block(ctrl_block), m_len(length) {
-        if (m_block)
-            m_block->inc_weak_ref();
+    weak_ptr<T[]>::weak_ptr(Tvalue* arr, std::size_t length) : m_arr(arr), m_len(length) {
+        if (m_arr)
+        {
+            internal::get_ctrlblock(m_arr)->m_weak++;
+        }
     }
     
     template<typename T>
     void weak_ptr<T[]>::cleanup() {
-        if (!m_block)
-            return;
-        m_block->dec_weak_ref();
-        if (m_block->strong_count() == 0 && m_block->weak_count() == 0) {
-            m_block->~shared_control_block();
-            tca::allocator* allocator = m_block->m_allocator;
-            if (allocator)
-                allocator->deallocate(m_block, m_block->m_blocksize);
+        if (m_arr)
+        {
+            internal::ctrl_block* block = internal::get_ctrlblock(m_arr);
+
+            assert(block->m_weak > 0);
+            block->m_weak--;
+
+            if (block->m_strong == 0 && block->m_weak == 0)
+            {
+                internal::free_ctrlblock(m_arr);
+            }
         }
     }
 
     template<typename T>
-    weak_ptr<T[]>::weak_ptr() : m_block(nullptr), m_len(0) {
+    weak_ptr<T[]>::weak_ptr() : m_arr(nullptr), m_len(0) {
 
     }
 
     template<typename T>
-    weak_ptr<T[]>::weak_ptr(const weak_ptr<T[]>& other) : m_block(other.m_block), m_len(other.m_len) {
-        if (m_block)
-            m_block->inc_weak_ref();
+    weak_ptr<T[]>::weak_ptr(const weak_ptr<T[]>& other) : m_arr(other.m_arr), m_len(other.m_len) {
+        if (m_arr)
+        {
+            internal::get_ctrlblock(m_arr)->m_weak++;
+        }
     }
     
     template<typename T>
-    weak_ptr<T[]>::weak_ptr(weak_ptr<T[]>&& other) : m_block(other.m_block), m_len(other.m_len) {
-        other.m_block   = nullptr;
-        other.m_len     = 0;
+    weak_ptr<T[]>::weak_ptr(weak_ptr<T[]>&& other) : m_arr(other.m_arr), m_len(other.m_len) {
+        other.m_arr = nullptr;
+        other.m_len = 0;
     }
     
     template<typename T>
@@ -486,43 +548,56 @@ public:
     weak_ptr<T[]>& weak_ptr<T[]>::operator=(const weak_ptr<T[]>& other) {
         if (*other != nullptr) {
             cleanup();
-            other.m_block->inc_weak_ref();
-            m_block = other.m_block;
-            m_len   = other.m_len;
+
+            m_arr = other.m_arr;
+            m_len = other.m_len;
+
+            if (m_arr)
+            {
+                internal::get_ctrlblock(m_arr)->m_weak++;
+            }
         }
         return *this;
     }
     
     template<typename T>
     weak_ptr<T[]>& weak_ptr<T[]>::operator=(weak_ptr<T[]>&& other) {
-        if (*other != nullptr) {
+        if (&other != this)
+        {
             cleanup();
-            m_block = other.m_block;
-            m_len   = other.m_len;
+            m_arr = other.m_arr;
+            m_len = other.m_len;
 
-            other.m_block   = nullptr;
-            other.m_len     = 0;
+            other.m_arr = nullptr;
+            other.m_len = 0;
         }
         return *this;
     }
     
     template<typename T>
     std::size_t weak_ptr<T[]>::use_count() const {
-        if (!m_block)
-            return 0;
-        return m_block->strong_count();
+        if (m_arr)
+        {
+            return internal::get_ctrlblock(m_arr)->m_strong;
+        }
+        return 0;
     }
     
     template<typename T>
     shared_ptr<T[]> weak_ptr<T[]>::lock() const {
-        if (!m_block || m_block->strong_count() == 0)
-            return shared_ptr<T[]>();
-        return shared_ptr<T[]>(m_block, m_len);
+        if (m_arr)
+        {
+            if (internal::get_ctrlblock(m_arr)->m_strong > 0)
+            {
+                return shared_ptr<T[]>(m_arr, m_len);
+            }
+        }
+        return shared_ptr<T[]>();
     }
 
     // template<typename T>
-    // shared_ptr<T[]> make_shared_array(uint32_t length, tca::allocator* allocator) {
-    //     return shared_ptr<T[]>(allocator, length);
+    // shared_ptr<T[]> make_shared<T[]>(std::size_t length, const T& val, tca::allocator* allocator) {
+    //     return shared_ptr<T[]>(length, val, allocator);
     // }
 }
 

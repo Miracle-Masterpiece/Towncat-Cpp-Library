@@ -1,0 +1,4 @@
+#ifndef A4F44C98_C0F8_4CA2_843D_5C7C4FE431A0
+#define A4F44C98_C0F8_4CA2_843D_5C7C4FE431A0
+#include <cpp/lang/utils/shared_ptr.hpp>
+#endif /* A4F44C98_C0F8_4CA2_843D_5C7C4FE431A0 */

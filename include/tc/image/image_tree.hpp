@@ -1,0 +1,4 @@
+#ifndef D29B59D6_A534_4D8B_BD46_35EF8EB60F95
+#define D29B59D6_A534_4D8B_BD46_35EF8EB60F95
+#include <cpp/lang/utils/images/image_tree.hpp>
+#endif /* D29B59D6_A534_4D8B_BD46_35EF8EB60F95 */

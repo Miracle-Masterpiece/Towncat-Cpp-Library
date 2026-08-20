@@ -240,7 +240,7 @@ namespace tc {
 
         if (error != 0)
             throw_except<illegal_state_exception>("resize error: %i", error);
-
+            
         return resized_image;
     }
 

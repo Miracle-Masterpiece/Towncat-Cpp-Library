@@ -18,9 +18,9 @@ namespace tc {
     
     ifstream::ifstream(const file& file) : m_handle(nullptr), m_available(0) {
         //функция filesystem::open уже кидает нужные исключения.
-        m_handle = filesystem::open(file.cstr(), "rb");
+        m_handle = filesystem::open(file.c_str(), "rb");
         try {
-            m_available = filesystem::length(file.cstr());
+            m_available = filesystem::length(file.c_str());
         } catch (const io_exception& except) {
             try {
                 filesystem::close(m_handle);

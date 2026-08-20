@@ -14,5 +14,5 @@ bin/WINDOWS_X86-64/src/file_channel.o: src/file_channel.cpp \
  include/allocators/base_allocator.hpp include/cpp/lang/math.hpp \
  include/internal/io/file_descriptor.hpp include/cpp/lang/io/file.hpp \
  include/cpp/lang/array.hpp include/cpp/lang/utils/arrays.hpp \
- include/cpp/lang/io/utility.hpp include/cpp/lang/io/constants.hpp \
+ include/cpp/lang/io/file_filter.hpp include/cpp/lang/io/constants.hpp \
  include/cpp/lang/io/channel.hpp

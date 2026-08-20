@@ -1,0 +1,4 @@
+#ifndef B5ED2001_0562_4C39_BBBA_F07F074FB3B3
+#define B5ED2001_0562_4C39_BBBA_F07F074FB3B3
+#include <allocators/null_allocator.hpp>
+#endif /* B5ED2001_0562_4C39_BBBA_F07F074FB3B3 */

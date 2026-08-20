@@ -1,0 +1,4 @@
+#ifndef FFC78DF2_7BAC_45A1_AB11_89865A6F7613
+#define FFC78DF2_7BAC_45A1_AB11_89865A6F7613
+#include <cpp/lang/utils/images/imageio.hpp>
+#endif /* FFC78DF2_7BAC_45A1_AB11_89865A6F7613 */

@@ -58,7 +58,7 @@ namespace imageio
             throw_except<illegal_state_exception>("Image size to large");
         }
 
-        unique_ptr<stbi_uc[]> raw_image = make_unique_array<stbi_uc>((std::size_t) size, allocator);
+        unique_ptr<stbi_uc[]> raw_image = make_unique<stbi_uc[]>((std::size_t) size, allocator);
         
         in->read((char*) raw_image.get(), size);
     

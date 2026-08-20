@@ -1,0 +1,4 @@
+#ifndef A943E5AE_E615_455B_B28E_66CB4956B558
+#define A943E5AE_E615_455B_B28E_66CB4956B558
+#include <cpp/lang/utils/map_entry.hpp>
+#endif /* A943E5AE_E615_455B_B28E_66CB4956B558 */

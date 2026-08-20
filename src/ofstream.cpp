@@ -18,7 +18,7 @@ namespace tc {
     }
     
     ofstream::ofstream(const file& f, bool append) : ofstream() {    
-        _handle = filesystem::open(f.cstr(), append ? "ab" : "wb");
+        _handle = filesystem::open(f.c_str(), append ? "ab" : "wb");
     }
 
     ofstream::ofstream(ofstream&& stream) : _handle(stream._handle) {
