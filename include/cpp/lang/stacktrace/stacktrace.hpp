@@ -4,11 +4,11 @@
 #include <cpp/lang/utils/cond_compile.hpp>
 
 #if __cplusplus >= 202302L
-#   include <stacktrace>
-#   define JSTD_ENABLE_CALLTRACE
-#   define JSTD_CALLTRACE_CODE(code) code
+# include <stacktrace>
+# define JSTD_ENABLE_CALLTRACE
+# define JSTD_CALLTRACE_CODE(code) code
 #else 
-#   define JSTD_CALLTRACE_CODE(code)
+# define JSTD_CALLTRACE_CODE(code)
 #endif
 namespace tc
 {
@@ -64,6 +64,6 @@ public:
     static calltrace current();
 };
 
-}// namespace jstd
+}// namespace tc
 
 #endif//JSTD_CPP_LANG_STACKTRACE_H

@@ -1,4 +1,8 @@
 #ifndef F0C6F617_DA6C_43C9_B324_1B6DA3B8F8FB
 #define F0C6F617_DA6C_43C9_B324_1B6DA3B8F8FB
 #include <cpp/lang/io/ostream.hpp>
+namespace tc
+{
+    typedef ostream output_stream;
+}
 #endif /* F0C6F617_DA6C_43C9_B324_1B6DA3B8F8FB */

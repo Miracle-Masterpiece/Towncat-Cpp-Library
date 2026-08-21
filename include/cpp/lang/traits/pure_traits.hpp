@@ -82,6 +82,27 @@ struct pure_type<T&> : base_pure_type<typename pure_type<T>::type> {};
 template<typename T>
 struct pure_type<T&&> : base_pure_type<typename pure_type<T>::type> {};
 
+
+template<typename T>
+struct remove_extent {
+    typedef T type;
+};
+
+template<typename T>
+struct remove_extent<T[]> {
+    typedef T type;
+};
+
+template<typename T>
+struct remove_extent<const T[]> {
+    typedef const T type;
+};
+
+template<typename T, std::size_t N>
+struct remove_extent<const T[N]> {
+    typedef const T type;
+};
+
 }
 
 #endif /* ED0D28B4_2EF2_47B2_8256_83B76C0AD537 */

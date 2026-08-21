@@ -70,21 +70,6 @@ public:
      */
     smooth_noise(unsigned long long seed, curve_func curve = no_smooth);
 
-    /** Конструктор копирования. */
-    smooth_noise(const smooth_noise& other);
-
-    /** Конструктор перемещения. */
-    smooth_noise(smooth_noise&& other);
-
-    /** Оператор копирующего присваивания. */
-    smooth_noise& operator=(const smooth_noise& other);
-
-    /** Оператор перемещающего присваивания. */
-    smooth_noise& operator=(smooth_noise&& other);
-
-    /** Деструктор. */
-    ~smooth_noise();
-
     /**
      * Возвращает текущий сид генератора.
      *

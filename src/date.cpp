@@ -7,52 +7,36 @@
 namespace tc
 {
 
+    bool get_local_time(const std::time_t* time, std::tm* localtime) {
+        JSTD_WIN_CODE
+        (
+            return localtime_s(localtime, time) == 0;
+        )
+        JSTD_UNIX_CODE
+        (
+            return localtime_r(time, localtime) != nullptr;
+        )
+    }
+
     date::date(int day, int month, int year, int second, int minute, int hour) {
         std::memset(&_localTime, 0, sizeof(_localTime));
-         day     = (day     == 0) ? 1 : day;
-         month   = (month   == 0) ? 1 : month;
-         year    = (year    == 0) ? 1 : year;
+         
+        day     = (day     == 0) ? 1       : day;
+        month   = (month   == 0) ? 1       : month;
+        year    = (year    == 0) ? 1900    : year;
         _localTime.tm_year    = year - 1900;
         _localTime.tm_mon     = month - 1;
         _localTime.tm_mday    = day;
         _localTime.tm_sec     = second;
         _localTime.tm_min     = minute;
         _localTime.tm_hour    = hour;
-        //_localTime.tm_isdst = -1;
+        _localTime.tm_isdst   = -1;
 
         _time = mktime(&_localTime);
     }
 
-    date::date(time_t date){
+    date::date(std::time_t date){
         set_time(date);
-    }
-
-    date::date(const date& date) : _time(date._time), _localTime(date._localTime) {
-        
-    }
-        
-    date::date(date&& date) : _time(std::move(date._time)), _localTime(std::move(date._localTime)) {
-
-    }
-
-    date& date::operator= (const date& date) {
-        if (&date != this){
-            _time       = date._time;
-            _localTime  = date._localTime;
-        }
-        return *this;
-    }
-    
-    date& date::operator= (date&& date) {
-        if (&date != this){
-            _time       = std::move(date._time);
-            _localTime  = std::move(date._localTime);
-        }
-        return *this;
-    }
-    
-    date::~date() {
-        
     }
 
     tc::string date::to_string(tca::allocator* alloc) const {
@@ -62,9 +46,17 @@ namespace tc
     }
 
     /*static*/ date date::now() {
-        time_t current;
+        std::time_t current;
         std::time(&current);
         return date(current);
+    }
+
+    /*static*/ date date::of_seconds(timepoint sec) {
+        return date(static_cast<std::time_t>(sec));
+    }
+
+    /*static*/ date date::of_milliseconds(timepoint ms) {
+        return of_seconds(ms / 1000);
     }
 
     bool date::equals(const date& date) const {
@@ -105,15 +97,13 @@ namespace tc
         return compare_to(date) <= 0;
     }
 
-    void date::set_time(time_t date) {
+    void date::set_time(std::time_t date) {
         _time            = date;
-        struct tm* time  = localtime(&_time);
-        if (time == nullptr)
+        if (!get_local_time(&_time, &_localTime))
             throw_except<runtime_exception>(std::strerror(errno));
-        _localTime = *time;
     }
 
-    time_t date::get_time() const {
+    std::time_t date::get_time() const {
         return _time;
     }
 

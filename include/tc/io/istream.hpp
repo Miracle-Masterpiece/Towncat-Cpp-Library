@@ -1,4 +1,8 @@
 #ifndef A86C94F9_F6F0_4A5B_B6BC_12C9D5497F23
 #define A86C94F9_F6F0_4A5B_B6BC_12C9D5497F23
 #include <cpp/lang/io/istream.hpp>
+namespace tc
+{
+    typedef istream input_stream;
+}
 #endif /* A86C94F9_F6F0_4A5B_B6BC_12C9D5497F23 */

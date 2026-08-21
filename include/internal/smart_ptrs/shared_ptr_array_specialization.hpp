@@ -5,30 +5,9 @@
 #include <internal/smart_ptrs/shared_ptr_t.hpp>
 #include <cpp/lang/utils/arrays.hpp>
 
+#if 1
 namespace tc
 {
-
-namespace internal
-{
-    template<typename T, typename T_>
-    T* allocate_memory_for_shared_ptr_array(std::size_t len, tca::allocator* alloc, const T_& val) {
-        void* mem = alloc_control_block(sizeof(T) * len, alignof(T), alloc);
-        
-        if(!mem)
-        {
-            throw_except<out_of_memory_error>("out of memory");
-        }
-        
-        try {
-            uninitialized_construct_n<T>(static_cast<T*>(mem), len, val);
-        } catch (...) {
-            free_ctrlblock(mem);
-            throw;
-        }
-        
-        return static_cast<T*>(mem);
-    }
-}
 
 template<typename T>
 class shared_ptr<T[]>;
@@ -36,18 +15,22 @@ class shared_ptr<T[]>;
 template<typename T>
 class weak_ptr<T[]> {
     friend class shared_ptr<T[]>;
-    
-    typedef typename remove_cv<T>::type Tvalue;
+
+    /**
+     * 
+     */
+    template<typename A>
+    typename enable_if< is_array<A>::value, shared_ptr<A> >::type allocate_shared(tca::allocator*, std::size_t, const typename remove_extent<A>::type&);
+
+    /**
+     * 
+     */
+    internal::control_block* m_control;
 
     /**
      * Указатель на первый элемент массива.
      */
-    Tvalue* m_arr;
-
-    /**
-     * Размер массива, на который указывает этот слабый указатель.
-     */
-    std::size_t m_len;
+    T* m_arr;
 
     /**
      * Конструктор для внутреннего API!
@@ -60,7 +43,7 @@ class weak_ptr<T[]> {
      * 
      * Данный конструктор должен увеличивать счётчик weak-reference.
      */
-    weak_ptr(Tvalue* arr, std::size_t length);
+    weak_ptr(T* arr, internal::control_block* block);
     
     /**
      * Выполняет очищение объекта.
@@ -136,11 +119,6 @@ public:
 
 template<typename T>
 class shared_ptr<T[]> {
-    
-    /**
-     * 
-     */
-    typedef typename remove_cv<T>::type Tvalue;
 
     /**
      * 
@@ -154,14 +132,14 @@ class shared_ptr<T[]> {
     friend class weak_ptr<T[]>;
     
     /**
+     * 
+     */
+    internal::control_block* m_control;
+
+    /**
      * Указатель на управляющий блок.
      */
-    Tvalue* m_arr;
-    
-    /**
-     * Размер массива.
-     */
-    std::size_t m_len;
+    T* m_arr;
 
     /**
      * Выполняет очищение объекта.
@@ -179,6 +157,12 @@ class shared_ptr<T[]> {
      */
     void check_access() const;
 
+    /**
+     * 
+     * 
+     */
+    explicit shared_ptr(T* arr, internal::control_block* block);
+
 public:
     /**
      * Создаёт нулевой shared_ptr.
@@ -188,29 +172,17 @@ public:
     /**
      * Создаёт shared_ptr, выделяет память и инициализирует объекты.
      * 
-     * @param val
-     *      Значение по-умолчанию для всех элементов массива.
+     * @param p
+     *      Указатель на ранее выделенный массив.
      * 
-     * @param length
-     *      Длина массива объектов.
+     * @param deleter
+     *      Объект, отвечающий за освобождение передаваемого указателя.
      * 
      * @param allocator
-     *      Аллокатор для выделения памяти.
-     * 
+     *      Аллокатор для выделения под контролирующий блок.
      */
-    shared_ptr(std::size_t length, const T& val, tca::allocator* allocator = tca::get_default_allocator());
-
-    /**
-     * !@internal
-     * 
-     * Конструктор для внутреннего API!
-     * 
-     * @param arr
-     *      Указатель на первый элемент массива, владеть которым будет этот shared_ptr.
-     * 
-     * Данный конструктор увеличивает счётчик strong-reference, если ctrl_block != nullptr
-     */
-    explicit shared_ptr(Tvalue* arr, std::size_t len);
+    template<typename DELETER>
+    shared_ptr(T* p, DELETER deleter, tca::allocator* allocator = tca::get_default_allocator());
 
     /**
      * Конструктор копирования. 
@@ -316,80 +288,72 @@ public:
      *      Новый weak_ptr.
      */
     weak_ptr<T[]> get_weak() const;
-
-    /**
-     * Преобразует shared_ptr<T[]> в shared_ptr<E[]> с использованием const_cast.
-     * 
-     * @tparam E 
-     *      Целевой тип.
-     * 
-     * @return 
-     *      Новый shared_ptr с преобразованным типом.
-     */
-    template<typename E>
-    shared_ptr<E> const_pointer_cast() const;
-
-    /**
-     * Возвращает длину массива.
-     */
-    std::size_t length() const;
 };
 
     template<typename T>
-    shared_ptr<T[]>::shared_ptr() : m_arr(nullptr), m_len(0) {
+    shared_ptr<T[]>::shared_ptr() : m_control(nullptr), m_arr(nullptr) {
 
     }
 
     template<typename T>
-    shared_ptr<T[]>::shared_ptr(std::size_t length, const T& val, tca::allocator* allocator) : m_arr(nullptr), m_len(length) {
-        m_arr = internal::allocate_memory_for_shared_ptr_array<Tvalue>(length, allocator, val);
-        internal::get_ctrlblock(m_arr)->m_strong++;
-    }
+    template<typename DELETER>
+    shared_ptr<T[]>::shared_ptr(T* arr, DELETER deleter, tca::allocator* allocator) {
+        typedef internal::ptr_control_block<T, DELETER> control_block_type;
 
-    template<typename T>
-    shared_ptr<T[]>::shared_ptr(Tvalue* arr, std::size_t len) : m_arr(arr), m_len(len) {
-        if (m_arr)
-        {
-            internal::get_ctrlblock(m_arr)->m_strong++;
+        control_block_type* control = (control_block_type*) allocator->allocate_align(sizeof(control_block_type), alignof(control_block_type));
+        if (!control)
+            throw_except<out_of_memory_error>("out of memory");
+
+        try {
+            m_control = new (control) control_block_type(arr, std::move(deleter), allocator);
+            m_arr     = control->get_object();
+        } catch (...) {
+            allocator->deallocate(control);
+            throw;
         }
     }
 
     template<typename T>
-    shared_ptr<T[]>::shared_ptr(const shared_ptr<T[]>& other) : shared_ptr<T[]>(other.m_arr, other.m_len) {
+    shared_ptr<T[]>::shared_ptr(T* arr, internal::control_block* control) : m_control(control), m_arr(arr) {
         
     }
 
     template<typename T>
-    shared_ptr<T[]>::shared_ptr(shared_ptr<T[]>&& other) : m_arr(other.m_arr), m_len(other.m_len) {
-        other.m_arr = nullptr;
-        other.m_len = 0;
+    shared_ptr<T[]>::shared_ptr(const shared_ptr<T[]>& ptr) : m_control(ptr.m_control), m_arr(ptr.m_arr) {
+        if (m_control)
+        {
+            m_control->inc_strong();
+        }
+    }
+
+    template<typename T>
+    shared_ptr<T[]>::shared_ptr(shared_ptr<T[]>&& ptr) : m_control(ptr.m_control), m_arr(ptr.m_arr) {
+        ptr.m_arr     = nullptr;
+        ptr.m_control = nullptr;
     }
 
 
     template<typename T>
-    shared_ptr<T[]>& shared_ptr<T[]>::operator=(const shared_ptr<T[]>& other) {
-        if (&other != this)
+    shared_ptr<T[]>& shared_ptr<T[]>::operator=(const shared_ptr<T[]>& ptr) {
+        if (&ptr != this)
         {
+            m_arr     = ptr.m_arr;
+            m_control = ptr.m_control;
             cleanup();
-            m_arr = other.m_arr;
-            m_len = other.m_len;
-            if (m_arr)
+            if (m_control)
             {
-                internal::get_ctrlblock(m_arr)->m_strong++;
+                m_control->inc_strong();
             }
         }
         return *this;
     }
 
     template<typename T>
-    shared_ptr<T[]>& shared_ptr<T[]>::operator=(shared_ptr<T[]>&& other) {
-        if (&other != this)
+    shared_ptr<T[]>& shared_ptr<T[]>::operator=(shared_ptr<T[]>&& ptr) {
+        if (&ptr != this)
         {
-            cleanup();
-            m_arr = other.m_arr;
-            m_len = other.m_len;
-            other.m_arr = nullptr;
-            other.m_len = 0;
+            std::swap(m_control, ptr.m_control);
+            std::swap(m_arr,     ptr.m_arr);
         }
         return *this;
     }
@@ -401,19 +365,14 @@ public:
 
     template<typename T>
     void shared_ptr<T[]>::cleanup() {
-        if (m_arr)
+        if (m_control)
         {
-            internal::ctrl_block* block = internal::get_ctrlblock(m_arr);
-            
-            assert(block->m_strong > 0);
-            block->m_strong--;
-        
-            if (block->m_strong == 0)
+            if (m_control->dec_strong() == 0)
             {
-                destroy_n(m_arr, m_len);
-                if (block->m_weak == 0)
+                m_control->destroy_object();
+                if (m_control->dec_weak() == 0)
                 {
-                    internal::free_ctrlblock(m_arr);
+                    m_control->destroy_control_block();
                 }
             }
         }
@@ -437,30 +396,32 @@ public:
         JSTD_DEBUG_CODE
         (
             check_access();
-            check_index(idx, m_len);
         )
         return m_arr[idx];
     }
 
     template<typename T>
     shared_ptr<T[]>::operator T*() const {
-        JSTD_DEBUG_CODE(
+        JSTD_DEBUG_CODE
+        (
             check_access();
         )
         return m_arr;
     }
 
+    #if 0
     template<typename T>
     template<typename E>
     shared_ptr<E> shared_ptr<T[]>::const_pointer_cast() const {
         static_assert(is_same<typename remove_cv<T[]>::type, typename remove_cv<E>::type>::value, "=== Type cast error! ===");
-        if (m_arr)
+        if (m_control)
         {
         
-            return shared_ptr<E>(m_arr, m_len);
+            return shared_ptr<E>(const_cast<E*>(m_arr), m_len);
         }
         return shared_ptr<E>();
     }
+    #endif
 
     template<typename T>
     shared_ptr<T[]>::operator weak_ptr<T[]>() const {
@@ -469,25 +430,20 @@ public:
 
     template<typename T>
     weak_ptr<T[]> shared_ptr<T[]>::get_weak() const {
-        if (m_arr)
+        if (m_control)
         {
-            return weak_ptr<T[]>(m_arr, m_len);
+            return weak_ptr<T[]>(m_arr, m_control);
         }
         return weak_ptr<T[]>();
     }
 
     template<typename T>
     std::size_t shared_ptr<T[]>::use_count() const {
-        if (m_arr)
+        if (m_control)
         {
-            internal::get_ctrlblock(m_arr)->m_strong;
+            m_control->get_strong();
         }
         return 0;
-    }
-
-    template<typename T>
-    std::size_t shared_ptr<T[]>::length() const {
-        return m_len;
     }
 
     /**
@@ -497,46 +453,41 @@ public:
      */
 
     template<typename T>
-    weak_ptr<T[]>::weak_ptr(Tvalue* arr, std::size_t length) : m_arr(arr), m_len(length) {
-        if (m_arr)
+    weak_ptr<T[]>::weak_ptr(T* arr, internal::control_block* control) : m_control(control), m_arr(arr) {
+        if (m_control)
         {
-            internal::get_ctrlblock(m_arr)->m_weak++;
+            m_control->inc_weak();
         }
     }
     
     template<typename T>
     void weak_ptr<T[]>::cleanup() {
-        if (m_arr)
+        if (m_control)
         {
-            internal::ctrl_block* block = internal::get_ctrlblock(m_arr);
-
-            assert(block->m_weak > 0);
-            block->m_weak--;
-
-            if (block->m_strong == 0 && block->m_weak == 0)
+            if (m_control->dec_weak() == 0)
             {
-                internal::free_ctrlblock(m_arr);
+                m_control->destroy_control_block();
             }
         }
     }
 
     template<typename T>
-    weak_ptr<T[]>::weak_ptr() : m_arr(nullptr), m_len(0) {
+    weak_ptr<T[]>::weak_ptr() : m_control(nullptr), m_arr(nullptr) {
 
     }
 
     template<typename T>
-    weak_ptr<T[]>::weak_ptr(const weak_ptr<T[]>& other) : m_arr(other.m_arr), m_len(other.m_len) {
-        if (m_arr)
+    weak_ptr<T[]>::weak_ptr(const weak_ptr<T[]>& ptr) : m_control(ptr.m_control), m_arr(ptr.m_arr) {
+        if (m_control)
         {
-            internal::get_ctrlblock(m_arr)->m_weak++;
+            m_control->inc_weak();
         }
     }
     
     template<typename T>
-    weak_ptr<T[]>::weak_ptr(weak_ptr<T[]>&& other) : m_arr(other.m_arr), m_len(other.m_len) {
-        other.m_arr = nullptr;
-        other.m_len = 0;
+    weak_ptr<T[]>::weak_ptr(weak_ptr<T[]>&& ptr) : m_control(ptr.m_control), m_arr(ptr.m_arr) {
+        ptr.m_arr       = nullptr;
+        ptr.m_control   = nullptr;
     }
     
     template<typename T>
@@ -545,60 +496,53 @@ public:
     }
     
     template<typename T>
-    weak_ptr<T[]>& weak_ptr<T[]>::operator=(const weak_ptr<T[]>& other) {
-        if (*other != nullptr) {
+    weak_ptr<T[]>& weak_ptr<T[]>::operator=(const weak_ptr<T[]>& ptr) {
+        if (*ptr != nullptr) {
             cleanup();
 
-            m_arr = other.m_arr;
-            m_len = other.m_len;
+            m_control   = ptr.m_control;
+            m_arr       = ptr.m_arr;
 
-            if (m_arr)
+            if (m_control)
             {
-                internal::get_ctrlblock(m_arr)->m_weak++;
+                m_control->inc_weak();
             }
         }
         return *this;
     }
     
     template<typename T>
-    weak_ptr<T[]>& weak_ptr<T[]>::operator=(weak_ptr<T[]>&& other) {
-        if (&other != this)
+    weak_ptr<T[]>& weak_ptr<T[]>::operator=(weak_ptr<T[]>&& ptr) {
+        if (&ptr != this)
         {
-            cleanup();
-            m_arr = other.m_arr;
-            m_len = other.m_len;
-
-            other.m_arr = nullptr;
-            other.m_len = 0;
+            std::swap(m_control, ptr.m_control);
+            std::swap(m_arr,     ptr.m_arr);
         }
         return *this;
     }
     
     template<typename T>
     std::size_t weak_ptr<T[]>::use_count() const {
-        if (m_arr)
+        if (m_control)
         {
-            return internal::get_ctrlblock(m_arr)->m_strong;
+            return m_control->get_strong();
         }
         return 0;
     }
     
     template<typename T>
     shared_ptr<T[]> weak_ptr<T[]>::lock() const {
-        if (m_arr)
+        if (m_control)
         {
-            if (internal::get_ctrlblock(m_arr)->m_strong > 0)
+            if (m_control->try_inc_strong())
             {
-                return shared_ptr<T[]>(m_arr, m_len);
+                return shared_ptr<T[]>(m_arr, m_control);
             }
         }
         return shared_ptr<T[]>();
     }
-
-    // template<typename T>
-    // shared_ptr<T[]> make_shared<T[]>(std::size_t length, const T& val, tca::allocator* allocator) {
-    //     return shared_ptr<T[]>(length, val, allocator);
-    // }
 }
 
 #endif//JSTD_INTERNAL_SMART_PTRS_SHARED_PTR_ARRAY_SPECIALIZATION_H
+
+#endif

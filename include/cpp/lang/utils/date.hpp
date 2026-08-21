@@ -21,12 +21,12 @@ class date {
     /**
      *  Время в формате time_t (секунды с начала Unix-эпохи).
      */
-    time_t _time;
+    std::time_t _time;
     
     /**
      * Локальное представление времени в структуре tm.
      */
-    tm _localTime;
+    std::tm _localTime;
 public:
     
     enum struct month {
@@ -44,6 +44,36 @@ public:
         DECEMBER       // Декабрь
     };
     
+    /**
+     * 
+     */
+    static const int DAY_DEFAULT    = 1;
+    
+    /**
+     * 
+     */
+    static const int MONTH_DEFAULT  = 1;
+    
+    /**
+     * 
+     */
+    static const int YEAR_DEFAULT   = 1990;
+    
+    /**
+     * 
+     */
+    static const int SECOND_DEFAULT = 0;
+    
+    /**
+     * 
+     */
+    static const int MINUTE_DEFAULT = 0;
+    
+    /**
+     * 
+     */
+    static const int HOUR_DEFAULT   = 0;
+
     /**
      * Конструктор, создающий объект даты с указанными компонентами.
      * 
@@ -65,57 +95,21 @@ public:
      * @param hour
      *      Часы (0-23).
      */
-    date(int day = 1, int month = 1, int year = 0, int second = 0, int minute = 0, int hour = 0);
+    date(
+        int day     = DAY_DEFAULT,
+        int month   = MONTH_DEFAULT,
+        int year    = YEAR_DEFAULT,
+        int second  = SECOND_DEFAULT,
+        int minute  = MINUTE_DEFAULT,
+        int hour    = HOUR_DEFAULT
+    );
 
     /**
      * Конструктор, создающий объект даты из времени в формате time_t.
      * 
      * @param date Время в формате time_t (секунды с начала Unix-эпохи).
      */
-    date(time_t date);
-
-    /**
-     * Конструктор копирования.
-     * 
-     * @param other
-     *      Копируемый объект date.
-     */
-    date(const date& other);
-
-    /**
-     * Конструктор перемещения.
-     * 
-     * @param other
-     *      Перемещаемый объект date.
-     */
-    date(date&& other);
-
-    /**
-     * Оператор присваивания копированием.
-     * 
-     * @param other
-     *      Копируемый объект date.
-     * 
-     * @return
-     *      Ссылка на текущий объект.
-     */
-    date& operator=(const date& other);
-
-    /**
-     * Оператор присваивания перемещением.
-     * 
-     * @param other
-     *      Перемещаемый объект date.
-     * 
-     * @return
-     *      Ссылка на текущий объект.
-     */
-    date& operator=(date&& other);
-
-    /**
-     * Деструктор.
-     */
-    ~date();
+    date(std::time_t date);
 
     /**
      * Возвращает текущую дату и время.
@@ -242,7 +236,7 @@ public:
      * @param date
      *      Время в формате time_t.
      */
-    void set_time(time_t date);
+    void set_time(std::time_t date);
 
     /**
      * Возвращает время в формате time_t.
@@ -250,7 +244,7 @@ public:
      * @return
      *      Время в формате time_t.
      */
-    time_t get_time() const;
+    std::time_t get_time() const;
 
     /**
      * Возвращает день месяца.

@@ -4,6 +4,7 @@
 #include <cpp/lang/traits/type_properties.hpp>
 #include <cpp/lang/utils/hash.hpp>
 #include <cstddef>
+#include <utility>
 
 namespace tc
 {
@@ -41,6 +42,13 @@ struct pair_element {};
  */
 template<typename E, std::size_t INDEX>
 struct pair_element<E, INDEX, true> : private E {
+    
+    /**
+     * 
+     */
+    template<typename E_>
+    pair_element(E_&& e) : E(std::forward<E_>(e)) {}
+    
     /**
      * Returns a reference to the stored element.
      */

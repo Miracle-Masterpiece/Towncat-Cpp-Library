@@ -459,7 +459,7 @@ int main() {
 }
 #endif
 
-#if 1
+#if 0
 
 #include <cpp/lang/utils/images/imageio.hpp>
 #include <cpp/lang/utils/images/image.hpp>
@@ -558,16 +558,43 @@ struct test {
     ~test() {std::cout << "~test()\n";}
 };
 
-#if 0
+#include <tc/date.hpp>
+
+
+
+
+
+
+
+
+
+template<typename T>
+struct PTR_DELETER {
+    void operator()(T* p)
+    {
+        delete p;
+    }
+};
+
+struct point {
+    int x, y;
+};
+
+#if 1
 int main() {
-    
+    using namespace tc::internal;
+    using namespace tc;
     tca::free_list_allocator alloc(tca::get_default_allocator());
 
-    tc::unique_ptr<const animal> a = tc::make_unique<cat>(&alloc);
-    
-    tc::unique_ptr<animal> b = tc::const_pointer_cast<animal>(std::move(a));
+    std::size_t LEN = 100;
 
-    b->say();
+
+    shared_ptr<const animal> a = allocate_shared<cat>(&alloc);
+    
+    shared_ptr<animal> _cat = const_pointer_cast<animal>(a);
+    shared_ptr<cat> c = reinterpret_pointer_cast<cat>(_cat);
+
+    c->say();
 
     alloc.print_log();
 }

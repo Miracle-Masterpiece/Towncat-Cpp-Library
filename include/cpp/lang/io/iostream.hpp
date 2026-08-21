@@ -1,8 +1,6 @@
 #ifndef JSTD_CPP_LANG_IO_IOSTREAM_H
 #define JSTD_CPP_LANG_IO_IOSTREAM_H
 
-
-
 namespace tc
 {
     /**

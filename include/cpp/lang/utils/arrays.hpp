@@ -134,6 +134,78 @@ namespace tc
 
         return data;
     }
+    
+    /**
+     * Allocates memory and constructs objects with a specified value.
+     * 
+     * Allocates memory for n objects of type T and constructs them in the
+     * allocated memory using the provided value as the initializer.
+     * Provides strong exception guarantee.
+     * 
+     * @tparam T
+     *      The type of objects to allocate and construct.
+     * 
+     * @param n
+     *      Number of objects to allocate and construct.
+     * 
+     * @param alloc
+     *      Allocator to use for memory allocation.
+     * 
+     * @param val
+     *      The value to copy-construct each element from.
+     * 
+     * @return
+     *      Pointer to the allocated and constructed memory,
+     *      or nullptr if memory allocation fails.
+     * 
+     * @throws
+     *      Any exception thrown by T's copy constructor during construction.
+     * 
+     * @note
+     *      If an exception occurs during construction, the allocated
+     *      memory is automatically deallocated before rethrowing.
+     * 
+     * @warning
+     *      The caller is responsible for deallocating the memory using
+     *      deallocate_and_destroy_n() or equivalent.
+     * 
+     * @example
+     *      // Allocate and construct 10 strings initialized with "Hello"
+     *      tca::allocator* alloc = tca::get_default_allocator();
+     *      std::string* arr = allocate_and_initialize_n<std::string>(10, alloc, "Hello");
+     *      if (arr) {
+     *          // All 10 strings contain "Hello"
+     *          for (std::size_t i = 0; i < 10; ++i) {
+     *              std::cout << arr[i] << "\n";
+     *          }
+     *          deallocate_and_destroy_n(arr, 10, alloc);
+     *      }
+     * 
+     * @example
+     *      // Allocate and construct 5 integers initialized with 42
+     *      int* ints = allocate_and_initialize_n<int>(5, alloc, 42);
+     *      assert(ints[0] == 42);
+     *      assert(ints[4] == 42);
+     */
+    template<typename T>
+    T* allocate_and_initialize_n(std::size_t n, tca::allocator* alloc, const T& val) {
+        JSTD_DEBUG_CODE(check_non_null(alloc, "'alloc' is null"));
+
+        typedef typename remove_cv<T>::type Tvalue;
+
+        Tvalue* data = (Tvalue*) alloc->allocate_align(sizeof(T) * n, alignof(T));
+        if (!data)
+            return nullptr;
+
+        try {
+            uninitialized_construct_n(data, n, val);
+        } catch(...) {
+            alloc->deallocate(data);
+            throw;
+        }
+
+        return data;
+    }
 
     /**
      * Destroys a range of objects.

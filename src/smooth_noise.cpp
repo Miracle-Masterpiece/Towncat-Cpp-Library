@@ -13,36 +13,6 @@ namespace tc
         generate_values();
     }
 
-    smooth_noise::smooth_noise(const smooth_noise& n) : smooth_noise(n.m_seed, n.m_curve_func) {
-        std::memcpy(m_buffer, n.m_buffer, sizeof(smooth_noise));
-    }
-
-    smooth_noise::smooth_noise(smooth_noise&& n) : smooth_noise(n.m_seed, n.m_curve_func) {
-
-    }
-    
-    smooth_noise& smooth_noise::operator=(const smooth_noise& n) {
-        if (&n != this) {
-            std::memcpy(m_buffer, n.m_buffer, sizeof(smooth_noise));
-            m_seed          = n.m_seed;
-            m_curve_func    = n.m_curve_func;
-        }
-        return *this;
-    }
-    
-    smooth_noise& smooth_noise::operator=(smooth_noise&& n) {
-        if (&n != this) {
-            std::memcpy(m_buffer, n.m_buffer, sizeof(smooth_noise));
-            m_seed          = n.m_seed;
-            m_curve_func    = n.m_curve_func;
-        }
-        return *this;
-    }
-    
-    smooth_noise::~smooth_noise() {
-
-    }
-
     unsigned long long smooth_noise::get_seed() const {
         return m_seed;
     }
@@ -140,7 +110,8 @@ namespace tc
     }
 
     float smooth_noise::get(long x, long y, int scale, int octaves, int scale_factor /* = 2 */, int freq_factor /* = 2 */) const {
-        JSTD_DEBUG_CODE(
+        JSTD_DEBUG_CODE
+        (
             if (scale        <= 0) throw_except<illegal_argument_exception>("Invalid scale: %i",scale);
             if (octaves      <= 0) throw_except<illegal_argument_exception>("Invalid count octaves: %i", octaves);
             if (scale_factor < 0 ) throw_except<illegal_argument_exception>("Invalid scale_factor octaves: %f", scale_factor);

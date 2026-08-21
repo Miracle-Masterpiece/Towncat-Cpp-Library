@@ -28,13 +28,11 @@ bin/WINDOWS_X86-64/src/main.o: src/main.cpp \
  include/cpp/lang/utils/linked_hash_map.hpp \
  include/cpp/lang/io/bytebuf.hpp include/cpp/lang/io/basebuf.hpp \
  include/cpp/lang/net/inetaddr.hpp include/cpp/lang/utils/optional.hpp \
- include/cpp/lang/utils/images/imageio.hpp \
- include/cpp/lang/utils/images/image.hpp include/cpp/lang/io/istream.hpp \
- include/cpp/lang/io/ostream.hpp include/cpp/lang/io/file.hpp \
- include/cpp/lang/io/file_filter.hpp include/cpp/lang/io/constants.hpp \
- include/cpp/lang/utils/images/image_packer.hpp \
- include/cpp/lang/utils/unique_ptr.hpp include/cpp/lang/traits/sfinae.hpp \
- include/cpp/lang/traits/pure_traits.hpp include/tc/unique_ptr.hpp \
- include/tc/shared_ptr.hpp include/cpp/lang/utils/shared_ptr.hpp \
+ include/tc/unique_ptr.hpp include/cpp/lang/utils/unique_ptr.hpp \
+ include/cpp/lang/traits/sfinae.hpp \
+ include/cpp/lang/traits/pure_traits.hpp include/tc/shared_ptr.hpp \
+ include/cpp/lang/utils/shared_ptr.hpp \
  include/internal/smart_ptrs/shared_ptr_t.hpp \
- include/internal/smart_ptrs/shared_ptr_array_specialization.hpp
+ include/internal/smart_ptrs/control_block.hpp \
+ include/internal/smart_ptrs/shared_ptr_array_specialization.hpp \
+ include/tc/date.hpp include/cpp/lang/utils/date.hpp

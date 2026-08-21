@@ -22,8 +22,10 @@ namespace tc
     }
     
     calltrace& calltrace::operator=(const calltrace& ct) {
-        if (&ct != this) {
-            JSTD_CALLTRACE_CODE(
+        if (&ct != this)
+        {
+            JSTD_CALLTRACE_CODE
+            (
                 m_stacktrace = ct.m_stacktrace;
             );
         }
@@ -31,8 +33,10 @@ namespace tc
     }
     
     calltrace& calltrace::operator=(calltrace&& ct) {
-        if (&ct != this) {
-            JSTD_CALLTRACE_CODE(
+        if (&ct != this)
+        {
+            JSTD_CALLTRACE_CODE
+            (
                 m_stacktrace = std::move(ct.m_stacktrace);
             );
         }
@@ -54,11 +58,15 @@ namespace tc
 
     void calltrace::print() const {
         JSTD_CALLTRACE_CODE (
-            for (int i = 0; i < m_stacktrace.size() - 1; ++i) {
-                std::string description     = m_stacktrace.at(i).description();
-                std::string callable_file   = m_stacktrace.at(i + 1).source_file();
-                int64_t callable_line       = m_stacktrace.at(i + 1).source_line();
-                system::tsprintf("      at %s(\033[36m%s:%lli\033[0m)\n", description.c_str(), callable_file.c_str(), (long long) callable_line);
+            if (m_stacktrace.size() > 0)
+            {
+                for (unsigned short i = 0; i < m_stacktrace.size() - 1; ++i)
+                {
+                    std::string description      = m_stacktrace.at(i).description();
+                    std::string callable_file    = m_stacktrace.at(i + 1).source_file();
+                    unsigned int callable_line   = m_stacktrace.at(i + 1).source_line();
+                    system::tsprintf("      at %s(\033[36m%s:%u\033[0m)\n", description.c_str(), callable_file.c_str(), callable_line);
+                }
             }
         );
     }
@@ -66,7 +74,8 @@ namespace tc
     void calltrace::write_log(class ostream* out) const {
         JSTD_CALLTRACE_CODE(
             try {
-                for (const std::stacktrace_entry& entry : m_stacktrace) {
+                for (const std::stacktrace_entry& entry : m_stacktrace)
+                {
                     const std::string& desc = entry.description();
                     out->write(desc.c_str(), desc.length());
                 }
