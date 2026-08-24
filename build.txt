@@ -84,7 +84,7 @@ OUTPUT_DIR = build
 # Compiler settings
 COMPILER = ${CXX_${TARGET_ARCH}_${OS}} ${CXX_FLAGS}
 LINKER   = ${CXX_${TARGET_ARCH}_${OS}} ${LDD_FLAGS}
-STANDARD = -std=c++23
+STANDARD = -std=c++11
 DEFINE   =
 INCLUDE  = -I"include"
 WARNING  = -Wall -pedantic -Wextra -Wsign-promo -Wfloat-equal -Wconversion -Wno-unused-parameter -Wno-unused-value -Wnon-virtual-dtor -Wno-unused-function

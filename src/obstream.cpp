@@ -1,141 +1,147 @@
 #include <cpp/lang/io/obstream.hpp>
 #include <cpp/lang/exceptions.hpp>
+#include <cpp/lang/errcode.hpp>
 #include <iostream>
 #include <cassert>
 
-namespace tc {
+namespace tc
+{
 
-    obstream::obstream() : _allocator(nullptr), _buffer(nullptr), _capacity(0), _offset(0), _out(nullptr) {
+    obstream::obstream() : m_allocator(nullptr), m_buffer(nullptr), m_capacity(0), m_offset(0), m_out(nullptr) {
 
     }
 
-    obstream::obstream(ostream* stream, tca::base_allocator* allocator, std::size_t buf_size) : obstream() {
-        JSTD_DEBUG_CODE(
-            if (stream == nullptr)      throw_except<null_pointer_exception>("stream is null!");
-            if (allocator == nullptr)   throw_except<null_pointer_exception>("allocator is null!");
+    obstream::obstream(ostream* stream, tca::allocator* allocator, std::size_t buf_size) : obstream() {
+        JSTD_DEBUG_CODE
+        (
+            if (!stream)      throw_except<null_pointer_exception>("stream is null");
+            if (!allocator)   throw_except<null_pointer_exception>("allocator is null");
         )
-        char* data  = (char*) allocator->allocate(buf_size);
+        char* data  = (char*) allocator->allocate_align(buf_size, alignof(char));
         if (!data)
-            throw_except<out_of_memory_error>("Out of memory!");
-        _allocator  = allocator;
-        _buffer     = data;
-        _capacity   = buf_size;
-        _offset     = 0;
-        _out        = stream;
+            throw_except<out_of_memory_error>("out of memory");
+        m_allocator  = allocator;
+        m_buffer     = data;
+        m_capacity   = buf_size;
+        m_offset     = 0;
+        m_out        = stream;
     }
     
     obstream::obstream(ostream* stream, char* buffer, std::size_t buf_size) : obstream() {
-        JSTD_DEBUG_CODE(
-            if (stream == nullptr)  throw_except<null_pointer_exception>("stream is null!");
-            if (buffer == nullptr)  throw_except<null_pointer_exception>("buffer is null!");
+        JSTD_DEBUG_CODE
+        (
+            if (stream == nullptr)  throw_except<null_pointer_exception>("stream is null");
+            if (buffer == nullptr)  throw_except<null_pointer_exception>("buffer is null");
         )
-        _buffer     = buffer;
-        _capacity   = buf_size;
-        _offset     = 0;
-        _out        = stream;
+        m_buffer     = buffer;
+        m_capacity   = buf_size;
+        m_offset     = 0;
+        m_out        = stream;
     }
 
     obstream::obstream(obstream&& stream) : 
-    _allocator(stream._allocator), _buffer(stream._buffer), _capacity(stream._capacity), _offset(stream._offset), _out(stream._out) {
-        stream._allocator   = nullptr;
-        stream._buffer      = nullptr;
-        stream._capacity    = 0;
-        stream._offset      = 0;
-        stream._out         = nullptr;
+    m_allocator(stream.m_allocator), m_buffer(stream.m_buffer), m_capacity(stream.m_capacity), m_offset(stream.m_offset), m_out(stream.m_out) {
+        stream.m_allocator   = nullptr;
+        stream.m_buffer      = nullptr;
+        stream.m_capacity    = 0;
+        stream.m_offset      = 0;
+        stream.m_out         = nullptr;
     }
 
     obstream& obstream::operator= (obstream&& stream) {
-        if (&stream != this) {
-            if (_out != nullptr)
-                close();
-            _allocator  = stream._allocator;
-            _buffer     = stream._buffer;
-            _capacity   = stream._capacity;
-            _offset     = stream._offset;
-            _out        = stream._out;
+        if (&stream != this)
+        {
+            if (!m_out)
+            {
+                error_code dontcare;
+                close(dontcare);
+            }
+            m_allocator  = stream.m_allocator;
+            m_buffer     = stream.m_buffer;
+            m_capacity   = stream.m_capacity;
+            m_offset     = stream.m_offset;
+            m_out        = stream.m_out;
 
-            stream._allocator   = nullptr;
-            stream._buffer      = nullptr;
-            stream._capacity    = 0;
-            stream._offset      = 0;
-            stream._out         = nullptr;
+            stream.m_allocator   = nullptr;
+            stream.m_buffer      = nullptr;
+            stream.m_capacity    = 0;
+            stream.m_offset      = 0;
+            stream.m_out         = nullptr;
         }
         return *this;
     }
 
     void obstream::free() {
-        if (_allocator != nullptr) {
-            _allocator->deallocate(_buffer, _capacity);
-            _allocator = nullptr;
+        if (!m_allocator)
+        {
+            m_allocator->deallocate(m_buffer);
+            m_allocator = nullptr;
         }
     }
 
     obstream::~obstream() {
-		free();
+        error_code dontcare;
+        close(dontcare);
     }
 
-    void obstream::write(char c) {
-        ostream::write(c);
-    }
-    
     void obstream::write(const char* data, std::size_t sz) {
-        JSTD_DEBUG_CODE(
-            if (_out == nullptr)
-                throw_except<io_exception>("stream is null!");
+        JSTD_DEBUG_CODE
+        (
+            if (!m_out)
+                throw_except<io_exception>("stream is null");
         )
-        assert(_capacity >= _offset);
-        std::size_t rem = _capacity - _offset;
+        
+        assert(m_capacity >= m_offset);
+        std::size_t rem = m_capacity - m_offset;
         
         if (rem < sz)
         {
             flush();
         }
         
-        if (sz > _capacity)
+        if (sz > m_capacity)
         {
-            _out->write(data, sz);
+            m_out->write(data, sz);
         } 
         else
         {
-            memcpy(_buffer + _offset, data, sz);
-            _offset += sz;
+            memcpy(m_buffer + m_offset, data, sz);
+            m_offset += sz;
         }
     }
     
     void obstream::flush() {
-        JSTD_DEBUG_CODE(
-            if (_out == nullptr)
-                throw_except<io_exception>("stream is null!");
+        JSTD_DEBUG_CODE
+        (
+            if (!m_out)
+                throw_except<io_exception>("stream is null");
         )
-        if (_offset > 0)
+        if (m_offset > 0)
         {
-            _out->write(_buffer, _offset);
-            _offset = 0;
+            m_out->write(m_buffer, m_offset);
+            m_offset = 0;
         }
     }
     
-    void obstream::close() {
-        if (_out == nullptr) 
-            return;
-        try {
-            flush();
-        } catch (...) {
-            try {
-                _out->close();
-            } catch (const io_exception& close_except) {}
-            _out = nullptr;
-            free();
-            throw;    
-        }
-        
-        free();
+    void obstream::close(error_code& err) {
+        if (m_out)
+        {
+            
+            error_code flush_err;
+            error_code close_err;
 
-        try {
-            _out->close();
-            _out = nullptr;
-        } catch (const io_exception& e) {
-            _out = nullptr;
-            throw e;
+            try {
+                flush();
+            } catch (...) {
+                flush_err = error_code(errcode::io_error, generic_category());
+            }
+        
+            m_out->close(close_err);
+            
+            free();
+            m_out = nullptr;
+            
+            err = flush_err ? flush_err : close_err;
         }
     }
     

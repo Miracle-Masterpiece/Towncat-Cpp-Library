@@ -195,6 +195,13 @@ public:
     }
 
     /**
+     * 
+     */
+    operator bool() const {
+        return val != 0;
+    }
+
+    /**
      * Retrieves the human-readable error message.
      * 
      * @param alloc
@@ -631,7 +638,6 @@ public:
         }
         return false;
     }
-    
 }
 
 #endif /* B7D7A5CF_9BC8_4925_BDFD_B4A8369B7151 */

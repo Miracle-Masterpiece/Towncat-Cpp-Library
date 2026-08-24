@@ -10,76 +10,98 @@ namespace tc
 {
 namespace imageio
 {
+
     /**
-     * Загружает изображение из входящего потока.
+     * Loads an image from an input stream.
+     * 
+     * Uses STB image library with custom I/O callbacks to read image data
+     * from the provided stream. The image data is allocated using the custom
+     * allocator and returned as an image object.
      * 
      * @param in
-     *      Входящий поток ввода.
+     *      Pointer to the input stream.
      * 
      * @param allocator
-     *      Распределитель памяти для выделения памяти под изображения и его загрузку.
+     *      Pointer to the allocator to use (may be unused as STB uses internal allocator).
      * 
-     * @throws out_of_memory_error
-     *      Если памяти для временного буфера не хватило.
-     *      Если прямяти для конечного изображения не хватило.
-     * 
-     * @throws io_exception
-     *      Если произошла ошибка ввода/вывода
+     * @return image
+     *      The loaded image object.
      * 
      * @throws illegal_state_exception
-     *      Если произошла ошибка во внутренней библитеки.
+     *      If image loading fails.
+     * 
+     * @throws io_exception
+     *      If an I/O error occurs.
      */
     image load_image(istream* in, tca::allocator* allocator);
-
+    
     /**
-     * Читает изображение из переданного файла.
+     * Loads an image from a file.
+     * 
+     * Opens the file and loads the image using the stream-based loader.
      * 
      * @param file
-     *      Файл, являющийся изображением.
+     *      Reference to the file object.
      * 
      * @param allocator
-     *      Распределитель памяти для выделения памяти под изображения и его загрузку.
+     *      Pointer to the allocator to use (defaults to system allocator).
      * 
-     * @throws file_not_found_exception
-     *      Если файла не существует.
-     * 
-     * Остальные выбрасываемые исключения, такие-же, как и у функции {@code load_image(istream*, tca::allocator*)}.
-     */
-    image load_image(const file& file , tca::allocator* allocator = tca::get_default_allocator());
-
-    /**
-     * Сохраняет изображение в поток вывода.
-     * 
-     * @param out
-     *      Поток вывода поток ввода.
-     * 
-     * @param img
-     *      Указатель на изображение, которое нужно сохранить.
-     * 
-     * @param ext
-     *      Указатель на строку, отвечаюшую за тип сохранённого изображения.
-     *      Например:
-     *      "png", "jpeg" or "jpg", "bmp", "tga"
-     * 
-     * @throws io_exception
-     *      Если произошла ошибка ввода/вывода
+     * @return image
+     *      The loaded image object.
      * 
      * @throws illegal_state_exception
-     *      Если произошла ошибка во внутренней библитеки.
+     *      If image loading fails.
+     * 
+     * @throws io_exception
+     *      If an I/O error occurs.
      */
-    void write_image(ostream* out, const image* img, const char* ext);
+    image load_image(const file& file , tca::allocator* allocator = tca::get_default_allocator());
     
     /**
-     * Тот же самый, метод, что и {
-     * @code void save_image(ostream*, tca::allocator*)
-     * }
+     * Writes an image to an output stream.
      * 
-     * Только вместо потока, файл в который сохранить изображение.
-     * Выбрасываемые исключения, такие-же, как и у функции {@code void write_image(ostream*, const image*, const char*)}.
+     * Encodes and writes the image data to the output stream in the specified format.
+     * Supported formats: PNG, JPEG, TGA, BMP.
+     * 
+     * @param out 
+     *      Pointer to the output stream.
+     * 
+     * @param img
+     *      Reference to the image to write.
+     * 
+     * @param ext
+     *      File extension determining the output format ("png", "jpeg", "jpg", "tga", "bmp").
+     * 
+     * @throws illegal_state_exception
+     *      If image writing fails.
+     * 
+     * @throws io_exception
+     *      If an I/O error occurs.
      */
-    void write_image(const file& file, const image* img, const char* ext);
-
+    void write_image(ostream* out, const image& img, const char* ext);
     
+    /**
+     * Writes an image to a file.
+     * 
+     * Opens the file and writes the image using the stream-based writer.
+     * The format is determined by the file extension.
+     * 
+     * @param file
+     *      Reference to the output file object.
+     * 
+     * @param img
+     *      Reference to the image to write.
+     * 
+     * @param ext
+     *      File extension determining the output format ("png", "jpeg", "jpg", "tga", "bmp").
+     * 
+     * @throws illegal_state_exception
+     *      If image writing fails.
+     * 
+     * @throws io_exception
+     *      If an I/O error occurs.
+     */
+    void write_image(const file& file, const image& img, const char* ext);
 
 }//namespace imageio
 }//namespace jstd 

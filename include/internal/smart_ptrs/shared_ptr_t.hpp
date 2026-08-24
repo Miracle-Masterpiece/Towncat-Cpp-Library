@@ -21,13 +21,13 @@ template<typename T>
 class shared_ptr;
 
 /**
- * @brief A weak reference to an object managed by shared_ptr.
+ * A weak reference to an object managed by shared_ptr.
  * 
- * `weak_ptr` provides a non-owning reference to an object managed by one or more
- * `shared_ptr` instances. It does not affect the object's lifetime and is used
+ * 'weak_ptr' provides a non-owning reference to an object managed by one or more
+ * 'shared_ptr' instances. It does not affect the object's lifetime and is used
  * to break circular references.
  * 
- * A `weak_ptr` can be converted to a `shared_ptr` using `lock()`, which returns
+ * A 'weak_ptr' can be converted to a 'shared_ptr' using 'lock()', which returns
  * a valid shared pointer if the object still exists, or an empty one otherwise.
  * 
  * @tparam T
@@ -37,23 +37,23 @@ template<typename T>
 class weak_ptr {
     
     /**
-     * @brief Grants shared_ptr access to internal members.
+     * Grants shared_ptr access to internal members.
      */
     friend class shared_ptr<T>;
     
     /**
-     * @brief Pointer to the control block managing reference counts.
+     * Pointer to the control block managing reference counts.
      */
     internal::control_block* m_control;
 
     /**
-     * @brief Raw pointer to the managed object.
+     * Raw pointer to the managed object.
      */
     T* m_obj;
 
     /**
      * @internal
-     * @brief Internal constructor for shared_ptr's use.
+     * Internal constructor for shared_ptr's use.
      * 
      * Creates a weak_ptr from an existing object and control block.
      * Increments the weak reference count.
@@ -72,7 +72,7 @@ class weak_ptr {
     
     /**
      * @internal
-     * @brief Releases the weak reference.
+     * Releases the weak reference.
      * 
      * Decrements the weak reference count. If it reaches zero, destroys the
      * control block.
@@ -81,7 +81,7 @@ class weak_ptr {
 
 public:
     /**
-     * @brief Default constructor. Creates an empty weak_ptr.
+     * Default constructor. Creates an empty weak_ptr.
      * 
      * The created weak_ptr does not point to any object.
      * 
@@ -92,7 +92,7 @@ public:
     weak_ptr();
 
     /**
-     * @brief Copy constructor. Creates a new weak reference.
+     * Copy constructor. Creates a new weak reference.
      * 
      * Increments the weak reference count of the control block.
      * 
@@ -108,7 +108,7 @@ public:
     weak_ptr(const weak_ptr<T>& other);
 
     /**
-     * @brief Move constructor. Transfers ownership of the weak reference.
+     * Move constructor. Transfers ownership of the weak reference.
      * 
      * The source weak_ptr becomes empty after the move.
      * 
@@ -124,7 +124,7 @@ public:
     weak_ptr(weak_ptr<T>&& other);
 
     /**
-     * @brief Destructor. Releases the weak reference.
+     * Destructor. Releases the weak reference.
      * 
      * Decrements the weak reference count. If it reaches zero and the
      * strong count is also zero, the control block is destroyed.
@@ -132,9 +132,9 @@ public:
     ~weak_ptr();
 
     /**
-     * @brief Copy assignment operator.
+     * Copy assignment operator.
      * 
-     * Releases the current weak reference and acquires a new one from `other`.
+     * Releases the current weak reference and acquires a new one from 'other'.
      * Increments the weak reference count of the new control block.
      * 
      * @param other
@@ -150,9 +150,9 @@ public:
     weak_ptr<T>& operator=(const weak_ptr<T>& other);
 
     /**
-     * @brief Move assignment operator.
+     * Move assignment operator.
      * 
-     * Transfers the weak reference from `other` to this. The source becomes
+     * Transfers the weak reference from 'other' to this. The source becomes
      * empty after the move.
      * 
      * @param other
@@ -169,7 +169,7 @@ public:
     weak_ptr<T>& operator=(weak_ptr<T>&& other);
 
     /**
-     * @brief Returns the number of shared_ptr instances managing the object.
+     * Returns the number of shared_ptr instances managing the object.
      * 
      * @return
      *      The strong reference count, or 0 if this weak_ptr is empty.
@@ -185,7 +185,7 @@ public:
     std::size_t use_count() const;
 
     /**
-     * @brief Creates a shared_ptr from this weak_ptr if the object still exists.
+     * Creates a shared_ptr from this weak_ptr if the object still exists.
      * 
      * If the managed object still exists (strong count > 0), increments the
      * strong reference count and returns a shared_ptr to the object.
@@ -211,24 +211,24 @@ public:
 };
 
 /**
- * @brief A shared pointer with reference-counted ownership.
+ * A shared pointer with reference-counted ownership.
  * 
- * `shared_ptr` is a smart pointer that retains shared ownership of an object
- * through a pointer. Several `shared_ptr` objects may own the same object.
+ * 'shared_ptr' is a smart pointer that retains shared ownership of an object
+ * through a pointer. Several 'shared_ptr' objects may own the same object.
  * The object is destroyed and its memory deallocated when either:
- * - The last remaining `shared_ptr` owning the object is destroyed.
- * - The last remaining `shared_ptr` owning the object is reassigned via
- *   `operator=` or `reset()`.
+ * - The last remaining 'shared_ptr' owning the object is destroyed.
+ * - The last remaining 'shared_ptr' owning the object is reassigned via
+ *   'operator=' or 'reset()'.
  * 
  * The object is destroyed using the deleter provided at construction time.
- * By default, `delete` is used.
+ * By default, 'delete' is used.
  * 
  * @tparam T
  *      The type of the managed object.
  * 
- * @note `shared_ptr` supports custom deleters and custom allocators.
- * @note `shared_ptr` provides strong exception guarantee for most operations.
- * @note `shared_ptr` can be converted to `weak_ptr` to break circular references.
+ * @note 'shared_ptr' supports custom deleters and custom allocators.
+ * @note 'shared_ptr' provides strong exception guarantee for most operations.
+ * @note 'shared_ptr' can be converted to 'weak_ptr' to break circular references.
  * 
  * @see weak_ptr
  * @see allocate_shared
@@ -238,18 +238,18 @@ template<typename T>
 class shared_ptr {
     
     /**
-     * @brief Allows converting between different shared_ptr types.
+     * Allows converting between different shared_ptr types.
      */
     template<typename A>
     friend class shared_ptr;
     
     /**
-     * @brief Grants weak_ptr access to internal members.
+     * Grants weak_ptr access to internal members.
      */
     friend class weak_ptr<T>;
 
     /**
-     * @brief Grants allocate_shared access to internal constructor.
+     * Grants allocate_shared access to internal constructor.
      */
     template<typename A, typename... Args>
     friend typename enable_if< !is_array<A>::value, shared_ptr<A> >::type allocate_shared(tca::allocator*, Args&&...);
@@ -261,36 +261,42 @@ class shared_ptr {
     friend shared_ptr<A> static_pointer_cast(const shared_ptr<B>&);
 
     /**
-     * @brief Grants static_pointer_cast access to internal members.
+     * Grants static_pointer_cast access to internal members.
      */
     template<typename A, typename B, typename>
     friend shared_ptr<A> const_pointer_cast(const shared_ptr<B>&);
 
     /**
-     * @brief Grants const_pointer_cast access to internal members.
+     * Grants const_pointer_cast access to internal members.
      */
     template<typename A, typename B, typename>
     friend shared_ptr<A> dynamic_pointer_cast(const shared_ptr<B>&);
 
     /**
-     * @brief Grants dynamic_pointer_cast access to internal members.
+     * Grants dynamic_pointer_cast access to internal members.
      */
     template<typename A, typename B, typename>
     friend shared_ptr<A> reinterpret_pointer_cast(const shared_ptr<B>&);
 
     /**
-     * @brief Pointer to the control block managing reference counts and deleter.
+     * 
+     */
+    template<typename A, typename DELETER>
+    friend shared_ptr<A> allocate_wrap_shared(tca::allocator*, A*, DELETER);
+
+    /**
+     * Pointer to the control block managing reference counts and deleter.
      */
     internal::control_block* m_control;
 
     /**
-     * @brief Raw pointer to the managed object.
+     * Raw pointer to the managed object.
      */
     T* m_obj;
     
     /**
      * @internal
-     * @brief Releases ownership of the managed object.
+     * Releases ownership of the managed object.
      * 
      * Decrements the strong reference count. If it reaches zero, the object
      * is destroyed via the deleter and the weak count is checked.
@@ -300,7 +306,7 @@ class shared_ptr {
     
     /**
      * @internal
-     * @brief Checks if the object is accessible.
+     * Checks if the object is accessible.
      * 
      * @throws (in DEBUG build)
      *      null_pointer_exception If the object pointer is null.
@@ -312,7 +318,7 @@ class shared_ptr {
 
     /**
      * @internal
-     * @brief Internal constructor for use by factory functions and casts.
+     * Internal constructor for use by factory functions and casts.
      * 
      * @param obj
      *      Pointer to the managed object.
@@ -324,10 +330,9 @@ class shared_ptr {
      *       The caller is responsible for proper reference counting.
      */
     explicit shared_ptr(T* obj, internal::control_block* block);
-
 public:
     /**
-     * @brief Default constructor. Creates an empty shared_ptr.
+     * Default constructor. Creates an empty shared_ptr.
      * 
      * The created shared_ptr does not own any object.
      * 
@@ -339,7 +344,7 @@ public:
     shared_ptr();
 
     /**
-     * @brief Copy constructor. Shares ownership with another shared_ptr.
+     * Copy constructor. Shares ownership with another shared_ptr.
      * 
      * Increments the strong reference count of the control block.
      * Both shared_ptrs now share ownership of the same object.
@@ -357,7 +362,7 @@ public:
     shared_ptr(const shared_ptr<T>& other);
 
     /**
-     * @brief Converting copy constructor.
+     * Converting copy constructor.
      * 
      * Allows constructing a shared_ptr from another shared_ptr of a related type.
      * The source type must be a base class of T or convertible with cv-qualifiers.
@@ -379,7 +384,7 @@ public:
     shared_ptr(const shared_ptr<E>& other);
 
     /**
-     * @brief Converting move constructor.
+     * Converting move constructor.
      * 
      * Transfers ownership from another shared_ptr of a related type.
      * The source shared_ptr becomes empty after the move.
@@ -399,10 +404,10 @@ public:
     shared_ptr(shared_ptr<E>&& other);
 
     /**
-     * @brief Copy assignment operator.
+     * Copy assignment operator.
      * 
-     * Releases the current object (if any) and shares ownership with `other`.
-     * Increments the strong reference count of `other`'s control block.
+     * Releases the current object (if any) and shares ownership with 'other'.
+     * Increments the strong reference count of 'other''s control block.
      * 
      * @param other
      *      Another shared_ptr to copy from.
@@ -420,9 +425,9 @@ public:
     shared_ptr<T>& operator=(const shared_ptr<T>& other);
 
     /**
-     * @brief Move assignment operator.
+     * Move assignment operator.
      * 
-     * Transfers ownership from `other` to this. The source becomes empty.
+     * Transfers ownership from 'other' to this. The source becomes empty.
      * 
      * @param other
      *      Another shared_ptr to move from.
@@ -440,7 +445,7 @@ public:
     shared_ptr<T>& operator=(shared_ptr<T>&& other);
 
     /**
-     * @brief Copy assignment from a related shared_ptr type.
+     * Copy assignment from a related shared_ptr type.
      * 
      * @param other
      *      Another shared_ptr to copy from.
@@ -455,7 +460,7 @@ public:
     shared_ptr<T>& operator=(const shared_ptr<E>& other);
 
     /**
-     * @brief Move assignment from a related shared_ptr type.
+     * Move assignment from a related shared_ptr type.
      * 
      * @param other
      *      Another shared_ptr to move from.
@@ -469,7 +474,7 @@ public:
     shared_ptr<T>& operator=(shared_ptr<E>&& other);
 
     /**
-     * @brief Destructor. Releases ownership of the managed object.
+     * Destructor. Releases ownership of the managed object.
      * 
      * Decrements the strong reference count. If it reaches zero, the object
      * is destroyed and the memory is deallocated using the stored deleter.
@@ -477,7 +482,7 @@ public:
     ~shared_ptr();
 
     /**
-     * @brief Dereferences the managed object.
+     * Dereferences the managed object.
      * 
      * @return
      *      A reference to the managed object.
@@ -494,7 +499,7 @@ public:
     T& operator*() const;
 
     /**
-     * @brief Provides access to the members of the managed object.
+     * Provides access to the members of the managed object.
      * 
      * @return
      *      A pointer to the managed object.
@@ -512,7 +517,7 @@ public:
     T* operator->() const;
 
     /**
-     * @brief Returns the raw pointer to the managed object.
+     * Returns the raw pointer to the managed object.
      * 
      * @return
      *      The raw pointer, or nullptr if this shared_ptr is empty.
@@ -528,7 +533,7 @@ public:
     T* get() const;
 
     /**
-     * @brief Checks if this shared_ptr owns an object.
+     * Checks if this shared_ptr owns an object.
      * 
      * @return
      *      true if the shared_ptr owns an object, false otherwise.
@@ -542,7 +547,7 @@ public:
     operator bool() const;
 
     /**
-     * @brief Implicit conversion to raw pointer.
+     * Implicit conversion to raw pointer.
      * 
      * Allows using shared_ptr where a raw pointer is expected.
      * 
@@ -560,7 +565,7 @@ public:
     operator T*() const;
 
     /**
-     * @brief Creates a weak_ptr observing the same object.
+     * Creates a weak_ptr observing the same object.
      * 
      * @return
      *      A weak_ptr that points to the same object.
@@ -573,7 +578,7 @@ public:
     operator weak_ptr<T>() const;
 
     /**
-     * @brief Creates a weak_ptr observing the same object.
+     * Creates a weak_ptr observing the same object.
      * 
      * @return
      *      A weak_ptr that points to the same object.
@@ -586,7 +591,7 @@ public:
     weak_ptr<T> get_weak() const;
 
     /**
-     * @brief Returns the number of shared_ptr instances owning the same object.
+     * Returns the number of shared_ptr instances owning the same object.
      * 
      * @return
      *      The strong reference count, or 0 if this shared_ptr is empty.
@@ -594,7 +599,7 @@ public:
     std::size_t use_count() const;
 
     /**
-     * @brief Compares two shared_ptrs for equality.
+     * Compares two shared_ptrs for equality.
      * 
      * Returns true if both shared_ptrs point to the same object.
      * 
@@ -623,23 +628,6 @@ public:
     shared_ptr<T>::shared_ptr() : m_control(nullptr), m_obj(nullptr) {
 
     }
-    
-    #if 0
-    template<typename T>
-    template<typename DELETER>
-    shared_ptr<T>::shared_ptr(T* obj, DELETER deleter, tca::allocator* alloc) : m_control(nullptr), m_obj(nullptr) {
-        typedef internal::ptr_control_block<T, DELETER> control_block_type;
-        void* mem = alloc->allocate_align(sizeof(control_block_type), alignof(control_block_type));
-        if (!mem)
-            throw_except<out_of_memory_error>("out of memory");
-        try {
-            m_control = new (mem) control_block_type(obj, std::move(deleter), alloc);
-        } catch (...) {
-            alloc->deallocate(mem);
-            throw;
-        }
-    }
-    #endif
     
     template<typename T>
     shared_ptr<T>::shared_ptr(T* obj, internal::control_block* block) : m_control(block), m_obj(obj) {

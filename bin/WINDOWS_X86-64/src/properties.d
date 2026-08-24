@@ -18,4 +18,5 @@ bin/WINDOWS_X86-64/src/properties.o: src/properties.cpp \
  include/cpp/lang/utils/pair.hpp \
  include/cpp/lang/traits/type_properties.hpp include/cpp/lang/string.hpp \
  include/cpp/lang/math.hpp include/cpp/lang/io/ostream.hpp \
- include/cpp/lang/io/istream.hpp include/cpp/lang/utils/date.hpp
+ include/cpp/lang/errors.hpp include/cpp/lang/io/istream.hpp \
+ include/cpp/lang/utils/date.hpp

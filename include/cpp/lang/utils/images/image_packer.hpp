@@ -30,7 +30,7 @@ class image_packer {
     /**
      * Корневой узел дерева размещения изображений.
      */
-    unique_ptr<texturing::node> m_root;
+    polymorph::unique_ptr<texturing::node> m_root;
     
     /**
      * Входной массив изображений.

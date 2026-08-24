@@ -237,16 +237,6 @@ namespace tc
         return count_files;
     }
 
-    void fs::close(FILE* handle) {
-        if (fclose(handle) != 0)
-            throw_except<io_exception>(strerror(errno));
-    }
-
-    void fs::flush(FILE* handle) {
-        if (fflush(handle) != 0)
-            throw_except<io_exception>(strerror(errno));
-    }
-
     bool fs::can_execute(const char* path) {
         return get_access(path, CAN_EXECUTE);
     }
@@ -341,7 +331,7 @@ namespace jstd
 
     static void throw_error() {
         if (errno == 0)         return;
-        if (errno == EACCES)    throw_except<sequrity_exception>(system::error_string(errno));
+        if (errno == EACCES)    throw_except<seсurity_exception>(system::error_string(errno));
         else                    throw_except<io_exception>(system::error_string(errno));
     }
 
@@ -507,12 +497,11 @@ namespace jstd
         return true;
     }
 
-    FILE* fs::open(const char* path, const char* mark) {
+    expected<FILE*, error_code> fs::open(const char* path, const char* mark) {
         FILE* handle = fopen(path, mark);   
-        if (handle == nullptr)
+        if (!handle)
         {
-            if (errno == EACCES) throw_except<sequrity_exception>(strerror(errno));
-            else                 throw_except<io_exception>(strerror(errno));
+            return unexpected(error_code(errno, generic_category()));
         }
         return handle;
     }
@@ -523,7 +512,7 @@ namespace jstd
         if (fd == -1)
         {
             if (errno == EACCES)
-                throw_except<sequrity_exception>(std::strerror(errno));
+                throw_except<seсurity_exception>(std::strerror(errno));
             throw_except<io_exception>(std::strerror(errno));
         }
     
@@ -630,7 +619,7 @@ namespace tc
     static void throw_error() {
         DWORD lastErr = GetLastError();
         assert(lastErr != ERROR_SUCCESS);
-        if (lastErr == ERROR_ACCESS_DENIED) throw_except<sequrity_exception>(system::error_string((int) lastErr));
+        if (lastErr == ERROR_ACCESS_DENIED) throw_except<security_exception>(system::error_string((int) lastErr));
         else                                throw_except<io_exception>(system::error_string((int) lastErr));
     }
     
@@ -928,7 +917,7 @@ namespace tc
         return true;
     }
 
-    FILE* fs::open(const char* path, const char* mark) {
+    expected<FILE*, error_code> fs::open(const char* path, const char* mark) {
         const std::size_t MARK_BUF_SIZE = 8;
 
         wchar_t wbuf_path[io::constants::MAX_LENGTH_PATH];
@@ -939,13 +928,24 @@ namespace tc
 
         FILE* handle = _wfopen(wbuf_path, wbuf_mark);
         
-        if (handle == nullptr)
+        if (!handle)
         {
-            if (errno == EACCES) throw_except<sequrity_exception>(strerror(errno));
-            else                 throw_except<io_exception>(strerror(errno));
+            return unexpected(error_code(errno, generic_category()));
         }
         
         return handle;
+    }
+
+    error_code fs::close(FILE* handle) {
+        if (fclose(handle) != 0)
+            return error_code(errno, generic_category());
+        return error_code();
+    }
+
+    error_code fs::flush(FILE* handle) {
+        if (fflush(handle) != 0)
+            return error_code(errno, generic_category());
+        return error_code();
     }
 
     int fs::open_fd(const char* path, int oflags, int pmode) {
@@ -957,7 +957,7 @@ namespace tc
         if (fd == -1)
         {
             if (errno == EACCES)
-                throw_except<sequrity_exception>(std::strerror(errno));
+                throw_except<security_exception>(std::strerror(errno));
             throw_except<io_exception>(std::strerror(errno));
         }
     

@@ -54,8 +54,8 @@ public:
                         D E C R E M E N T
     ###########################################################*/
 
-    std::size_t dec_weak() {return --m_weak;}
     std::size_t inc_weak() {return ++m_weak;}
+    std::size_t dec_weak() {return --m_weak;}
 
     /*###########################################################
                         G E T T E R S

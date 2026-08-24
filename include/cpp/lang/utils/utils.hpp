@@ -221,8 +221,203 @@ namespace internal
             v = bswap<T>(v);
         std::memcpy(ptr, &v, sizeof(T));
     }
+
+namespace internal
+{
+    /**
+     * Recursive template for writing a number in little-endian format.
+     * 
+     * @tparam T
+     *      Type of the number to write (must be integral).
+     * 
+     * @tparam INDEX
+     *      Current byte index for writing (starts with sizeof(T)).
+     * 
+     * This template recursively writes the bytes of the number into the buffer,
+     * starting from the most significant byte down to the least significant byte,
+     * which corresponds to little-endian order.
+     */
+    template<typename T, std::size_t INDEX = sizeof(T)>
+    struct write_le
+    {
+        typedef typename make_unsigned<T>::type Tunsigned;
+        static void write(char buf[], T x) {
+            buf[INDEX - 1] = static_cast<char>((static_cast<Tunsigned>(x) >> ((INDEX - 1) * CHAR_BIT)) & ~(unsigned char) 0);
+            write_le<T, INDEX - 1>::write(buf, x);
+        }
+    };
+    
+    /**
+     * Base case specialization for write_le recursion.
+     * 
+     * @tparam T
+     *      Type of the number (unused in the base case).
+     * 
+     * Terminates the recursive byte writing process when INDEX reaches 0.
+     */
+    template<typename T>
+    struct write_le<T, 0>{
+        static void write(char buf[], T x) {}
+    };
+    
+    /**
+     * Recursive template for reading a number in little-endian format.
+     * 
+     * @tparam T
+     *      Type of the number to read (must be integral).
+     * 
+     * @tparam INDEX
+     *      Current byte index for reading (starts with sizeof(T)).
+     * 
+     * This template recursively reads the bytes from the buffer and reconstructs
+     * the number in little-endian order.
+     */
+    template<typename T, std::size_t INDEX = sizeof(T)>
+    struct read_le
+    {
+        typedef typename make_unsigned<T>::type Tunsigned;
+        static T read(char buf[]) {
+            Tunsigned x = static_cast<Tunsigned>( static_cast<unsigned char>(buf[INDEX - 1]) ) << ((INDEX - 1) * CHAR_BIT);
+            return static_cast<T>(x | read_le<T, INDEX - 1>::read(buf));
+        }
+    };
+    
+    /**
+     * Base case specialization for read_le recursion.
+     * 
+     * @tparam T
+     *      Type of the number (unused in the base case).
+     * 
+     * Terminates the recursive byte reading process when INDEX reaches 0.
+     */
+    template<typename T>
+    struct read_le<T, 0>{
+        static T read(char buf[]) {return 0;}
+    };
 }
 
-}
+
+    /**
+     * Writes an integral value to a buffer in little-endian format.
+     * 
+     * @tparam T
+     *      Type of the value to write (must be integral).
+     * 
+     * @tparam SZ
+     *      Size of the type T (defaults to sizeof(T)).
+     * 
+     * @param buf
+     *      Pointer to the output buffer.
+     * 
+     * @param x
+     *      Value to write.
+     */
+    template<typename T, std::size_t SZ = sizeof(T)>
+    void write_le(char buf[], T x) {
+        internal::write_le<T>::write(buf, x);
+    }
+
+    /**
+     * Specialization for writing float values in little-endian format.
+     * 
+     * Converts the float to its bit representation using type punning via memcpy,
+     * then writes the bit pattern as an integral type in little-endian order.
+     * 
+     * @param buf
+     *      Pointer to the output buffer.
+     * 
+     * @param x
+     *      Float value to write.
+     */
+    template<>
+    inline void write_le<float, sizeof(float)>(char buf[], float x) {
+        uint_float_bits bits;
+        std::memcpy(&bits, &x, sizeof(x));
+        internal::write_le<uint_float_bits>::write(buf, bits);
+    }
+
+    /**
+     * Specialization for writing double values in little-endian format.
+     * 
+     * Converts the double to its bit representation using type punning via memcpy,
+     * then writes the bit pattern as an integral type in little-endian order.
+     * 
+     * @param buf
+     *      Pointer to the output buffer.
+     * 
+     * @param x
+     *      Double value to write.
+     */
+    template<>
+    inline void write_le<double, sizeof(double)>(char buf[], double x) {
+        uint_double_bits bits;
+        std::memcpy(&bits, &x, sizeof(x));
+        internal::write_le<uint_double_bits>::write(buf, bits);
+    }
+
+    /**
+     * Reads an integral value from a buffer in little-endian format.
+     * 
+     * @tparam T
+     *      Type of the value to read (must be integral).
+     * 
+     * @tparam SZ
+     *      Size of the type T (defaults to sizeof(T)).
+     * 
+     * @param buf
+     *      Pointer to the input buffer.
+     * 
+     * @return T
+     *      The reconstructed value.
+     */
+    template<typename T, std::size_t SZ = sizeof(T)>
+    T read_le(char buf[]) {
+        return internal::read_le<T>::read(buf);
+    }
+
+    /**
+     * Specialization for reading float values from little-endian format.
+     * 
+     * Reads the bit pattern as an integral type from the buffer in little-endian order,
+     * then reconstructs the float value using type punning via memcpy.
+     * 
+     * @param buf
+     *      Pointer to the input buffer.
+     * 
+     * @return
+     *      float The reconstructed float value.
+     */
+    template<>
+    inline float read_le<float, sizeof(float)>(char buf[]) {
+        static_assert(sizeof(uint_float_bits) == sizeof(float), "sizeof(uint_flaot_bits) != sizeof(float)");
+        uint_float_bits bits = internal::read_le<uint_float_bits>::read(buf);
+        float x;
+        std::memcpy(&x, &bits, sizeof(x));
+        return x;
+    }
+
+    /**
+     * Specialization for reading double values from little-endian format.
+     * 
+     * Reads the bit pattern as an integral type from the buffer in little-endian order,
+     * then reconstructs the double value using type punning via memcpy.
+     * 
+     * @param buf
+     *      Pointer to the input buffer.
+     * 
+     * @return
+     *      double The reconstructed double value.
+     */
+    template<>
+    inline double read_le<double, sizeof(double)>(char buf[]) {
+        static_assert(sizeof(uint_double_bits) == sizeof(double), "sizeof(uint_double_bits) != sizeof(double)");
+        uint_double_bits bits = internal::read_le<uint_double_bits>::read(buf);
+        double x;
+        std::memcpy(&x, &bits, sizeof(x));
+        return x;
+    }
+
+} //namespace internal
+} //namespace tc
 
 #endif//_ALLOCATORS_UTILS_H_

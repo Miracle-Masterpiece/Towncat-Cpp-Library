@@ -88,7 +88,7 @@ public:
      * @return 
      *      Длина файла.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Eсли доступ к файлу запрещён.
      */
     std::uintmax_t length() const;
@@ -99,7 +99,7 @@ public:
      * @return 
      *      Значение последнего изменения в миллисекундах.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Eсли доступ к файлу запрещён.
      */
     timepoint last_modified() const;
@@ -110,7 +110,7 @@ public:
      * @return 
      *      true - если операция произошла успешно, иначе false.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Eсли доступ к файлу запрещён.
      */
     bool set_last_modified(uint64_t ms);
@@ -131,7 +131,7 @@ public:
      * @return 
      *      true - если файл создался, false - если файл уже существует.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Eсли доступ к файлу запрещён.
      * 
      * @throw 
@@ -145,7 +145,7 @@ public:
      * @return 
      *      true - если директория создана, иначе false.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Eсли доступ к файлу запрещён.
      */
     bool mkdir();
@@ -156,7 +156,7 @@ public:
      * @return 
      *      true - если директория создана вместе со всеми поддиректориями, иначе false.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Eсли доступ к файлу запрещён.
      */
     bool mkdirs();
@@ -167,7 +167,7 @@ public:
      * @return 
      *      true - если файл или директория успешно удалены, иначе false.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Eсли доступ к файлу запрещён.
      */
     bool remove();
@@ -184,7 +184,7 @@ public:
      * @return 
      *      true - если файл успешно был переименован, иначе false.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Eсли доступ к файлу запрещён.
      */
     bool rename_to(const char* new_name);
@@ -195,7 +195,7 @@ public:
      * @return 
      *      true - если, файл может быть выполнен, иначе false.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Eсли доступ к файлу запрещён.
      */
     bool can_execute() const;
@@ -206,7 +206,7 @@ public:
      * @return true 
      *      Eсли, файл может быть прочтён, иначе false.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Eсли доступ к файлу запрещён.
      */
     bool can_read() const;
@@ -217,7 +217,7 @@ public:
      * @return 
      *      true - если, в файл может быть выполнено запись, иначе false.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Eсли доступ к файлу запрещён.
      */
     bool can_write() const;
@@ -231,7 +231,7 @@ public:
      * @return 
      *      true - если операция произошла успешно, иначе false.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Если доступ к файлу запрещён.
      */
     bool set_executable(bool on_off);
@@ -245,7 +245,7 @@ public:
      * @return 
      *      true - если операция произошла успешно, иначе false.
      * 
-     * @throw sequrity_exception 
+     * @throw seсurity_exception 
      *      Если доступ к файлу запрещён.
      */
     bool set_writable(bool on_off);
@@ -260,7 +260,7 @@ public:
      *      true - если операция произошла успешно, иначе false.
      * 
      * @throw 
-     *      sequrity_exception - если доступ к файлу запрещён.
+     *      seсurity_exception - если доступ к файлу запрещён.
      */
     bool set_readable(bool on_off);
 
@@ -316,7 +316,7 @@ public:
      * 
      * @return объект файла описывающий абсолютный путь к файлу.
      * 
-     * @throw sequrity_exception - если доступ к файлу запрещён.
+     * @throw seсurity_exception - если доступ к файлу запрещён.
      */
     static file make_absolute(const char* format, ...);
 

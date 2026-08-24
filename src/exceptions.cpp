@@ -4,7 +4,6 @@
 namespace tc 
 {
 
-
     throwable::throwable() noexcept : m_calltrace() {
         _cause[0] = 0;
     }
@@ -28,7 +27,8 @@ namespace tc
     }
     
     throwable& throwable::operator= (const throwable& t) noexcept {
-        if (&t != this) {
+        if (&t != this)
+        {
             m_calltrace = t.m_calltrace;
             std::memcpy(_cause, t._cause, sizeof(_cause));
         }
@@ -36,7 +36,8 @@ namespace tc
     }
     
     throwable& throwable::operator= (throwable&& t) noexcept {
-        if (&t != this) {
+        if (&t != this)
+        {
             m_calltrace = std::move(t.m_calltrace);
             std::memcpy(_cause, t._cause, sizeof(_cause));
         }
@@ -63,33 +64,16 @@ namespace tc
         m_calltrace = std::move(calltrace);
     }
 
-    int throwable::to_string(char buf[], std::size_t bufsize) const noexcept {
-        return snprintf(buf, bufsize, "%s", _cause);
-    }
-
 #define TEMPLATE__EXCEPT_CLASS_IMPL(clazz_name, super_clazz)\
     clazz_name::clazz_name() noexcept : super_clazz() {}\
     clazz_name::clazz_name(const char* cause) noexcept : super_clazz(cause) {}\
-    clazz_name::clazz_name(const clazz_name& e) noexcept : super_clazz(e) {}\
-    clazz_name::clazz_name(clazz_name&& e) noexcept : super_clazz(std::move(e)) {}\
-    clazz_name& clazz_name::operator=(const clazz_name& e) noexcept {\
-        if (&e != this)\
-            super_clazz::operator=(e);\
-        return *this;\
-    }\
-    clazz_name& clazz_name::operator=(clazz_name&& e) noexcept {\
-        if (&e != this)\
-            super_clazz::operator=(std::move(e));\
-        return *this;\
-    }\
-    clazz_name::~clazz_name() noexcept {}\
                    
 TEMPLATE__EXCEPT_CLASS_IMPL(error,                               throwable)
 TEMPLATE__EXCEPT_CLASS_IMPL(out_of_memory_error,                 error)
 TEMPLATE__EXCEPT_CLASS_IMPL(exception,                           throwable)
 TEMPLATE__EXCEPT_CLASS_IMPL(runtime_exception,                   exception)
 TEMPLATE__EXCEPT_CLASS_IMPL(null_pointer_exception,              runtime_exception)
-TEMPLATE__EXCEPT_CLASS_IMPL(sequrity_exception,                  runtime_exception)
+TEMPLATE__EXCEPT_CLASS_IMPL(security_exception,                  runtime_exception)
 TEMPLATE__EXCEPT_CLASS_IMPL(interrupted_exception,               exception)
 
 /**

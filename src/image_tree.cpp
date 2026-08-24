@@ -56,7 +56,7 @@ namespace texturing
     }
 
     bool node::is_leaf() const {
-        return m_left == nullptr && m_right == nullptr;
+        return !m_left && !m_right;
     }
 
     node* node::put_image(int w, int h, std::size_t imageID) {
@@ -83,21 +83,22 @@ namespace texturing
 			return this;
 		}
 		
-        unique_ptr<node> left, right;
+        polymorph::unique_ptr<node> left, right;
         
-        if (m_rect.w - w > m_rect.h - h){	//Если высота больше ширины, то разбиваем по x
-            left  = make_unique<node>(node({m_rect.x, 		m_rect.y, 		w, 				m_rect.h},      m_allocator), m_allocator);
-            right = make_unique<node>(node({m_rect.x + w, 	m_rect.y, 		m_rect.w - w, 	m_rect.h},      m_allocator), m_allocator);
+        if (m_rect.w - w > m_rect.h - h) //Если высота больше ширины, то разбиваем по x
+        {
+            left    = polymorph::allocate_unique<node>(m_allocator, node({m_rect.x, m_rect.y, w, m_rect.h}, m_allocator));
+            right   = polymorph::allocate_unique<node>(m_allocator, node({m_rect.x + w, m_rect.y, m_rect.w - w, m_rect.h}, m_allocator));
 		}
-        
-        else {								//Иначе по y
-            left  = make_unique<node>(node({m_rect.x, 		m_rect.y, 		m_rect.w, 		h},             m_allocator), m_allocator);
-            right = make_unique<node>(node({m_rect.x, 		m_rect.y + h,	m_rect.w, 		m_rect.h - h},  m_allocator), m_allocator);
+        else
+        {								//Иначе по y
+            left    = polymorph::allocate_unique<node>(m_allocator, node({m_rect.x, m_rect.y,m_rect.w, h}, m_allocator));
+            right   = polymorph::allocate_unique<node>(m_allocator, node({m_rect.x, m_rect.y + h, m_rect.w, m_rect.h - h}, m_allocator));
 		}
         
         m_left  = std::move(left);
         m_right = std::move(right);
-
+        
 		return m_left->put_image(w, h, imageID);
     }
 

@@ -6,6 +6,8 @@
 #include <cpp/lang/io/file_filter.hpp>
 #include <cpp/lang/types.hpp>
 #include <allocators/allocator.hpp>
+#include <cpp/lang/errors.hpp>
+#include <cpp/lang/expected.hpp>
 #include <cstdint>
 #include <cstdio>
 
@@ -206,19 +208,19 @@ public:
     /**
      * 
      */
-    static FILE*
+    static expected<FILE*, error_code>
         open(const char* path, const char* mark);
     
     /**
      * 
      */
-    static void
+    static error_code
         close(FILE*);
     
     /**
      * 
      */
-    static void
+    static error_code
         flush(FILE*);
 
     /**

@@ -11,17 +11,17 @@ namespace math
     /**
      * 
      */
-    static const double PI          = 3.141592653589793;
+    constexpr double PI = 3.141592653589793;
     
     /**
      * 
      */
-    static const double HALF_PI     = PI / 2.0;
+    constexpr double HALF_PI  = PI / 2.0;
 
     /**
      * 
      */
-    static const double E           = 2.718281828459045;
+    constexpr double E = 2.718281828459045;
 
     /**
      * 

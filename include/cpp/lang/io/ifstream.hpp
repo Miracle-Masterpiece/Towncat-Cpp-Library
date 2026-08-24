@@ -5,146 +5,130 @@
 #include <cpp/lang/io/file.hpp>
 #include <cstdio>
 
-namespace tc {
+namespace tc
+{
 
 /**
- * Класс предназначен для чтения из файла.
+ * File input stream class.
  * 
- * @remark
- *      Копирование и присваивание запрещены, чтобы избежать неожиданных побочных эффектов.  
+ * Provides file-based input stream functionality using C standard library FILE* handles.
+ * Inherits from istream and implements file reading and closing operations.
  */
 class ifstream : public istream {
-    //Указатель на файл.
     FILE*   m_handle;
-    
-    //Любой ценой это значение должно указывать, сколько байт можно считать из файла.
-    //Просто, чёрт возьми, убейте меня...
-    std::uintmax_t m_available;     //сколько байт -доступно- для чтения.
-
 public:
+    using istream::close;
+
     /**
-     * Создаёт пустой файловый поток.
+     * Default constructor.
+     * 
+     * Constructs an ifstream object without opening a file.
+     * The stream is not associated with any file.
      */
     ifstream();
     
     /**
-     * Создаёт поток по указанному пути.
+     * Constructor from file path (C-style string).
      * 
      * @param path
-     *      Путь к файлу.
-     * 
-     * @throws file_not_found_exception
-     *      Если файла не существует.
+     *      Path to the file to open.
      * 
      * @throws io_exception
-     *      Если произошла ошибка ввода/вывода.
+     *      if the file cannot be opened.
      * 
-     * @throws sequrity_exception
-     *      Если чтение из файла запрещено.
+     * @throws security_exception
+     *      if permission is denied.
      */
     ifstream(const char* path);
     
     /**
-     * Создаёт поток по объекту файла.
+     * Constructor from file path (C++ string).
      * 
-     * @param file  
-     *      Объект, описыващий файл.
+     * @param path
+     *      Path to the file to open.
      * 
-     * @throws file_not_found_exception 
-     *      Если файла не существует.
+     * @throws io_exception
+     *      if the file cannot be opened.
      * 
-     * @throws io_exception 
-     *      Если произошла ошибка ввода/вывода.
+     * @throws security_exception
+     *      if permission is denied.
+     */
+    ifstream(const string& path);
+    
+    /**
+     * Constructor from file object.
      * 
-     * @throws sequrity_exception 
-     *      Если чтение из файла запрещено.
+     * @param file
+     *      File object containing the path to open.
+     * 
+     * @throws io_exception
+     *      if the file cannot be opened.
+     * 
+     * @throws security_exception
+     *      if permission is denied.
      */
     ifstream(const file& file);
     
-    //Перемещение.
+    /**
+     * Move constructor.
+     * 
+     * Transfers ownership of the file handle from another ifstream object.
+     * The source object is left in a valid but unspecified state (handle set to nullptr).
+     * 
+     * @param stream
+     *      The ifstream object to move from.
+     */
     ifstream(ifstream&&);
     
     /**
-     * Перемещение.
+     * Move assignment operator.
      * 
-     * @throws io_exception 
-     *          Если произошла ошибка ввода/вывода.
+     * Transfers ownership of the file handle from another ifstream object.
+     * If this object currently holds an open file, it is closed first.
+     * Self-assignment is handled correctly.
+     * 
+     * @param stream
+     *      The ifstream object to move from.
+     * 
+     * @return
+     *      Reference to this object.
      */
     ifstream& operator= (ifstream&&);
     
     /**
-     * @note
-     *      Для освобождения ресурсов должен явно вызываться this::close()
+     * Destructor.
+     * 
+     * Automatically closes the file handle if it is open.
+     * Any errors during closing are ignored.
      */
     ~ifstream();
     
     /**
-     * Читает один байт из потока.
-     * 
-     * @return 
-     *      Значение прочитанного байта (0–255) или -1, если достигнут конец потока.
-     * 
-     * @throws io_exception
-     *      Если произошла ошибка ввода/вывода.
-     *      Если поток не был открыт.
-     */
-    int read() override;
-    
-    /**
-     * Читает sz байт из потока в передаваемый буфер.
+     * Reads up to sz bytes from the file into the buffer.
      * 
      * @param buf
-     *      Буфер в который будут записаны данные.
+     *      Pointer to the buffer where data will be stored.
+     * @param sz Maximum number of bytes to read.
      * 
-     * @param sz
-     *      Сколько байт нужно считать из потока.
+     * @return istream::eof_value() if end of file is reached,
+     *         otherwise the actual number of bytes read (> 0).
      * 
-     * @return
-     *      Фактическое количество считанных байт.
-     * 
-     * @throws io_exception 
-     *      Если произошла ошибка ввода/вывода.
-     *      Если поток не был открыт.
+     * @throws io_exception
+     *      An I/O error occurs during reading.
      */
     std::size_t read(char buf[], std::size_t sz) override;
     
     /**
-     * Пропускает n байт из потока.
+     * Closes the file stream without throwing exceptions.
      * 
-     * @param n
-     *      Сколько байт нужно пропустить.
+     * If the file handle is already nullptr, this function does nothing.
+     * Closes the file and sets the handle to nullptr.
+     * All errors are reported through the err parameter.
      * 
-     * @return
-     *      Фактическое кол-во пропущенных байт.
-     * 
-     * @throws io_exception
-     *      Если произошла ошибка ввода/вывода.
-     *      Если поток не был открыт.
+     * @param err
+     *      Reference to an error_code object that will receive the error status.
      */
-    std::size_t skip(std::size_t n = 1) override;
-    
-    /**
-     * Возвращает количество доступных для чтения байт.
-     * 
-     * Позволяет узнать, сколько данных можно прочитать из этого потока.
-     * 
-     * @return 
-     *      Количество доступных байт в потоке.
-     * 
-     * @throws io_exception
-     *      Если произошла ошибка ввода/вывода
-     *      Если поток не был открыт.
-     */
-    std::uintmax_t available() const override;
-    
-    /**
-     * Закрывает поток файла.
-     * 
-     * @throws io_exception
-     *      Если произошла ошибка ввода/вывода.
-     *      Если поток не был открыт.
-     */                     
-    void close() override;
+    void close(error_code& err) override;
 };
 
 }

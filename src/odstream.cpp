@@ -1,63 +1,67 @@
 #include <cpp/lang/io/odstream.hpp>
 #include <cpp/lang/exceptions.hpp>
-#include <iostream>
 
-namespace tc {
+namespace tc
+{
 
-    odstream::odstream() : _out(nullptr) {
+    odstream::odstream() : m_out(nullptr) {
 
     }
 
-    odstream::odstream(ostream* out) : _out(out) {
-        if (out == nullptr)
-            throw_except<null_pointer_exception>("stream is null!");
+    odstream::odstream(ostream* out) : m_out(out) {
+        JSTD_DEBUG_CODE
+        (
+            if (!out)
+                throw_except<io_exception>("stream is null");
+        )
     }
 
-    odstream::odstream(odstream&& stream) : _out(stream._out) {
-        stream._out = nullptr;
+    odstream::odstream(odstream&& stream) : m_out(stream.m_out) {
+        stream.m_out = nullptr;
     }
     
-    odstream& odstream::operator= (odstream&& stream) {
-        if (&stream != this) {
-            if (_out != nullptr)
-                close();
-            _out        = stream._out;
-            stream._out = nullptr;
+    odstream& odstream::operator= (odstream&& out) {
+        if (&out != this)
+        {
+            if (m_out)
+            {
+                error_code dontcare;
+                close(dontcare);
+            }
+            m_out     = out.m_out;
+            out.m_out = nullptr;
         }
         return *this;
     }
     
     odstream::~odstream() {
-
+        error_code dontcare;
+        close(dontcare);
     }
 
     void odstream::write(const char* data, std::size_t sz) {
-        JSTD_DEBUG_CODE(
-            if (_out == nullptr)
-                throw_except<io_exception>("Stream is null!");
+        JSTD_DEBUG_CODE
+        (
+            if (!m_out)
+                throw_except<io_exception>("stream is null");
         )
-        _out->write(data, sz);
+        m_out->write(data, sz);
     }
     
     void odstream::flush() {
-        JSTD_DEBUG_CODE(
-            if (_out == nullptr)
-                throw_except<io_exception>("Stream is null!");
+        JSTD_DEBUG_CODE
+        (
+            if (!m_out)
+                throw_except<io_exception>("stream is null");
         )
-        _out->flush();
+        m_out->flush();
     }
     
-    void odstream::close() {
-        JSTD_DEBUG_CODE(
-            if (_out == nullptr)
-                throw_except<io_exception>("Stream is null!");
-        )
-        try {
-            _out->close();
-            _out = nullptr;
-        } catch (...) {
-            _out = nullptr;
-            throw;
+    void odstream::close(error_code& err) {
+        if (m_out)
+        {
+            m_out->close(err);
+            m_out = nullptr;
         }
     }
 }

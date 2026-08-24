@@ -4,9 +4,6 @@
 #include <cstdio>
 #include <cwchar>
 
-#warning IOSTREAM
-#include <iostream>
-
 namespace tc
 {
     template<typename TCHAR>

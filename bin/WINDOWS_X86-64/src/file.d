@@ -12,4 +12,7 @@ bin/WINDOWS_X86-64/src/file.o: src/file.cpp include/cpp/lang/io/file.hpp \
  include/cpp/lang/utils/objects.hpp include/cpp/lang/utils/hash.hpp \
  include/cpp/lang/traits/pointer_traits.hpp include/cpp/lang/string.hpp \
  include/cpp/lang/math.hpp include/cpp/lang/io/file_filter.hpp \
- include/cpp/lang/io/constants.hpp include/internal/io/filesystem.hpp
+ include/cpp/lang/io/constants.hpp include/internal/io/filesystem.hpp \
+ include/cpp/lang/errors.hpp include/cpp/lang/expected.hpp \
+ include/cpp/lang/traits/relatoship_traits.hpp \
+ include/cpp/lang/traits/pure_traits.hpp

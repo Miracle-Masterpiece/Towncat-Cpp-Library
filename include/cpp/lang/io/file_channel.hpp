@@ -44,7 +44,8 @@ class mappedbuf : public basebuf {
     /**
      * 
      */
-    JSTD_WIN_CODE(
+    JSTD_WIN_CODE
+    (
         typedef void* win_handle_t;
         win_handle_t m_mapped_hanle;
     )
@@ -221,7 +222,7 @@ public:
      * @throws file_not_found_exception
      *      Если опция указывает на добавление в файл и файла не существует.
      * 
-     * @throws sequrity_exception
+     * @throws seсurity_exception
      *      Если доступ к файлу запрещён.
      * 
      * @throws io_exception
@@ -245,7 +246,7 @@ public:
      * @param length
      *      Новая длина файла.
      * 
-     * @throws sequrity_exception
+     * @throws seсurity_exception
      *      Если доступ к файлу запрещён.
      * 
      * @throws io_exception

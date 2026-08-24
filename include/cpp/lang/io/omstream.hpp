@@ -4,115 +4,161 @@
 #include <cpp/lang/io/ostream.hpp>
 #include <allocators/allocator.hpp>
 
-namespace tc {
+namespace tc
+{
 
 /**
- * Класс предназначен для представления байтового массива, как выходной поток в который сохраняются данные.
+ * Output stream that writes to a dynamically growing memory buffer.
  * 
- * @note
- *      Для закрытия ресурсов необходимо вызывать функцию omstream::close().
- *      Деструктор не освобождает данные! В силу требований об явной обработке ошибок.
+ * Provides an output stream interface for writing data to a memory buffer.
+ * The buffer can be either dynamically allocated and automatically resized,
+ * or provided externally by the user.
+ * 
+ * With allocator: Buffer grows automatically as needed using geometric growth
+ * Without allocator (external buffer): Fixed-size buffer, throws on overflow
  */
 class omstream : public ostream {
-    static const std::size_t INIT_BUF_SIZE = 16;
+    static constexpr std::size_t INIT_BUF_SIZE = 16;
     
-    // Может быть nullptr, тогда это означает, что this->_buffer является внешним массивом.
-    tca::allocator* _allocator;   
-    
-    // 
-    char* _buffer;
-    
-    // 
-    std::size_t _capacity;
-    
-    // 
-    std::size_t _offset;
-    
-    // 
-    void resize(std::size_t sz);
-public:
+    tca::allocator* m_allocator;   
+    char*       m_buffer;
+    std::size_t m_capacity;
+    std::size_t m_offset;
 
     /**
-     * Инициализирует класс с помощью аллокатора и начальным размером буфера.
+     * Resizes the buffer to accommodate more data.
      * 
-     * @param allocator
-     *      Аллокатор, который управляет памятью.
+     * Allocates a new buffer with sufficient capacity, copies existing data,
+     * and frees the old buffer. Uses geometric growth (1.5x) for amortized
+     * constant-time append operations.
+     * 
+     * @param sz
+     *      Additional size needed beyond current offset.
+     * 
+     * @throws out_of_memory_error
+     *      If allocation fails.
+     */
+    void resize(std::size_t sz);
+
+public:
+    
+    /**
+     * Constructor with automatic buffer allocation.
+     * 
+     * Creates a memory stream that allocates its own buffer using the
+     * provided allocator. The buffer grows automatically as needed.
      * 
      * @param init_buf_size
-     *      Начальный размер буфера.
+     *      Initial buffer size in bytes (default: 16).
      * 
-     * @remark
-     *      Буфер можно быть выделен лениво, при первом использовании.
+     * @param allocator
+     *      Allocator to use for buffer allocation (default: default allocator).
+     * 
+     * @throws out_of_memory_error
+     *      If initial buffer allocation fails.
      */
     omstream(std::size_t init_buf_size = INIT_BUF_SIZE, tca::allocator* allocator = tca::get_default_allocator());
-
+    
     /**
-     * Инициализирует класс уже существующим массивом.
+     * Constructor with external buffer (fixed size).
+     * 
+     * Creates a memory stream that uses a user-provided buffer.
+     * The buffer is fixed-size and will not grow.
+     * 
+     * Writing more than capacity bytes will throw overflow_exception.
      * 
      * @param buf
-     *      Массив, куда будут записываться данные.
+     *      Pointer to the external buffer.
      * 
      * @param capacity
-     *      Размер массива, в который будут записываться данные.
+     *      Size of the buffer in bytes.
      */
     omstream(char* buf, std::size_t capacity);
-
-    //перемещение
+    
+    /**
+     * Move constructor.
+     * 
+     * Transfers ownership of the buffer from another omstream object.
+     * The source object is left in a valid but unspecified state.
+     * 
+     * @param stream
+     *      The omstream object to move from.
+     */
     omstream(omstream&&);
-
-    //перемещение
+    
+    /**
+     * Move assignment operator.
+     * 
+     * Transfers ownership of the buffer from another omstream object.
+     * If this object currently holds a buffer, it is closed first.
+     * Self-assignment is handled correctly.
+     * 
+     * @param stream
+     *      The omstream object to move from.
+     * 
+     * @return
+     *      Reference to this object.
+     */
     omstream& operator= (omstream&&);
 
     /**
-     * Записывает один символ в поток.
+     * Destructor.
      * 
-     * @throws io_exception 
-     *          Если произошла ошибка ввода/вывода
-     * 
-     * @throws buffer_owerflow
-     *          Если для класса используется внешний массив и места в нём не хватает.
-     */
-    void write(char c) override;
-
-    /**
-     * Записывает массив байтов в поток.
-     * 
-     * @param data Указатель на массив байтов.
-     * 
-     * @throws io_exception 
-     *          Если произошла ошибка ввода/вывода
-     * 
-     * @throws buffer_owerflow
-     *          Если для класса используется внешний массив и места в нём не хватает.
-     */
-    void write(const char* data, std::size_t sz) override;
-
-    /**
-     * Ничего не делает.
-     */
-    void flush() override;
-
-    /**
-     * Если this->_buffer не является внешним массивом, то освобождает память.
-     * 
-     * @throws io_exception
-     *          Если поток не открыт.
-     */
-    void close() override;
-
-    /**
-     * @note
-     *      Для освобождения ресурсов должен явно вызываться this::close()
+     * Frees the internal buffer if it was allocated by this object.
+     * Any errors during cleanup are ignored.
      */
     ~omstream();
 
     /**
-     * Возвращает указатель на внутренний буфер.
+     * Writes data to the memory buffer.
+     * 
+     * If the buffer is owned (allocator provided), it grows automatically
+     * when more space is needed. If the buffer is external (fixed size),
+     * throws overflow_exception when capacity is exceeded.
+     * 
+     * @param data
+     *      Pointer to the data to write.
+     * 
+     * @param sz
+     *      Number of bytes to write.
+     * 
+     * @throws overflow_exception
+     *      If external buffer capacity is exceeded.
+     * 
+     * @throws out_of_memory_error
+     *      If buffer allocation fails during resize.
      */
-    const char* data() const;
+    void write(const char* data, std::size_t sz) override;
 
     /**
-     * Возвращает размер полезных данных в потоке.
+     * No-op
+     */
+    void flush() override;
+    
+    /**
+     * Closes the memory stream without throwing exceptions.
+     * 
+     * Frees the internal buffer if it was allocated by this object.
+     * All errors are reported through the err parameter.
+     * 
+     * @param err
+     *      Reference to an error_code object that will receive the error status.
+     */
+    void close(error_code& err) override;
+    
+    /**
+     * Returns a pointer to the internal buffer.
+     * 
+     * @return
+     *      Pointer to the beginning of the buffer, or nullptr if not allocated.
+     */
+    const char* data() const;
+    
+    /**
+     * Returns the current write position (number of bytes written).
+     * 
+     * @return
+     *      Current offset in bytes from the beginning of the buffer.
      */
     std::size_t offset() const;
 };

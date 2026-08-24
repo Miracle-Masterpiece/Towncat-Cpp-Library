@@ -14,4 +14,5 @@ bin/WINDOWS_X86-64/src/image.o: src/image.cpp \
  include/cpp/lang/utils/arrays.hpp include/cpp/lang/traits/sfinae.hpp \
  include/cpp/lang/traits/relatoship_traits.hpp \
  include/cpp/lang/traits/type_properties.hpp \
- include/cpp/lang/traits/pure_traits.hpp include/internal/img_utils.hpp
+ include/cpp/lang/traits/pure_traits.hpp include/cpp/lang/utils/pair.hpp \
+ include/internal/img_utils.hpp

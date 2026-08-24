@@ -1,8 +1,7 @@
-bin/WINDOWS_X86-64/src/imstream.o: src/imstream.cpp \
- include/cpp/lang/io/imstream.hpp include/cpp/lang/io/istream.hpp \
- include/cpp/lang/errors.hpp include/cpp/lang/string.hpp \
- include/cpp/lang/utils/comparator.hpp include/cpp/lang/utils/objects.hpp \
- include/cpp/lang/utils/hash.hpp \
+bin/WINDOWS_X86-64/src/io_helpers.o: src/io_helpers.cpp \
+ include/internal/io/io_helpers.hpp include/cpp/lang/errors.hpp \
+ include/cpp/lang/string.hpp include/cpp/lang/utils/comparator.hpp \
+ include/cpp/lang/utils/objects.hpp include/cpp/lang/utils/hash.hpp \
  include/cpp/lang/traits/primitive_traits.hpp \
  include/cpp/lang/traits/SFINAE.hpp \
  include/cpp/lang/traits/pointer_traits.hpp \
@@ -11,4 +10,6 @@ bin/WINDOWS_X86-64/src/imstream.o: src/imstream.cpp \
  include/cpp/lang/stacktrace/stacktrace.hpp \
  include/cpp/lang/utils/cond_compile.hpp include/allocators/allocator.hpp \
  include/allocators/base_allocator.hpp include/cpp/lang/common.hpp \
- include/cpp/lang/math.hpp
+ include/cpp/lang/math.hpp include/cpp/lang/errcode.hpp \
+ include/allocators/inline_linear_allocator.hpp \
+ include/allocators/linear_allocator.hpp

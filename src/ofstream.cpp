@@ -5,73 +5,86 @@
 #include <errno.h>
 #include <cstring>
 #include <iostream>
+#include <internal/io/io_helpers.hpp>
 
 namespace tc {
 
-    ofstream::ofstream() : _handle(nullptr) {
+    ofstream::ofstream() : m_handle(nullptr) {
 
     }
 
     
+    ofstream::ofstream(const string& path, bool append) : ofstream(path.c_str(), append) {
+    
+    }
+
     ofstream::ofstream(const char* path, bool append) : ofstream(file(path), append) {
         
     }
     
     ofstream::ofstream(const file& f, bool append) : ofstream() {    
-        _handle = filesystem::open(f.c_str(), append ? "ab" : "wb");
+        expected<FILE*, error_code> fhandle = filesystem::open(f.c_str(), append ? "ab" : "wb");
+        if (!fhandle)
+        {
+            internal::io::throw_error_code(fhandle.error());
+        }
+        m_handle = fhandle.value();
     }
 
-    ofstream::ofstream(ofstream&& stream) : _handle(stream._handle) {
-        stream._handle = nullptr;
+    ofstream::ofstream(ofstream&& stream) : m_handle(stream.m_handle) {
+        stream.m_handle = nullptr;
     }
     
-    ofstream& ofstream::operator= (ofstream&& stream) {
-        if (&stream != this) {
-            if (_handle != nullptr)
-                close();
-            _handle = stream._handle;
-            stream._handle = nullptr;
+    ofstream& ofstream::operator= (ofstream&& out) {
+        if (&out != this)
+        {
+            if (m_handle)
+            {
+                error_code dontcare;
+                close(dontcare);
+            }
+            m_handle     = out.m_handle;
+            out.m_handle = nullptr;
         }
         return *this;
     }
     
     ofstream::~ofstream() {
-
-    }
-    
-    void ofstream::write(char c) {
-        return ostream::write(c);
+        error_code dontcare;
+        close(dontcare);
     }
     
     void ofstream::write(const char* data, std::size_t sz) {
-        JSTD_DEBUG_CODE(
-            if (_handle == nullptr)
-                throw_except<io_exception>("File stream is null!");
+        JSTD_DEBUG_CODE
+        (
+            if (!m_handle)
+                throw_except<io_exception>("stream is null");
         )
-        std::size_t writed = fwrite(data, 1, sz, _handle);
+        std::size_t writed = fwrite(data, 1, sz, m_handle);
         if (writed != sz)
+        {
             throw_except<io_exception>(strerror(errno));
+        }
     }
     
     void ofstream::flush() {
-        filesystem::flush(_handle);
+        JSTD_DEBUG_CODE
+        (
+            if (!m_handle)
+                throw_except<io_exception>("stream is null");
+        )
+        error_code err = filesystem::flush(m_handle);
+        if (err)
+        {
+            internal::io::throw_error_code(err);
+        }
     }
     
-    void ofstream::close() {
-        if (_handle != nullptr)
+    void ofstream::close(error_code& err) {
+        if (m_handle)
 		{
-            try {
-                flush();
-                filesystem::close(_handle);
-            } catch (const io_exception& e) {
-                _handle     = nullptr;
-                throw e;
-            }
-            _handle     = nullptr;
-        }
-		else
-		{
-            throw_except<io_exception>("Stream already closed!");
+            err      = filesystem::close(m_handle);
+            m_handle = nullptr;
         }
     }    
 }

@@ -7,68 +7,96 @@
 #include <cpp/lang/traits/relatoship_traits.hpp>
 #include <cpp/lang/traits/type_properties.hpp>
 #include <cpp/lang/traits/pure_traits.hpp>
+#include <cpp/lang/utils/pair.hpp>
 #include <typeinfo>
 
 namespace tc
 {
 
 template<typename T>
+struct default_deleter {
+    
+    default_deleter() {}
+
+    template<typename E, typename = typename enable_if<is_cv_castable<E, T>::value && is_base_of<E, T>::value>::type>
+    default_deleter(const default_deleter<E>& a) {}
+    
+    void operator()(T* p) const {
+        p->~T();
+        tca::get_default_allocator()->deallocate((void*) p);
+    }
+};
+
+template<typename T>
+struct alloc_deleter {
+    tca::allocator* m_alloc;
+
+    alloc_deleter(tca::allocator* alloc) : m_alloc(alloc) {}
+    
+    alloc_deleter() : m_alloc(nullptr) {}
+
+    template<typename E, typename = typename enable_if<is_cv_castable<E, T>::value && is_base_of<E, T>::value>::type>
+    alloc_deleter(const alloc_deleter<E>& a) : m_alloc(a.m_alloc) {}
+
+    void operator()(T* p) const {
+        p->~T();
+        m_alloc->deallocate(static_cast<void*>(p));
+    }
+};
+
+
+template<typename, typename>
+class unique_ptr;
+
+namespace polymorph
+{
+    template<typename T, typename... Args>
+    tc::unique_ptr<T, alloc_deleter<T>> allocate_unique(tca::allocator*, Args&&...);
+}
+
+template<typename T, typename DELETER = default_deleter<T>>
 class unique_ptr {
 
     /**
      * 
      */
-    template<typename U>
+    template<typename U, typename D>
     friend class unique_ptr;
    
-     /**
+    /**
      * 
      */
-    template<typename A, typename B, typename>
-    friend unique_ptr<A> static_pointer_cast(unique_ptr<B>&&);
+    template<typename A, typename D>
+    friend tc::unique_ptr<A, D> wrap_unique(T*, D);
     
     /**
      * 
      */
-    template<typename A, typename B, typename>
-    friend unique_ptr<A> const_pointer_cast(unique_ptr<B>&&);
-    
-    /**
-     * 
-     */
-    template<typename A, typename B, typename>
-    friend unique_ptr<A> dynamic_pointer_cast(unique_ptr<B>&&);
+    template<typename A, typename... Args>
+    friend tc::unique_ptr<A> make_unique(Args&&...);
 
     /**
      * 
      */
-    template<typename A, typename B, typename>
-    friend unique_ptr<A> reinterpret_pointer_cast(unique_ptr<B>&&);
+    template<typename A, typename... Args>
+    friend tc::unique_ptr<A, alloc_deleter<A>> polymorph::allocate_unique(tca::allocator*, Args&&...);
 
     /**
+     * first  - pointer
+     * second - deleter
      * 
      */
-    tca::allocator* m_allocator;
-    
-    /**
-     * 
-     */
-    T* m_object;
-
-    /**
-     * 
-     */
-    unique_ptr(T* p, tca::allocator* allocator);
+    pair<T*, DELETER> m_pair;
 
     /**
      * deleted
      */
-    unique_ptr(const unique_ptr<T>&) = delete;
+    unique_ptr(const unique_ptr<T, DELETER>&) = delete;
     
     /**
      * deleted
      */
-    unique_ptr<T>& operator= (const unique_ptr<T>&) = delete;
+    unique_ptr<T, DELETER>& operator= (const unique_ptr<T, DELETER>&) = delete;
 
     /**
      * 
@@ -80,34 +108,28 @@ class unique_ptr {
      */
     void non_null_or_except() const;
 
+    /**
+     * 
+     */
+    unique_ptr(T* obj, DELETER deleter = DELETER());
+
 public:
     /**
      * 
      */
     unique_ptr();
-
-    /**
-     * @deprecated
-     */
-    template<typename T_, typename = typename enable_if<
-                                                is_same<
-                                                        typename remove_cv<T>::type, 
-                                                        typename remove_cv<T_>::type
-                                                >::value
-                                            >::type>
-    unique_ptr(T_&& obj, tca::allocator* allocator = tca::get_default_allocator());
-
-    /**
-     * 
-     */
-    template<typename E, typename = typename enable_if<is_base_of<E, T>::value && is_cv_castable<E, T>::value>::type>
-    unique_ptr(unique_ptr<E>&&);
     
     /**
      * 
      */
+    template<typename E, typename EDELETER, typename = typename enable_if<is_base_of<E, T>::value && is_cv_castable<E, T>::value>::type>
+    unique_ptr(unique_ptr<E, EDELETER>&&);
+
+    /**
+     * 
+     */
     template<typename E, typename = typename enable_if<is_base_of<E, T>::value>::type>
-    unique_ptr<T>& operator= (unique_ptr<E>&&);
+    unique_ptr<T, DELETER>& operator= (unique_ptr<E, DELETER>&&);
 
     /**
      * 
@@ -133,17 +155,7 @@ public:
      * 
      */
     T& operator*() const;
-
-    /**
-     * 
-     */
-    tca::allocator* get_allocator() const;
-
-    /**
-     * 
-     */
-    operator T*() const;
-
+    
     /**
      * 
      */
@@ -153,194 +165,155 @@ public:
      * 
      */
     bool operator!= (const unique_ptr<T>&) const;
+
+    /**
+     * 
+     */
+    T* release();
 };
 
-    template<typename T>
-    unique_ptr<T>::unique_ptr() : m_allocator(nullptr), m_object(nullptr) {
+    template<typename T, typename DELETER>
+    unique_ptr<T, DELETER>::unique_ptr() : m_pair() {
 
     }
 
-    template<typename T>
-    unique_ptr<T>::unique_ptr(T* p, tca::allocator* allocator) :
-    m_allocator(allocator),
-    m_object(p) {
+    template<typename T, typename DELETER>
+    unique_ptr<T, DELETER>::unique_ptr(T* p, DELETER deleter) : m_pair(p, std::move(deleter)) {
 
     }
 
-    template<typename T>
-    template<typename T_, typename>
-    unique_ptr<T>::unique_ptr(T_&& obj, tca::allocator* allocator) : m_allocator(allocator) {
-        void* mem = m_allocator->allocate_align(sizeof(T), alignof(T));
-        if (!mem)
-            throw_except<out_of_memory_error>("Out of memory!");
-        try {
-            m_object = new(mem) T(std::forward<T_>(obj));
-        } catch (...) {
-            m_allocator->deallocate(mem);
-            throw;
+    template<typename T, typename DELETER>
+    void unique_ptr<T, DELETER>::cleanup() {
+        if (get())
+        {
+            m_pair.second()(get());
         }
     }
 
-    template<typename T>
-    void unique_ptr<T>::cleanup() {
-        if (m_allocator != nullptr && m_object != nullptr) {
-            m_object->~T();
-            m_allocator->deallocate((void*) m_object);
-        }
-    }
-
-    template<typename T>
-    unique_ptr<T>::~unique_ptr() {
+    template<typename T, typename DELETER>
+    unique_ptr<T, DELETER>::~unique_ptr() {
         cleanup();
     }
 
-    template<typename T>
-    T* unique_ptr<T>::get() const {
-        return m_object;
+    template<typename T, typename DELETER>
+    T* unique_ptr<T, DELETER>::release() {
+        T* ptr = get();
+        m_pair.first() = nullptr;
+        return ptr;
     }
 
-    template<typename T>
-    unique_ptr<T>::operator bool() const {
-        return m_object != nullptr;
-    }
-    
-    template<typename T>
-    unique_ptr<T>::operator T*() const {
-        return m_object;
+    template<typename T, typename DELETER>
+    T* unique_ptr<T, DELETER>::get() const {
+        return m_pair.first();
     }
 
-    template<typename T>
-    template<typename E, typename>
-    unique_ptr<T>::unique_ptr(unique_ptr<E>&& p) : 
-    m_allocator(p.m_allocator), 
-    m_object(static_cast<T*>(p.m_object)) {
-        p.m_allocator   = nullptr;
-        p.m_object      = nullptr;
+    template<typename T, typename DELETER>
+    unique_ptr<T, DELETER>::operator bool() const {
+        return get() != nullptr;
     }
     
-    template<typename T>
+    template<typename T, typename DELETER>
+    template<typename E, typename EDELETER, typename>
+    unique_ptr<T, DELETER>::unique_ptr(unique_ptr<E, EDELETER>&& p) : m_pair(p.m_pair.first(), std::move(p.m_pair.second())) {
+        p.m_pair.first() = nullptr;
+    }
+    
+    template<typename T, typename DELETER>
     template<typename E, typename>
-    unique_ptr<T>& unique_ptr<T>::operator= (unique_ptr<E>&& p) {
+    unique_ptr<T, DELETER>& unique_ptr<T, DELETER>::operator= (unique_ptr<E, DELETER>&& p) {
         if (&p != this) {
             cleanup();
-            m_allocator = p.m_allocator;
-            m_object    = static_cast<T*>(p.m_object);
-            p.m_allocator   = nullptr;
-            p.m_object      = nullptr;
+            m_pair = std::move(p.m_pair);
+            p.m_pair.first() = nullptr;
         }
         return *this;
     }
-
-    template<typename T>
-    void unique_ptr<T>::non_null_or_except() const {
+    
+    template<typename T, typename DELETER>
+    void unique_ptr<T, DELETER>::non_null_or_except() const {
         JSTD_DEBUG_CODE(
-            if (!m_object)
+            if (!get())
                 throw_except<null_pointer_exception>("m_object == null");
         );
     }
 
-    template<typename T>
-    T* unique_ptr<T>::operator->() const {
+    template<typename T, typename DELETER>
+    T* unique_ptr<T, DELETER>::operator->() const {
         JSTD_DEBUG_CODE(non_null_or_except());
-        return m_object;
+        return get();
     }
 
-    template<typename T>
-    T& unique_ptr<T>::operator*() const {
+    template<typename T, typename DELETER>
+    T& unique_ptr<T, DELETER>::operator*() const {
         JSTD_DEBUG_CODE(non_null_or_except());
-        return *m_object;
+        return *get();
     }
 
-    template<typename T>
-    tca::allocator* unique_ptr<T>::get_allocator() const {
-        return m_allocator;
+    template<typename T, typename DELETER>
+    bool unique_ptr<T, DELETER>::operator== (const unique_ptr<T>& p) const {
+        return get() == p.get();
     }
 
-    template<typename T>
-    bool unique_ptr<T>::operator== (const unique_ptr<T>& p) const {
-        return m_object == p.m_object;
+    template<typename T, typename DELETER>
+    bool unique_ptr<T, DELETER>::operator!= (const unique_ptr<T>& p) const {
+        return get() != p.get();
     }
 
-    template<typename T>
-    bool unique_ptr<T>::operator!= (const unique_ptr<T>& p) const {
-        return m_object != p.m_object;
-    }
-
-    template<typename A, typename B, typename = typename enable_if<is_related<B, A>::value && is_cv_castable<A, B>::value>::type>
-    unique_ptr<A> static_pointer_cast(unique_ptr<B>&& a) {
-        unique_ptr<A> result(static_cast<A*>(a.m_object), a.m_allocator);
-        a.m_allocator   = nullptr;
-        a.m_object      = nullptr;
-        return result;
-    }
-
-    template<typename A, typename B, typename = typename enable_if<
-                                                                    is_same<
-                                                                            typename remove_cv<A>::type, 
-                                                                            typename remove_cv<B>::type
-                                                                        >::value
-                                                                    >::type>
-    unique_ptr<A> const_pointer_cast(unique_ptr<B>&& a) {
-        unique_ptr<A> result(const_cast<A*>(a.m_object), a.m_allocator);
-        a.m_allocator   = nullptr;
-        a.m_object      = nullptr;
-        return result;
-    }
-
-    template<typename A, typename B, typename = typename enable_if<is_cv_castable<B, A>::value>::type>
-    unique_ptr<A> reinterpret_pointer_cast(unique_ptr<B>&& a) {
-        unique_ptr<A> result(reinterpret_cast<A*>(a.m_object), a.m_allocator);
-        a.m_allocator   = nullptr;
-        a.m_object      = nullptr;
-        return result;
-    }
-
-    /**
-     * @throws null_pointer_exception
-     *      Если передаваемый указатель является нулевым.
-     * 
-     * @throws class_cast_exception
-     *     Если код попытался привести объект к подклассу, экземпляром которого он не является.
-     */
-    template<typename A, typename B, typename = typename enable_if<is_related<B, A>::value && is_cv_castable<B, A>::value>::type>
-    unique_ptr<A> dynamic_pointer_cast(unique_ptr<B>&& a) {
-        JSTD_DEBUG_CODE(check_non_null(a.m_object));
-        A* instance = dynamic_cast<A*>(a.m_object);
-        if (!instance)
-            throw_except<class_cast_exception>("Where [From = %s, To = %s]", typeid(A).name(), typeid(*a.m_object).name());
-        unique_ptr<A> result(instance, a.m_allocator);
-        a.m_allocator   = nullptr;
-        a.m_object      = nullptr;
-        return result;
+namespace polymorph
+{
+    template<typename T, typename... Args>
+    tc::unique_ptr<T, alloc_deleter<T>> allocate_unique(tca::allocator* alloc, Args&&... args) {
+        void* p = alloc->allocate_align(sizeof(T), alignof(T));
+        if (!p)
+            throw_except<out_of_memory_error>("out of memory");
+    
+        try {
+            T* obj = new(p) T(std::forward<Args>(args)...);
+            return unique_ptr<T, alloc_deleter<T>>(obj, {alloc});
+        } catch(...) {
+            alloc->deallocate(p);
+            throw;
+        }
     }
 }
 
+    template<typename T, typename... Args>
+    tc::unique_ptr<T> make_unique(Args&&... args) {
+        
+        tca::allocator* default_alloc = tca::get_default_allocator();
+
+        void* p = default_alloc->allocate_align(sizeof(T), alignof(T));
+        if (!p) throw_except<out_of_memory_error>("out of memory");
+    
+        try {
+            T* obj = new(p) T(std::forward<Args>(args)...);
+            return unique_ptr<T>(obj);
+        } catch(...) {
+            default_alloc->deallocate(p);
+            throw;
+        }
+
+    }
+    
+    template<typename T, typename DELETER>
+    tc::unique_ptr<T, DELETER> wrap_unique(T* p, DELETER deleter) {
+        return tc::unique_ptr<T, DELETER>(p, std::move(deleter));
+    }
+}
+
+#if 0
+// Я хер знает, буду ли я доделывать этот класс. 
+// кто-то вообще использует массив внутри unique_ptr?
 namespace tc
 {
 
-template<typename T>
+template<typename T, typename DELETER>
 class unique_ptr<T[]> {
 
     /**
      * 
      */
-    typedef typename remove_cv<T>::type Tvalue;
-
-
-    /**
-     * 
-     */
-    tca::allocator* m_allocator;
-    
-    /**
-     * 
-     */
-    Tvalue* m_array;
-
-    /**
-     * 
-     */
-    std::size_t m_length;
+    pair<T*, DELETER> m_pair;
 
     /**
      * 
@@ -366,7 +339,7 @@ public:
     /**
      * 
      */
-    unique_ptr();
+    unique_ptr(T* arr, DELETER deleter);
 
     /**
      * 
@@ -402,16 +375,6 @@ public:
      * 
      */
     T& operator[] (std::size_t idx) const;
-
-    /**
-     * 
-     */
-    tca::allocator* get_allocator() const;
-
-    /**
-     * 
-     */
-    operator T*() const;
 };
 
     template<typename T>
@@ -532,6 +495,14 @@ namespace tc
     typename enable_if< is_array<T>::value, unique_ptr<T> >::type make_unique(std::size_t len, tca::allocator* allocator = tca::get_default_allocator()) {
         return unique_ptr<T>(len, typename pure_type<T>::type(), allocator);
     }
+}
+#endif
+
+namespace tc
+{
+namespace polymorph {
+    template<typename T> using unique_ptr = tc::unique_ptr<T, alloc_deleter<T>>;
+}
 }
 
 #endif//JSTD_CPP_LANG_UTILS_UNIQUE_PTR_H

@@ -2,7 +2,6 @@
 #define FD3886F5_C3F2_43D5_B795_2668A12DE7EF
 
 #include <cstddef>
-#define TC_ALIGN_ASSERT(ptr, align) assert(((std::uintptr_t) ptr % align) == 0)
 
 namespace tca
 {

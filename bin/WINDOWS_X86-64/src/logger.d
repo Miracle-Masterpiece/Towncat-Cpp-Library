@@ -12,4 +12,4 @@ bin/WINDOWS_X86-64/src/logger.o: src/logger.cpp \
  include/cpp/lang/utils/cond_compile.hpp include/allocators/allocator.hpp \
  include/allocators/base_allocator.hpp include/cpp/lang/common.hpp \
  include/cpp/lang/math.hpp include/cpp/lang/io/ostream.hpp \
- include/cpp/lang/system.hpp
+ include/cpp/lang/errors.hpp include/cpp/lang/system.hpp

@@ -35,10 +35,10 @@ private:
     tca::allocator* const m_allocator;
 
     // Левый дочерний узел.
-    unique_ptr<node>    m_left;
+    polymorph::unique_ptr<node>    m_left;
     
     // Правый дочерний узел.
-    unique_ptr<node>    m_right;
+    polymorph::unique_ptr<node>    m_right;
 
     // Прямоугольник, занимаемый данным узлом.
     rect m_rect;
@@ -184,20 +184,19 @@ public:
 
     template<typename CONTEXT>
     void node::depth_search0(CONTEXT& context, node* n) const {
-        if (n == nullptr)
-            return;
+        if (!n) return;
         
         if (n->m_ID != NULL_ID)
             context(const_cast<const node*>(n));
         
-        depth_search0(context, n->m_left);
-        depth_search0(context, n->m_right);
+        depth_search0(context, n->m_left.get());
+        depth_search0(context, n->m_right.get());
     }
 
     template<typename CONTEXT>
     void node::depth_search(CONTEXT& context) const {
-        depth_search0(context, m_left);
-        depth_search0(context, m_right);
+        depth_search0(context, m_left.get());
+        depth_search0(context, m_right.get());
     }
 
 }//namespace jstd

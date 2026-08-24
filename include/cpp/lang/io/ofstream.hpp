@@ -5,119 +5,155 @@
 #include <cpp/lang/io/file.hpp>
 #include <cstdio>
 
-namespace tc {
+namespace tc
+{
 
 /**
- * Класс предназначен для записи в файл.
+ * File output stream class.
  * 
- * @remark
- *      Копирование и присваивание запрещены, чтобы избежать неожиданных побочных эффектов.  
+ * Provides file-based output stream functionality using C standard library FILE* handles.
+ * Inherits from ostream and implements file writing, flushing, and closing operations.
  */
 class ofstream : public ostream {
-    FILE* _handle;  //указатель на файл.
+    FILE* m_handle;
 public:
+    using ostream::close;
+    using ostream::write;
+
     /**
-     * Создаёт пустой файловый поток.
-     */    
+     * Default constructor.
+     * 
+     * Constructs an ofstream object without opening a file.
+     * The stream is not associated with any file.
+     */
     ofstream();
-    
+
     /**
-     * Создаёт поток по указанному пути.
+     * Constructor from file path (C++ string).
      * 
-     * @param path  Путь к файлу.
+     * Opens the file in binary mode. If append is true, opens in append mode ("ab");
+     * otherwise, opens in write mode ("wb").
      * 
-     * @param append  Режим открытия.
-     *              true - добавляет новые данный в файл.
-     *              false - стирает старые данные из файла и записывает сначала.
+     * @param path
+     *      Path to the file to open.
      * 
-     * @throws io_exception 
-     *          Если произошла ошибка ввода/вывода.
+     * @param append
+     *      If true, append to existing file; if false, overwrite existing file.
      * 
-     * @throws sequrity_exception 
-     *          Если запись в файл запрещено.
+     * @throws io_exception
+     *      If the file cannot be opened.
+     * 
+     * @throws security_exception
+     *      If permission is denied.
+     */
+    ofstream(const string& path, bool append = false);
+
+    /**
+     * Constructor from file path (C-style string).
+     * 
+     * Opens the file in binary mode. If append is true, opens in append mode ("ab");
+     * otherwise, opens in write mode ("wb").
+     * 
+     * @param path
+     *      Path to the file to open.
+     * 
+     * @param append
+     *      If true, append to existing file; if false, overwrite existing file.
+     * 
+     * @throws io_exception
+     *      If the file cannot be opened.
+     * 
+     * @throws security_exception
+     *      If permission is denied.
      */
     ofstream(const char* path, bool append = false);
 
     /**
-     * Создаёт поток по объекту файла.
+     * Constructor from file object.
      * 
-     * @param file  
-     *      Объект, описыващий файл.
+     * Opens the file specified by the file object in binary mode.
+     * 
+     * @param file
+     *      File object containing the path to open.
      * 
      * @param append
-     *      Режим открытия.
-     *      true - добавляет новые данный в файл.
-     *      false - стирает старые данные из файла и записывает сначала.
+     *      If true, append to existing file; if false, overwrite existing file.
      * 
-     * @throws io_exception 
-     *          Если произошла ошибка ввода/вывода.
+     * @throws io_exception
+     *      If the file cannot be opened.
      * 
-     * @throws sequrity_exception 
-     *          Если запись в файл запрещено.
+     * @throws security_exception
+     *      If permission is denied.
      */
-    ofstream(const file& f, bool append = false);
-    
-    //Перемещение.
-    ofstream(ofstream&&);
-    
+    ofstream(const file& file, bool append = false);
+
     /**
-     * Перемещение.
+     * Move constructor.
      * 
-     * @throws io_exception 
-     *          Если произошла ошибка ввода/вывода.
+     * Transfers ownership of the file handle from another ofstream object.
+     * The source object is left in a valid but unspecified state (handle set to nullptr).
+     */
+    ofstream(ofstream&&);
+
+    /**
+     * Move assignment operator.
+     * 
+     * Transfers ownership of the file handle from another ofstream object.
+     * If this object currently holds an open file, it is closed first.
+     * 
+     * @param out
+     *      The ofstream object to move from.
+     * 
+     * @return
+     *      Reference to this object.
      */
     ofstream& operator= (ofstream&&);
-    
+
     /**
-     * @note
-     *      Для освобождения ресурсов должен явно вызываться this::close()
+     * Destructor.
+     * 
+     * Automatically closes the file handle if it is open.
+     * Any errors during closing are ignored.
      */
     ~ofstream();
-    
+
     /**
-     * Записывайт байт в поток.
+     * Writes a block of data to the file.
      * 
-     * @param c 
-     *      Значение байта, которое будет записано в поток.
+     * This method guarantees either all bytes are written or an exception is thrown.
+     * 
+     * @param data
+     *      Pointer to the data to write.
+     * 
+     * @param sz
+     *      Number of bytes to write.
      * 
      * @throws io_exception
-     *      Если произошла ошибка ввода/вывода.
-     *      Если поток не был открыт.
-     */
-    void write(char c) override;
-    
-    /**
-     * Записывает sz байт в потока из передаваемого буфера.
-     * 
-     * @param data   
-     *      Буфер из которого будут записаны данные.
-     * 
-     * @param sz     
-     *      Сколько байт нужно записать в поток.
-     * 
-     * @throws io_exception
-     *      Если произошла ошибка ввода/вывода.
-     *      Если поток не был открыт.
+     *      If the number of bytes written does not match sz.
      */
     void write(const char* data, std::size_t sz) override;
     
     /**
-     * Сбрасывает данные из потока.
+     * Flushes the file buffers.
+     * 
+     * Forces any buffered data to be written to the file.
      * 
      * @throws io_exception
-     *      Если произошла ошибка ввода/вывода.
-     *      Если поток не был открыт.
+     *      If I/O error occurs during flushing.
      */
     void flush() override;
-    
+
     /**
-     * Закрывает поток и сбрасывает данные.
+     * Closes the file stream without throwing exceptions.
      * 
-     * @throws io_exception
-     *      Если произошла ошибка ввода/вывода.
-     *      Если поток не был открыт.
+     * If the file handle is already nullptr, this function does nothing.
+     * Closes the file and sets the handle to nullptr.
+     * All errors are reported through the err parameter.
+     * 
+     * @param err
+     *      Reference to an error_code object that will receive the error status.
      */
-    void close() override;
+    void close(error_code& err) override;
 };
 
 } 

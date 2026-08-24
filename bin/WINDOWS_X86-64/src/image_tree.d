@@ -11,4 +11,7 @@ bin/WINDOWS_X86-64/src/image_tree.o: src/image_tree.cpp \
  include/cpp/lang/traits/sfinae.hpp \
  include/cpp/lang/traits/relatoship_traits.hpp \
  include/cpp/lang/traits/type_properties.hpp \
- include/cpp/lang/traits/pure_traits.hpp
+ include/cpp/lang/traits/pure_traits.hpp include/cpp/lang/utils/pair.hpp \
+ include/cpp/lang/utils/hash.hpp \
+ include/cpp/lang/traits/pointer_traits.hpp include/cpp/lang/numbers.hpp \
+ include/cpp/lang/math/math.hpp

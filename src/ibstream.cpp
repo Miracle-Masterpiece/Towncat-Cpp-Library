@@ -3,99 +3,101 @@
 #include <iostream>
 #include <cassert>
 
-namespace tc {
+namespace tc
+{
 
-    ibstream::ibstream() : _allocator(nullptr), _buffer(nullptr), _capacity(0), _offset(0), _limit(0), _in(nullptr) {
+    ibstream::ibstream() : m_allocator(nullptr), m_buffer(nullptr), m_capacity(0), m_offset(0), m_limit(0), m_in(nullptr) {
 
     }
 
     ibstream::ibstream(istream* stream, std::size_t buf_size, tca::allocator* allocator) : ibstream() {
-        char* data = (char*) allocator->allocate(buf_size);
-        _allocator  = allocator;
-        _buffer     = data;
-        _capacity   = buf_size;
-        _offset     = 0;
-        _limit      = 0;
-        _in         = stream;
+        char* data = (char*) allocator->allocate_align(buf_size, alignof(char));
+        m_allocator  = allocator;
+        m_buffer     = data;
+        m_capacity   = buf_size;
+        m_offset     = 0;
+        m_limit      = 0;
+        m_in         = stream;
     }
     
     ibstream::ibstream(istream* stream, char* buf, std::size_t buf_size) : ibstream() {
-        _buffer     = buf;
-        _capacity   = buf_size;
-        _offset     = 0;
-        _limit      = 0;
-        _in         = stream;
+        m_buffer     = buf;
+        m_capacity   = buf_size;
+        m_offset     = 0;
+        m_limit      = 0;
+        m_in         = stream;
     }
     
     ibstream::ibstream(ibstream&& stream) : 
-    _allocator(stream._allocator), 
-    _buffer(stream._buffer),
-    _capacity(stream._capacity),
-    _offset(stream._offset),
-    _limit(stream._limit),
-    _in(stream._in) {
-        stream._allocator   = nullptr;
-        stream._buffer      = nullptr;
-        stream._capacity    = 0;
-        stream._offset      = 0;
-        stream._limit       = 0;
-        stream._in          = nullptr;
+    m_allocator(stream.m_allocator), 
+    m_buffer(stream.m_buffer),
+    m_capacity(stream.m_capacity),
+    m_offset(stream.m_offset),
+    m_limit(stream.m_limit),
+    m_in(stream.m_in) {
+        stream.m_allocator   = nullptr;
+        stream.m_buffer      = nullptr;
+        stream.m_capacity    = 0;
+        stream.m_offset      = 0;
+        stream.m_limit       = 0;
+        stream.m_in          = nullptr;
     }
     
     ibstream& ibstream::operator= (ibstream&& stream) {
         if (&stream != this) {
-            if (_in != nullptr)
-                close();
-            _allocator   = stream._allocator;
-            _buffer      = stream._buffer;
-            _capacity    = stream._capacity;
-            _offset      = stream._offset;
-            _limit       = stream._limit;
-            _in          = stream._in;
+            if (m_in != nullptr)
+            {
+                error_code dontcare;
+                close(dontcare);
+            }
+            m_allocator   = stream.m_allocator;
+            m_buffer      = stream.m_buffer;
+            m_capacity    = stream.m_capacity;
+            m_offset      = stream.m_offset;
+            m_limit       = stream.m_limit;
+            m_in          = stream.m_in;
             
-            stream._allocator   = nullptr;
-            stream._buffer      = nullptr;
-            stream._capacity    = 0;
-            stream._offset      = 0;
-            stream._limit       = 0;
-            stream._in          = nullptr;
+            stream.m_allocator   = nullptr;
+            stream.m_buffer      = nullptr;
+            stream.m_capacity    = 0;
+            stream.m_offset      = 0;
+            stream.m_limit       = 0;
+            stream.m_in          = nullptr;
         }
         return *this;
     }
     
-    int ibstream::read() {
-        return istream::read();
-    }
-    
     void ibstream::fill_buffer() {
-        std::size_t readed = _in->read(_buffer, _capacity);
-        _limit  = (readed == istream::eof_value()) ? 0 : readed;
-        _offset = 0;
+        std::size_t readed = m_in->read(m_buffer, m_capacity);
+        m_limit  = (readed == istream::eof_value()) ? 0 : readed;
+        m_offset = 0;
     }
 
     std::size_t ibstream::read(char* buf, std::size_t sz) {
-        JSTD_DEBUG_CODE(
-            if (_in == nullptr) throw_except<io_exception>("input is null")
+        JSTD_DEBUG_CODE
+        (
+            if (!m_in)
+                throw_except<io_exception>("stream is null");
         );
         
         std::size_t total_readed = 0;
         
         while (total_readed < sz)
         {
-            if (_offset >= _limit)
+            if (m_offset >= m_limit)
             {
                 fill_buffer();
-                if (_limit == 0)
+                if (m_limit == 0)
                     break; // EOF
             }
             
-            std::size_t available = _limit - _offset;
+            std::size_t available = m_limit - m_offset;
             std::size_t to_read = std::min(available, sz - total_readed);
             
             if (to_read > 0)
             {
-                memcpy(buf + total_readed, _buffer + _offset, to_read);
-                _offset += to_read;
+                memcpy(buf + total_readed, m_buffer + m_offset, to_read);
+                m_offset += to_read;
                 total_readed += to_read;
             }
         }
@@ -103,45 +105,25 @@ namespace tc {
         return total_readed > 0 ? 
                                     total_readed : istream::eof_value();
     }
-   
-    std::size_t ibstream::skip(std::size_t n) {
-        JSTD_DEBUG_CODE(
-            if (_in == nullptr)
-                throw_except<io_exception>("Stream is null");
-        );
-        return istream::skip(n);
-    }
-    
-    std::uintmax_t ibstream::available() const {
-        assert(_limit >= _offset);
-        std::size_t available_in_buffer = _limit - _offset;
-        return available_in_buffer + _in->available();
-    }
     
     void ibstream::free() {
-        if (_allocator != nullptr)
+        if (m_allocator)
         {
-            _allocator->deallocate(_buffer, _capacity);
-            _allocator  = nullptr;
+            m_allocator->deallocate(m_buffer, m_capacity);
+            m_allocator = nullptr;
         }
     }
 
     ibstream::~ibstream() {
-		free();
+		error_code dontcare;
+        close(dontcare);
     }
 
-    void ibstream::close() {
-        if (_in == nullptr)
+    void ibstream::close(error_code& err) {
+        if (m_in == nullptr)
             return;
-        try
-        {
-            _in->close();
-        } catch (const io_exception& e) {
-            _in = nullptr;
-            free();
-            throw e;    
-        }
-        _in = nullptr;
+        m_in->close(err);
+        m_in = nullptr;
         free();
-    }    
+    }
 }

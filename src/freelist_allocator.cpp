@@ -239,8 +239,8 @@ namespace tca
         sz = NODE_SIZE + (align - 1) + sz;
         void* memory = m_parent->allocate_align(sz, alignof(memblock));
         
-        std::uintptr_t  hdr      = reinterpret_cast<std::uintptr_t>(memory);
-        std::uintptr_t  user_ptr = align_up(hdr + NODE_SIZE, align);
+        uintptr_t  hdr      = reinterpret_cast<uintptr_t>(memory);
+        uintptr_t  user_ptr = align_up(hdr + NODE_SIZE, align);
         
         fallback_t*     fallback_ptr = reinterpret_cast<fallback_t*>(user_ptr - sizeof(fallback_t));
         
@@ -259,7 +259,7 @@ namespace tca
         using internal::memblock_get_largesize;
         using internal::fallback_t;
         
-        std::uintptr_t user_ptr = reinterpret_cast<std::uintptr_t>(p);
+        uintptr_t user_ptr = reinterpret_cast<uintptr_t>(p);
         fallback_t fallback     = *reinterpret_cast<fallback_t*>(user_ptr - sizeof(fallback));
         memblock* block         = reinterpret_cast<memblock*>(user_ptr - fallback);
 
@@ -313,10 +313,10 @@ namespace tca
             unlink(block);
 
             // Указатель на начало блока (первый байт заголовка)
-            std::uintptr_t  start_block  = reinterpret_cast<std::uintptr_t>(block);
+            uintptr_t  start_block  = reinterpret_cast<uintptr_t>(block);
             
             // Указатель на пользовательский заголовок
-            std::uintptr_t  user_ptr     = align_up<std::uintptr_t>(start_block + HDR_SIZE, align);
+            uintptr_t  user_ptr     = align_up<uintptr_t>(start_block + HDR_SIZE, align);
             
             // Размер заголовка (вместе с padding)
             memsize_t     hdr_with_padd  = static_cast<memsize_t>(user_ptr - start_block);
@@ -409,8 +409,8 @@ namespace tca
         using internal::memblock_setuse;
         using internal::memblock_is_large;
         
-        std::uintptr_t  user_ptr     = reinterpret_cast<std::uintptr_t>(p);
-        std::uintptr_t  fallback_ptr = user_ptr - sizeof(fallback_t);
+        uintptr_t  user_ptr     = reinterpret_cast<uintptr_t>(p);
+        uintptr_t  fallback_ptr = user_ptr - sizeof(fallback_t);
         fallback_t      fallback     = *reinterpret_cast<fallback_t*>(fallback_ptr);
 
         memblock* block = reinterpret_cast<memblock*>(user_ptr - fallback);
@@ -438,7 +438,7 @@ namespace tca
         while (page)
         {
 
-            std::uintptr_t start = reinterpret_cast<std::uintptr_t>(page->dat);
+            uintptr_t start = reinterpret_cast<uintptr_t>(page->dat);
             std::size_t i        = 0;
             while (i < page->user_size)
             {
@@ -483,7 +483,7 @@ namespace tca
             using internal::memblock_is_use;
             std::printf("############### PAGE %zu ###############\n", cnt_pages++);
 
-            std::uintptr_t start = reinterpret_cast<std::uintptr_t>(page->dat);
+            uintptr_t start = reinterpret_cast<uintptr_t>(page->dat);
             std::size_t i        = 0;
             while (i < page->user_size)
             {

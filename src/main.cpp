@@ -508,7 +508,7 @@ int main() {
         tc::array_list<tc::image> images = load_all_image(image_folder);
         tc::image_packer packer(images.data(), images.size(), 1024, 1024);
         tc::image atlas = packer.pack(4);
-        tc::imageio::write_image(tc::file("build/atlas.png"), &atlas, "png");
+        tc::imageio::write_image(tc::file("build/atlas.png"), atlas, "png");
     } catch (const tc::throwable& t) {
         std::cout << t.cause() << "\n";
         t.print_stack_trace();
@@ -520,23 +520,23 @@ int main() {
 #include <tc/unique_ptr.hpp>
 #include <tc/shared_ptr.hpp>
 
-struct animal{
+struct animal {
     double x, y, z;
     float xo, yo, zo;
     bool on_ground;
 
-    virtual void say() = 0;
+    virtual void say() const = 0;
     virtual ~animal() {
-        // std::cout << "~animal()\n";
+        std::cout << "~animal()\n";
     }
 };
 
 struct cat : animal {
-    void say() {
+    void say() const {
         std::cout << "meow\n";
     }
     ~cat() {
-        // std::cout << "~cat()\n";
+        std::cout << "~cat()\n";
     }
 };
 
@@ -544,6 +544,7 @@ struct cat : animal {
 #include <allocators/helpers.hpp>
 #include <cpp/lang/traits/primitive_traits.hpp>
 #include <cpp/lang/traits/pure_traits.hpp>
+#include <tc/unique_ptr.hpp>
 
 #include <memory>
 
@@ -580,22 +581,52 @@ struct point {
     int x, y;
 };
 
-#if 1
+template class tc::unique_ptr<tc::string>;
+
+
+
+
+#if 0
 int main() {
     using namespace tc::internal;
     using namespace tc;
     tca::free_list_allocator alloc(tca::get_default_allocator());
 
-    std::size_t LEN = 100;
-
-
-    shared_ptr<const animal> a = allocate_shared<cat>(&alloc);
+    // {
+    //     tc::array_list<tc::polymorph::unique_ptr<animal>> animals(&alloc);
     
-    shared_ptr<animal> _cat = const_pointer_cast<animal>(a);
-    shared_ptr<cat> c = reinterpret_pointer_cast<cat>(_cat);
-
-    c->say();
-
+    //     for (std::size_t i = 0; i < 1000; ++i)
+    //     {
+    //         animals.add(
+    //             tc::polymorph::allocate_unique<cat>(&alloc)
+    //         );
+    //     }
+        
+    //     for (std::size_t i = 0; i < 10; ++i)
+    //     {
+    //         animals.at(i)->say();
+    //     }
+    
+    // }
     alloc.print_log();
 }
 #endif
+
+#include <tc/io/ifstream.hpp>
+#include <tc/io/file_channel.hpp>
+
+int main() {
+    try {
+        tc::file_channel channel;
+        channel.open("build/file.txt", tc::open_option::READ_WRITE);
+        channel.truncate(1 << 7);
+        tc::mappedbuf mmap = channel.map(tc::fmap_mode::READ_WRITE, 0, 64);
+        std::cout << mmap.to_string() << std::endl;
+        mmap.put<int>(2556);
+        mmap.flip();
+        mmap.force();
+        std::cout << mmap.get<int>() << "\n";
+    } catch (const tc::throwable& e) {
+        std::cout << e.cause() << "\n";
+    }
+}

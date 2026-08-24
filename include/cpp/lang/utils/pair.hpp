@@ -46,6 +46,11 @@ struct pair_element<E, INDEX, true> : private E {
     /**
      * 
      */
+    pair_element() : E() {}
+
+    /**
+     * 
+     */
     template<typename E_>
     pair_element(E_&& e) : E(std::forward<E_>(e)) {}
     

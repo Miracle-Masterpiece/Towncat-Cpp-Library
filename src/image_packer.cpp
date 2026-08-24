@@ -69,17 +69,16 @@ namespace tc {
     }
 
     void image_packer::create_tree() {
-        if (!m_root) 
-            m_root = make_unique<node>(
-                                        node(m_width, m_height, m_allocator), 
-                                        m_allocator
-                                    );
+        if (!m_root)   
+        
+        m_root = polymorph::allocate_unique<node>(m_allocator, node(m_width, m_height, m_allocator));
+
         BEGIN: 
         for (std::size_t i = 0; i < m_cnt_imgs; ++i)
         {
             const image& img = m_images[i];
             node* n = m_root->put_image(img.get_width(), img.get_height(), i);
-            if (n == nullptr)
+            if (!n)
             {
                 /**
                  * Если не получилось вставить изображение, начинаем заного, 

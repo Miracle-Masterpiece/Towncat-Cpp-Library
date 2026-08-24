@@ -259,20 +259,20 @@ public:
 
     template<typename T>
     optional<T>::optional(const T& value) : _is_value(false) {
-        new(const_cast<remove_cv<T>::type*>(&obj)) T(value);
+        new(const_cast<typename remove_cv<T>::type*>(&obj)) T(value);
         _is_value = true;
     }
 
     template<typename T>
     optional<T>::optional(T&& value) : _is_value(false) {
-        new(const_cast<remove_cv<T>::type*>(&obj)) T(std::move(value));
+        new(const_cast<typename remove_cv<T>::type*>(&obj)) T(std::move(value));
         _is_value = true;
     }
 
     template<typename T>
     optional<T>::optional(const optional<T>& t) : _is_value(false) {
         if (t._is_value) {
-            new(const_cast<remove_cv<T>::type*>(&obj)) T(*reinterpret_cast<const T*>(t.obj));
+            new(const_cast<typename remove_cv<T>::type*>(&obj)) T(*reinterpret_cast<const T*>(t.obj));
             _is_value = true;
         }
     }
@@ -281,7 +281,7 @@ public:
     optional<T>::optional(optional<T>&& t) : _is_value(false) {
         if (t._is_value)
         {
-            new(const_cast<remove_cv<T>::type*>(&obj)) T(std::move(obj));
+            new(const_cast<typename remove_cv<T>::type*>(&obj)) T(std::move(obj));
             _is_value = true;
         }
     }

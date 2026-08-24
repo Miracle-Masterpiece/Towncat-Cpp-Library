@@ -6,117 +6,159 @@
 #include <cpp/lang/system.hpp>
 #include <cpp/lang/utils/utils.hpp>
 
-namespace tc {
+namespace tc
+{
 
 /**
- * Класс предназначен для буферезированной записи бинарных данных.
- * Бинарные данные будут записаны в порядке байт Little-Endian, даже на Big-Endian платформе. 
+ * Output decorator stream for writing typed data.
  * 
- * @note
- *      Для закрытия ресурсов необходимо вызывать функцию odstream::close().
- *      Деструктор не освобождает данные! В силу требований об явной обработке ошибок.
+ * Provides typed write operations on top of a raw ostream. Writes integers,
+ * structures, and arrays with proper endianness handling (little-endian).
+ * Acts as a decorator/wrapper around any ostream-derived object.
  */
 class odstream : public ostream {
-    ostream* _out;
+    ostream* m_out;
 public:
     using ostream::write;
+    using ostream::close;
     
     /**
-     * Создаёт пустой поток.
+     * Default constructor.
+     * 
+     * Constructs an odstream object without an associated stream.
+     * Any write operations on this object will fail.
      */
     odstream();
-    
+
     /**
-     * Оборачивает поток вывода, для записи в него бинарных данных.
-     * @throws null_pointer_exception
-     *          Если out равен nullptr.
+     * Constructor from a raw ostream pointer.
+     * 
+     * @param out
+     *      Pointer to the underlying output stream.
+     * 
+     * @throws io_exception
+     *      In debug builds if out is nullptr.
+     * 
+     * @note The wrapped stream is not owned; it must remain valid for the lifetime of this object.
      */
     odstream(ostream* out);
-    
-    //Перемещение
-    odstream(odstream&&);
-    
-    //Перемещение
+
     /**
-     * @throws io_exception 
-     *          Если произошла ошибка ввода/вывода.
+     * Move constructor.
+     * 
+     * Transfers ownership of the wrapped stream pointer from another odstream object.
+     * The source object is left in a valid but unspecified state (m_out set to nullptr).
+     * 
+     * @param stream
+     *      The odstream object to move from.
+     */
+    odstream(odstream&&);
+
+    /**
+     * Move assignment operator.
+     * 
+     * Transfers ownership of the wrapped stream pointer from another odstream object.
+     * If this object currently holds a stream, it is closed first.
+     * 
+     * @param out
+     *      The odstream object to move from.
+     * 
+     * @return
+     *      Reference to this object.
      */
     odstream& operator= (odstream&&);
     
     /**
-     * @note
-     *      Для освобождения ресурсов должен явно вызываться this::close()
+     * Destructor.
+     * 
+     * Closes the wrapped stream if it is associated. Any errors during closing are ignored.
      */
     ~odstream();
 
     /**
-     * Записывает массив байтов в поток.
+     * Writes raw bytes to the underlying stream.
      * 
-     * @param data 
-     *      Указатель на массив байтов.
+     * @param data
+     *      Pointer to the data to write.
      * 
-     * @throws io_exception 
-     *      Если произошла ошибка ввода/вывода
-     *      Если поток закрыт или не был открыт
+     * @param sz
+     *      Number of bytes to write.
+     * 
+     * @throws io_exception
+     *      If the underlying stream throws an exception.
      */
     void write(const char* data, std::size_t sz) override;
-    
-    /**
-     * Сбрасывает буферизированные данные.
+
+     /**
+     * Flushes the underlying stream.
+     * 
+     * Forces any buffered data to be written to the underlying output device.
      * 
      * @throws io_exception 
-     *      Если произошла ошибка ввода/вывода
-     *      Если поток закрыт или не был открыт
+     *      If the underlying stream throws an exception.
      */
     void flush() override;
 
     /**
-     * Закрывает поток.
+     * Closes the wrapped stream without throwing exceptions.
+     * 
+     * If the wrapped stream is nullptr, this function does nothing.
+     * Closes the underlying stream and sets m_out to nullptr.
+     * All errors are reported through the err parameter.
+     * 
+     * @param err
+     *      Reference to an error_code object that will receive the error status.
+     */
+    void close(error_code& err) override;
+
+    /**
+     * Writes a typed value to the stream.
+     * 
+     * Writes a value of type T to the underlying stream in little-endian byte order.
+     * 
+     * @tparam T
+     *      The type of value to write. Must be trivially copyable.
+     * 
+     * @param v
+     *      The value to write.
      * 
      * @throws io_exception
-     *      Если произошла ошибка ввода/вывода
-     *      Если поток закрыт или не был открыт
-     */
-    void close() override;
-    
-    /**
-     * @see this->write<T>(const T* v, std::size_t sz);
+     *      If the underlying stream throws an error.
      */
     template<typename T>
-    inline void write(T v) {
-        write<T>(&v, 1);
+    void write(T v) {
+        char buf[sizeof(T)];
+        utils::write_le(buf, v);
+        write(buf, sizeof(T));
     }
 
     /**
-     * Записывает в поток массив типа T в порядке байт Little-Endian.
+     * Writes an array of typed values to the stream.
      * 
-     * @tparam 
-     *      Любой тип, который тривиально-копируемый
+     * Writes sz elements of type T to the underlying stream.
+     * Each element is written using the single-element write<T>() method.
      * 
-     * @remark 
-     *      Данные записываются в порядке байт Little-Endian.
+     * @tparam T
+     *      The type of values to write. Must be trivially copyable.
      * 
-     * @param v
-     *      Указатель на массив данных типа T.
+     * @param arr
+     *      Pointer to the array of values to write.
      * 
      * @param sz
-     *      Размер массива v
+     *      Number of elements to write.
+     * 
+     * @throws io_exception
+     *      If the underlying stream throws an error.
      */
     template<typename T>
     void write(const T* v, std::size_t sz);
 };
 
     template<typename T>
-    void odstream::write(const T* v, std::size_t sz) {
-        if (system::native_byte_order() != byte_order::LE) {
-            T tmp;
-            for (std::size_t i = 0; i < sz; ++i) {
-                tmp = utils::bswap<T>(v[i]);
-                write(reinterpret_cast<const char*>(&tmp), sizeof(T));
-            }
-        } 
-        else {
-            write(reinterpret_cast<const char*>(v), sizeof(T) * sz);
+    void odstream::write(const T* arr, std::size_t sz) {
+        for (std::size_t i = 0; i < sz; ++i)
+        {
+            write<T>(arr[i]);
         }
     }
 }

@@ -57,11 +57,6 @@ public:
     // 
     // 
     // 
-    virtual int to_string(char buf[], std::size_t bufsize) const noexcept;
-    
-    // 
-    // 
-    // 
     const char* cause() const noexcept;
     
     // 
@@ -85,11 +80,6 @@ public:
                                                 public:\
                                                     clazz_name() noexcept;\
                                                     clazz_name(const char* cause) noexcept;\
-                                                    clazz_name(const clazz_name& t) noexcept;\
-                                                    clazz_name(clazz_name&& t) noexcept;\
-                                                    clazz_name& operator= (const clazz_name& t) noexcept;\
-                                                    clazz_name& operator= (clazz_name&& t) noexcept;\
-                                                    ~clazz_name() noexcept;\
                                                 };\
 
 
@@ -98,7 +88,7 @@ MAKE_EXCEPT_CLASS__(out_of_memory_error,                 error)
 MAKE_EXCEPT_CLASS__(exception,                           throwable)
 MAKE_EXCEPT_CLASS__(runtime_exception,                   exception)
 MAKE_EXCEPT_CLASS__(null_pointer_exception,              runtime_exception)
-MAKE_EXCEPT_CLASS__(sequrity_exception,                  runtime_exception)
+MAKE_EXCEPT_CLASS__(security_exception,                  runtime_exception)
 MAKE_EXCEPT_CLASS__(interrupted_exception,               exception)
 
 

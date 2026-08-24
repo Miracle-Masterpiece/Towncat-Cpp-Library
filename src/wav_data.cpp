@@ -119,16 +119,8 @@ namespace tc
     wav_data::wav_data(const file& path, tca::allocator* allocator) : m_allocator(allocator) {    
         if (!path.exists())
             throw_except<file_not_found_exception>("file not found!");
-
         ifstream in(path);
-        try {
-            load_from(&in);
-        } catch(...) {
-            close_stream_and_suppress_except(&in);
-            throw;
-        }
-        in.close();
-
+        load_from(&in);
     }
 
     wav_data::wav_data(istream* in, tca::allocator* allocator) : wav_data(allocator) {
