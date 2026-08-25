@@ -317,7 +317,7 @@ namespace tc
             
             if (err)
             {
-                internal::io::throw_error_code(errno, generic_category());
+                internal::io::throw_error_code(error_code(errno, generic_category()));
             }
         )
         #endif
