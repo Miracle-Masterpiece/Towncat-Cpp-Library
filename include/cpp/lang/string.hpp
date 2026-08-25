@@ -1186,12 +1186,12 @@ struct compare_to<tstring<T>> {
 #include <iosfwd>
 
 inline std::ostream& operator<<(std::ostream& out, const tc::string& s) {
-    out << s.c_str();
+    out.write(s.c_str(), s.length());
     return out;
 }
 
 inline std::wostream& operator<<(std::wostream& out, const tc::wstring& s) {
-    out << s.c_str();
+    out.write(s.c_str(), s.length());
     return out;
 }
 

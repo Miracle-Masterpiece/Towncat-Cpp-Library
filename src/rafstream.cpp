@@ -4,6 +4,7 @@
 #include <cpp/lang/traits/primitive_traits.hpp>
 #include <cpp/lang/io/basebuf.hpp>
 #include <cstdio>
+#include <cerrno>
 
 #if defined(JSTD_OS_WINDOWS)
 # include <io.h>

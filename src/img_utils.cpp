@@ -3,6 +3,7 @@
 #include <cpp/lang/array.hpp>
 #include <cpp/lang/math.hpp>
 #include <cassert>
+#include <cerrno>
 
 /**
  * Image resizing implementation using Mitchell-Netravali cubic filter.
