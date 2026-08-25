@@ -243,7 +243,7 @@ namespace internal
         typedef typename make_unsigned<T>::type Tunsigned;
         static void write(char buf[], T x) {
             buf[INDEX - 1] = static_cast<char>(
-                static_cast<Tunsigned>(x) >> ((INDEX - 1) * CHAR_BIT) & ~(unsigned char) 0
+                static_cast<Tunsigned>(x) >> ((INDEX - 1) * CHAR_BIT)
             );
             write_le<T, INDEX - 1>::write(buf, x);
         }
