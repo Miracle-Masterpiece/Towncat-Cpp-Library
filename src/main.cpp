@@ -319,7 +319,7 @@ namespace string_test
 
         TC_ASSERT(s.get_allocator() == &alloc);
 
-        std::cout << s << std::endl;
+        // std::cout << s << std::endl;
     }
 }
 #endif
