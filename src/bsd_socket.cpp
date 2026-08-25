@@ -28,7 +28,6 @@ namespace bsd_socket
         // что я решил сделать функцию, которая сама будет присваивать и делать static_cast
         utils::assign_static_cast( tv->tv_sec, millisec / 1000 );
         utils::assign_static_cast( tv->tv_usec, (millisec % 1000) * 1000 );
-
     }   
 
     timepoint timeval_to_ms(struct timeval* tv) {
@@ -612,9 +611,9 @@ namespace bsd_socket
         _____UNIX_CODE____
         (
             
-            int idle;       assign_static_cast(idle,     value.keepalive.time_to_first);
-            int interval;   assign_static_cast(interval, value.keepalive.time_interval);
-            int count;      assign_static_cast(count,    value.keepalive.try_count);
+            int idle;       utils::assign_static_cast(idle,     value.keepalive.time_to_first);
+            int interval;   utils::assign_static_cast(interval, value.keepalive.time_interval);
+            int count;      utils::assign_static_cast(count,    value.keepalive.try_count);
             
             if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle)) != 0)
                 throw_except<socket_exception>("set_keep_alive_ex fail: %s", socket_error_string());

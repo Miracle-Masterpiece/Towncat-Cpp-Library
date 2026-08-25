@@ -3,7 +3,8 @@
 
 #include <allocators/allocator.hpp>
 
-namespace tca {
+namespace tca
+{
 
 /**
  * Линейный распределитель памяти, который линейно выделяет память.

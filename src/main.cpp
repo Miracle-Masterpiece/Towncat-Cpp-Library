@@ -637,7 +637,7 @@ int main() {
 
         {
             tc::string s = file.read_string();
-            std::cout << s << std::endl;
+            // std::cout << s << std::endl;
         }
 
     } catch (const tc::throwable& e) {

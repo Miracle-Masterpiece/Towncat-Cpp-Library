@@ -7,8 +7,24 @@
 #include <iostream>
 
 
+#if 0
 #define TC_MAKE_INT(buf) ((static_cast<long>(buf[0]) & 0xFF) | ((static_cast<long>(buf[1]) & 0xFF) << CHAR_BIT) | ((static_cast<long>(buf[2]) & 0xFF) << (CHAR_BIT * 2)) | ((static_cast<long>(buf[3]) & 0xFF) << (CHAR_BIT * 3)));
 #define TC_MAKE_SHORT(buf) ((static_cast<short>(buf[0]) & 0xFF) | ((static_cast<short>(buf[1]) & 0xff) << CHAR_BIT));
+#endif
+
+#define TC_MAKE_INT(buf) static_cast<long>(\
+    static_cast<unsigned long>(static_cast<unsigned char>(buf[0]) << (0 * CHAR_BIT)) |\
+    static_cast<unsigned long>(static_cast<unsigned char>(buf[1]) << (1 * CHAR_BIT)) |\
+    static_cast<unsigned long>(static_cast<unsigned char>(buf[2]) << (2 * CHAR_BIT)) |\
+    static_cast<unsigned long>(static_cast<unsigned char>(buf[3]) << (3 * CHAR_BIT)) \
+)\
+
+#define TC_MAKE_SHORT(buf) static_cast<short>(\
+    static_cast<unsigned short>(static_cast<unsigned char>(buf[0]) << (0 * CHAR_BIT)) |\
+    static_cast<unsigned short>(static_cast<unsigned char>(buf[1]) << (1 * CHAR_BIT)) \
+)\
+
+    
 
 namespace tc 
 {

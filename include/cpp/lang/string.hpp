@@ -1183,8 +1183,8 @@ struct compare_to<tstring<T>> {
 
 } //namespace tc
 
+#if 0
 #include <iosfwd>
-
 inline std::ostream& operator<<(std::ostream& out, const tc::string& s) {
     out << static_cast<const char*>(s.c_str());
     return out;
@@ -1194,5 +1194,6 @@ inline std::wostream& operator<<(std::wostream& out, const tc::wstring& s) {
     out << static_cast<const wchar_t*>(s.c_str());
     return out;
 }
+#endif
 
 #endif /* A6379E4D_4085_4DC3_B5E7_3C4A783981AF */
