@@ -2,7 +2,7 @@
 #define A10D59B8_10B4_4E4E_9BB5_F8A243A463DB
 
 #include <utility>
-#include <cpp/lang/traits/SFINAE.hpp>
+#include <cpp/lang/traits/sfinae.hpp>
 #include <cpp/lang/traits/relatoship_traits.hpp>
 #include <cpp/lang/traits/pure_traits.hpp>
 #include <cpp/lang/traits/pointer_traits.hpp>
