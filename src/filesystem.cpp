@@ -1,11 +1,11 @@
-#include <internal/io/filesystem.hpp>
-#include <cpp/lang/string.hpp>
-#include <cpp/lang/utils/coder.hpp>
-#include <cpp/lang/math.hpp>
 #include <allocators/inline_linear_allocator.hpp>
+#include <internal/io/io_helpers.hpp>
+#include <internal/io/filesystem.hpp>
+#include <cpp/lang/utils/coder.hpp>
+#include <cpp/lang/string.hpp>
+#include <cpp/lang/math.hpp>
 #include <cerrno>
 #include <cassert>
-#include <internal/io/io_helpers.hpp>
 
 namespace tc
 {
@@ -512,7 +512,7 @@ namespace tc
         if (fd == -1)
         {
             if (errno == EACCES)
-                throw_except<seсurity_exception>(std::strerror(errno));
+                throw_except<security_exception>(std::strerror(errno));
             throw_except<io_exception>(std::strerror(errno));
         }
     

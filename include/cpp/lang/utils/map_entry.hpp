@@ -1,7 +1,7 @@
 #ifndef C151DFEA_DFA0_44BB_9C18_756422D43DDA
 #define C151DFEA_DFA0_44BB_9C18_756422D43DDA
 
-#include <cpp/lang/traits/SFINAE.hpp>
+#include <cpp/lang/traits/sfinae.hpp>
 #include <cpp/lang/traits/relatoship_traits.hpp>
 #include <cpp/lang/utils/pair.hpp>
 #include <cpp/lang/utils/hash.hpp>

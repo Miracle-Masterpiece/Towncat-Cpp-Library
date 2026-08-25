@@ -187,6 +187,8 @@ namespace internal
 #ifndef ENOTEMPTY
 #  define ENOTEMPTY EINVAL
 #endif
+
+#if defined(JSTD_OS_WINDOWS)
 namespace tc
 {
 namespace internal
@@ -594,6 +596,7 @@ inline int win32_to_posix_error(int err) noexcept {
 
 } //namespace internal
 } //namespace tc
+#endif
 
 namespace tc
 {

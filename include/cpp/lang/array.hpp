@@ -4,12 +4,12 @@
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/utils.hpp>
 #include <allocators/allocator.hpp>
-#include <utility>
-#include <new>
 #include <cpp/lang/utils/arrays.hpp>
 #include <cpp/lang/utils/objects.hpp>
-#include <initializer_list>
 #include <cpp/lang/traits/cv_traits.hpp>
+#include <initializer_list>
+#include <utility>
+#include <new>
 
 namespace tc
 {

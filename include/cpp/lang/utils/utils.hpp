@@ -42,7 +42,7 @@ namespace internal
     T bswap(T x) {
         if (SZ == 1)
         {
-            return x & ~ ((unsigned char) 0);
+            return x & (unsigned char) ~0;
         }
         
         const std::size_t HSZ   = SZ / 2;

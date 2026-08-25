@@ -2,6 +2,7 @@
 #include <cpp/lang/math.hpp>
 #include <internal/memory.hpp>
 #include <cstddef>
+#include <cstdint>
 
 #include <iostream>
 #include <cstdio>
