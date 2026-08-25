@@ -2,7 +2,7 @@
 #define EC12E84B_2C4A_448B_AA66_F927509E8ECF
 
 #include <climits>
-#include <cpp/lang/traits/SFINAE.hpp>
+#include <cpp/lang/traits/sfinae.hpp>
 
 namespace tc
 {
