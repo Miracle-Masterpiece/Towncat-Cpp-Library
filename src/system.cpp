@@ -12,7 +12,6 @@
 	#include<time.h>
 #endif
 
-namespace tc = tc;
 namespace tc
 {   
 namespace system

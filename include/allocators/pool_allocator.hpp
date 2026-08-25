@@ -212,7 +212,7 @@ public:
      *      Passing an invalid pointer (not from this pool) results
      *      in undefined behavior.
      */
-    void  deallocate(void* p);
+    void  deallocate(void* p) override;
     
     /**
      * Allocates memory of the specified size.

@@ -85,6 +85,7 @@ namespace internal
         }
     };
 
+    #if defined(JSTD_OS_WINDOWS)
     /**
      * Error category for Windows system error codes.
      * 
@@ -166,6 +167,7 @@ namespace internal
         error_condition default_error_condition(int err) const override;
 
     };
+    #endif
 
 } //namespace internal
 } //namespace tc

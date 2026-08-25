@@ -327,7 +327,7 @@ namespace tc
 #define NIX_EXECUTE           (EXECUTABLE_OWNER | EXECUTABLE_GROUP | EXECUTABLE_OTHER)
 #define PERMISSION_ALL        (NIX_READ | NIX_WRITE | NIX_EXECUTE)
 
-namespace jstd
+namespace tc
 {
 
     static void throw_error() {
@@ -529,7 +529,7 @@ namespace jstd
 }
 
 
-namespace jstd
+namespace tc
 {
     directory_iterator::directory_iterator(const char* path) : _dir(nullptr), _entry(nullptr) {
         if (path != nullptr)

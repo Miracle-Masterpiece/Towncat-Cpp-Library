@@ -13,7 +13,8 @@
 # define FTRUNCATE(fd, size) _chsize_s(fd, size)
 #elif defined(JSTD_OS_LINUX) || defined(JSTD_OS_MAC)
 # include <sys/stat.h>
-# define STAT_STRUCT stat
+# include <unistd.h>
+# define STAT_STRUCT struct stat
 # define STAT_FUNC(fd, ptr) fstat(fd, ptr)
 # define FTRUNCATE(fd, size) ftruncate(fd, size)
 #endif
