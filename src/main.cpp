@@ -613,19 +613,33 @@ int main() {
 #endif
 
 #include <tc/io/ifstream.hpp>
-#include <tc/io/file_channel.hpp>
+#include <tc/io/rafstream.hpp>
 
 int main() {
     try {
-        tc::file_channel channel;
-        channel.open("build/file.txt", tc::open_option::READ_WRITE);
-        channel.truncate(1 << 7);
-        tc::mappedbuf mmap = channel.map(tc::fmap_mode::READ_WRITE, 0, 64);
-        std::cout << mmap.to_string() << std::endl;
-        mmap.put<int>(2556);
-        mmap.flip();
-        mmap.force();
-        std::cout << mmap.get<int>() << "\n";
+        
+        
+        tc::random_access_file file("build/text.txt", "r");
+
+        {
+            tc::string s = "Hello, World";
+            file.write_string(s);
+
+            char c;
+            std::cout << "before force\n";
+            std::cin >> c;
+            file.force(false);
+            std::cout << "after force\n";
+            std::cin >> c;
+        }
+        
+        file.seek(0);
+
+        {
+            tc::string s = file.read_string();
+            std::cout << s << std::endl;
+        }
+
     } catch (const tc::throwable& e) {
         std::cout << e.cause() << "\n";
     }

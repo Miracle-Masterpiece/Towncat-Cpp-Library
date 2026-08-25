@@ -17,4 +17,5 @@ bin/WINDOWS_X86-64/src/filesystem.o: src/filesystem.cpp \
  include/cpp/lang/traits/pure_traits.hpp include/cpp/lang/utils/coder.hpp \
  include/cpp/lang/utils/utils.hpp include/cpp/lang/system.hpp \
  include/allocators/inline_linear_allocator.hpp \
- include/allocators/linear_allocator.hpp
+ include/allocators/linear_allocator.hpp \
+ include/internal/io/io_helpers.hpp

@@ -39,6 +39,5 @@ bin/WINDOWS_X86-64/src/main.o: src/main.cpp \
  include/tc/io/ifstream.hpp include/cpp/lang/io/ifstream.hpp \
  include/cpp/lang/io/istream.hpp include/cpp/lang/errors.hpp \
  include/cpp/lang/io/file.hpp include/cpp/lang/io/file_filter.hpp \
- include/cpp/lang/io/constants.hpp include/tc/io/file_channel.hpp \
- include/cpp/lang/io/file_channel.hpp \
- include/internal/io/file_descriptor.hpp include/cpp/lang/io/channel.hpp
+ include/cpp/lang/io/constants.hpp include/tc/io/rafstream.hpp \
+ include/cpp/lang/io/rafstream.hpp

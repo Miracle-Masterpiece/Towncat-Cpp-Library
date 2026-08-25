@@ -5,6 +5,7 @@
 #include <allocators/inline_linear_allocator.hpp>
 #include <cerrno>
 #include <cassert>
+#include <internal/io/io_helpers.hpp>
 
 namespace tc
 {
@@ -330,9 +331,8 @@ namespace jstd
 {
 
     static void throw_error() {
-        if (errno == 0)         return;
-        if (errno == EACCES)    throw_except<seсurity_exception>(system::error_string(errno));
-        else                    throw_except<io_exception>(system::error_string(errno));
+        assert(errno != 0);
+        internal::io::throw_error_code(error_code(errno, system_category()));
     }
 
     static void init_stat(const char* path, struct stat* filestat) {
@@ -619,8 +619,7 @@ namespace tc
     static void throw_error() {
         DWORD lastErr = GetLastError();
         assert(lastErr != ERROR_SUCCESS);
-        if (lastErr == ERROR_ACCESS_DENIED) throw_except<security_exception>(system::error_string((int) lastErr));
-        else                                throw_except<io_exception>(system::error_string((int) lastErr));
+        internal::io::throw_error_code(error_code(lastErr, system_category()));
     }
     
     static std::size_t wchar_to_char(const wchar_t* wstr, std::size_t wstrlen, char str[], std::size_t strlen) {
