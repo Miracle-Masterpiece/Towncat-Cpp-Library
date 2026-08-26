@@ -57,15 +57,8 @@ namespace map
     void append_entry(std::size_t idx, ENTRY_T* e, tc::array<ENTRY_T*>& buckets) {
         assert(buckets.length > 0);
         assert(idx < buckets.length);
-        if (buckets[idx])
-        {
-            e->set_next(buckets[idx]);
-            buckets[idx] = e;
-        }
-        else
-        {
-            buckets[idx] = e;
-        }
+        e->set_next(buckets[idx]);
+        buckets[idx] = e;
     }
 
     template<typename THASHER, typename KEY, typename ENTRY_T>
@@ -92,6 +85,7 @@ namespace map
 
     template<typename THASHER, typename TEQUALER, typename ENTRY>
     void rehash(array<ENTRY*>& buckets, std::size_t newcap) {
+        assert(newcap != 0);
         if (buckets.length == newcap)
             return;
 
@@ -105,12 +99,11 @@ namespace map
         {
             for (ENTRY* e = old[i]; e != nullptr; )
             {
-                ENTRY* current = e;
-                internal::map::append_entry(current->get_hash() % newcap, current, new_);
-                e = e->get_next();
+                ENTRY* next_entry = e->get_next();
+                internal::map::append_entry(e->get_hash() % newcap, e, buckets);
+                e = next_entry;
             }
         }
-
     }
 
     template<typename THASHER, typename TKEY>
@@ -120,7 +113,8 @@ namespace map
 
     template<typename THASHER, typename TEQUALER, typename TKEY, typename TVALUE, typename ENTRY>
     ENTRY* insert(TKEY&& key, TVALUE&& value, array<ENTRY*>& buckets, tca::allocator* alloc) {
-    
+        assert(buckets.length > 0);
+
         ENTRY* finded   = find_entry<THASHER, TEQUALER>(key, buckets);
         if (!finded)
         {

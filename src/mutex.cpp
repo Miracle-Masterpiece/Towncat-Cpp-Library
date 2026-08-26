@@ -1,4 +1,5 @@
 #include <cpp/lang/concurrency/mutex.hpp>
+#include <cpp/lang/exceptions.hpp>
 #include <utility>
 
 namespace tc
@@ -13,15 +14,27 @@ namespace tc
     }
     
     void mutex::lock() {
-        m_mutex_impl.lock();
+        try {
+            m_mutex_impl.lock();
+        } catch (...) {
+            throw_except<interrupted_exception>();
+        }
     }
     
     void mutex::unlock() {
-        m_mutex_impl.unlock();
+        try {
+            m_mutex_impl.unlock();
+        } catch (...) {
+            throw_except<interrupted_exception>();
+        }
     }
     
     bool mutex::try_lock() {
-        return m_mutex_impl.try_lock();
+        try {
+            return m_mutex_impl.try_lock();
+        } catch (...) {
+            throw_except<interrupted_exception>();
+        }
     }
 
 }// namespace jstd

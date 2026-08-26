@@ -41,7 +41,8 @@ namespace tc
     }
     
     std::size_t imstream::read(char buf[], std::size_t sz) {
-        JSTD_DEBUG_CODE(
+        JSTD_DEBUG_CODE
+        (
             if (m_buffer == nullptr)
                 throw_except<io_exception>("Stream is null");
         );

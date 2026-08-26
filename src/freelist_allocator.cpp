@@ -127,8 +127,8 @@ namespace internal
      * @return
      *      The large allocation size in bytes.
      */
-    inline static std::size_t memblock_get_largesize(const memblock* b) {
-        assert(memblock_is_large(b));
+    inline static std::size_t memblock_get_largesize(const large_memblock* b) {
+        assert(memblock_is_large(&b->base));
         return b->large_size;
     }
 
@@ -141,9 +141,9 @@ namespace internal
      * @param sz
      *      The large allocation size in bytes.
      */
-    inline static void memblock_set_largesize(memblock* b, std::size_t sz) {
-        memblock_set_size(b, 0);
-        memblock_setlarge(b, true);
+    inline static void memblock_set_largesize(large_memblock* b, std::size_t sz) {
+        memblock_set_size(&b->base, 0);
+        memblock_setlarge(&b->base, true);
         b->large_size = sz;
     }
 
@@ -233,22 +233,25 @@ namespace tca
     void* fla:: alloc_from_parent(std::size_t sz, std::size_t align) {
         using internal::memsize_t;
         using internal::memblock;
+        using internal::large_memblock;
         using internal::memblock_setuse;
         using internal::memblock_set_largesize;
         using internal::fallback_t;
         
-        sz = NODE_SIZE + (align - 1) + sz;
-        void* memory = m_parent->allocate_align(sz, alignof(memblock));
+        sz = LARGE_BLOCK_HEADER_SIZE + (align - 1) + sz;
+        void* memory = m_parent->allocate_align(sz, alignof(large_memblock));
         
         uintptr_t  hdr      = reinterpret_cast<uintptr_t>(memory);
-        uintptr_t  user_ptr = align_up(hdr + NODE_SIZE, align);
+        uintptr_t  user_ptr = align_up(hdr + LARGE_BLOCK_HEADER_SIZE, align);
         
-        fallback_t*     fallback_ptr = reinterpret_cast<fallback_t*>(user_ptr - sizeof(fallback_t));
+        fallback_t* fallback_ptr = reinterpret_cast<fallback_t*>(user_ptr - sizeof(fallback_t));
         
         TC_ALIGN_ASSERT(fallback_ptr, alignof(fallback_t));
         *fallback_ptr = static_cast<fallback_t>(user_ptr - hdr);
 
-        memblock* block = reinterpret_cast<memblock*>(hdr);
+        large_memblock* block = reinterpret_cast<large_memblock*>(hdr);
+        TC_ALIGN_ASSERT(block, alignof(large_memblock));
+        
         memblock_set_largesize(block, sz);
 
         TC_ALIGN_ASSERT(user_ptr, align);
@@ -256,15 +259,15 @@ namespace tca
     }
     
     void  fla:: free_from_parent(void* p) {
-        using internal::memblock;
+        using internal::large_memblock;
         using internal::memblock_get_largesize;
         using internal::fallback_t;
         
-        uintptr_t user_ptr = reinterpret_cast<uintptr_t>(p);
+        uintptr_t user_ptr      = reinterpret_cast<uintptr_t>(p);
         fallback_t fallback     = *reinterpret_cast<fallback_t*>(user_ptr - sizeof(fallback));
-        memblock* block         = reinterpret_cast<memblock*>(user_ptr - fallback);
+        large_memblock* block   = reinterpret_cast<large_memblock*>(user_ptr - fallback);
 
-        m_parent->deallocate(block, block->large_size);
+        m_parent->deallocate(block, memblock_get_largesize(block));
     }
 
     void* fla:: allocate_align(std::size_t sz, std::size_t align) {

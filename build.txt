@@ -1,24 +1,22 @@
 
 OS   	    = WINDOWS
-TARGET_ARCH = X86-64
+TARGET_ARCH = X64
 TARGET_TYPE = SHARED
-OUTPUT_NAME = tclib-${TARGET_ARCH}
+OUTPUT_NAME = libtc-${TARGET_ARCH}
 
 # Windows
 CXX_ARM7_WINDOWS    = armv7-w64-mingw32-g++
 CXX_AARCH64_WINDOWS = aarch64-w64-mingw32-g++
-CXX_X86-64_WINDOWS  = x86_64-w64-mingw32-g++
+CXX_X64_WINDOWS     = x86_64-w64-mingw32-g++
 CXX_X86_WINDOWS	    = i686-w64-mingw32-g++
 
 # Windows compiler flags
 CXX_WINDOWS_STATIC_FLAGS =
 CXX_WINDOWS_SHARED_FLAGS =
-CXX_WINDOWS_EXE_FLAGS = -O0 -g
 
 # Windows linker flags
 LDD_WINDOWS_STATIC_FLAGS =
 LDD_WINDOWS_SHARED_FLAGS = -shared -fPIC
-LDD_WINDOWS_EXE_FLAGS =
 
 # Windows Librarires
 LDD_WINDOWS_LIB	= -lws2_32 -lstdc++exp
@@ -48,19 +46,19 @@ WINDOWS_EXE_OUTPUT    = a.exe
 # Linux
 CXX_ARM7_LINUX		= clang++ --target=arm-linux-gnueabihf
 CXX_AARCH64_LINUX	= clang++ --target=aarch64-linux-gnu
-CXX_X86-64_LINUX	= clang++ --target=x86_64-linux-gnu
+CXX_X64_LINUX	    = clang++ --target=x86_64-linux-gnu
 CXX_X86_LINUX		= clang++ --target=i686-linux-gnu
 
 # Linux compiler flags
 CXX_LINUX_STATIC_FLAGS =
-CXX_LINUX_SHARED_FLAGS = -shared -fPIC
+CXX_LINUX_SHARED_FLAGS = -fPIC
 
 # Linux linker flags
 LDD_LINUX_STATIC_FLAGS =
 LDD_LINUX_SHARED_FLAGS = -shared -fPIC
 
 # Linux Librarires
-LDD_LINUX_LIB	= -lstdc++exp
+# LDD_LINUX_LIB	= -lstdc++exp
 
 # Output linux
 LINUX_SHARED_OUTPUT = ${OUTPUT_NAME}.so
@@ -91,7 +89,6 @@ WARNING  = -Wall -pedantic -Wextra -Wsign-promo -Wfloat-equal -Wconversion -Wno-
 
 MAKE_STATIC = ar rcs ${__OUTPUT__} ${__OBJECTS__}
 MAKE_SHARED = ${LINKER} ${__OBJECTS__} -o ${__OUTPUT__} ${LDD_LIB}
-MAKE_EXE = ${LINKER} ${__OBJECTS__} -o ${__OUTPUT__} ${LDD_LIB}
 
 # System
 COMPILE= ${COMPILER} -c ${__SOURCE__} -o ${__OBJECT__} ${INCLUDE} ${STANDARD} ${DEFINE} ${WARNING} -MMD

@@ -24,13 +24,14 @@ struct memblock {
     memsize_t        key;
     signed char      height;
     fallback_t       dummy;
-    union {
-        struct {
-            struct memblock* left;
-            struct memblock* right;
-        };
-        std::size_t large_size;
-    };
+    struct memblock* left;
+    struct memblock* right;
+};
+
+struct large_memblock {
+    struct memblock base;
+    std::size_t     large_size;
+    fallback_t      dummy;
 };
 
 } //namespace internal
@@ -79,7 +80,10 @@ class free_list_allocator : public allocator {
         MIN_BLOCK_SIZE  = align_up<std::size_t>(NODE_SIZE, MIN_ALIGN),
         
         // Default page size (128KB).
-        PAGE_SIZE       = 1024 * 128
+        PAGE_SIZE       = 1024 * 128,
+
+        // Size of large memblock
+        LARGE_BLOCK_HEADER_SIZE = sizeof(internal::large_memblock),
     };
 
     // Linked list of memory pages.

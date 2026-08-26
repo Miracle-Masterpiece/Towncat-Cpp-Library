@@ -3,7 +3,6 @@
 
 namespace tc
 {
-
     odstream::odstream() : m_out(nullptr) {
 
     }
@@ -49,12 +48,10 @@ namespace tc
     }
     
     void odstream::flush() {
-        JSTD_DEBUG_CODE
-        (
-            if (!m_out)
-                throw_except<io_exception>("stream is null");
-        )
-        m_out->flush();
+        if (m_out)
+        {
+            m_out->flush();
+        }
     }
     
     void odstream::close(error_code& err) {

@@ -130,7 +130,7 @@ namespace internal
      *      Equivalent to: t = static_cast<TARGET_T>(std::forward<SOURCE_T>(s));
      */
     template<typename TARGET_T, typename SOURCE_T>
-    static void assign_static_cast(TARGET_T& t, SOURCE_T&& s) {
+    void assign_static_cast(TARGET_T& t, SOURCE_T&& s) {
         t = static_cast<TARGET_T>(std::forward<SOURCE_T>(s));
     }
 
@@ -279,7 +279,9 @@ namespace internal
     {
         typedef typename make_unsigned<T>::type Tunsigned;
         static T read(char buf[]) {
-            Tunsigned x = static_cast<Tunsigned>( static_cast<unsigned char>(buf[INDEX - 1]) ) << ((INDEX - 1) * CHAR_BIT);
+            Tunsigned x = static_cast<Tunsigned>(
+                static_cast<Tunsigned>( static_cast<unsigned char>(buf[INDEX - 1]) ) << ((INDEX - 1) * CHAR_BIT)
+            );
             return static_cast<T>(x | read_le<T, INDEX - 1>::read(buf));
         }
     };

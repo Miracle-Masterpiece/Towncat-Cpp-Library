@@ -4,9 +4,27 @@
 #include <cpp/lang/system.hpp>
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/utils.hpp>
+#include <cpp/lang/types.hpp>
 
 namespace tc
 {
+
+class idstream;
+
+namespace internal
+{
+
+template<typename T, std::size_t SIZE>
+struct ostream_string_reader {
+    static tstring<T> read(idstream*, tca::allocator*);
+};
+
+template<typename T>
+struct ostream_string_reader<T, sizeof(char)> {
+    static tstring<T> read(idstream*, tca::allocator*);
+};
+
+}
 
 /**
  * Input decorator stream for reading typed data.
@@ -130,14 +148,10 @@ public:
         {
             throw_except<eof_exception>("cannot read type");
         }
-        utils::read_le<T>(buf);
+        return utils::read_le<T>(buf);
     }
 
-    template<typename T>
-    void read(T buf[], std::size_t sz);
-};
-
-    /**
+/**
      * Reads an array of typed values from the stream.
      * 
      * Reads sz elements of type T from the underlying stream.
@@ -159,10 +173,80 @@ public:
      *      if the underlying stream throws an error.
      */
     template<typename T>
+    void read(T buf[], std::size_t sz);
+
+    /**
+     * Reads a length-prefixed string from the stream.
+     * 
+     * Reads the string length as a 32-bit unsigned integer followed
+     * by the string data. The string data is read in little-endian
+     * byte order for each character.
+     * 
+     * @tparam TCHAR
+     *      The character type of the string (char, wchar_t, etc.).
+     * 
+     * @param alloc
+     *      Allocator to use for the string (default: default allocator).
+     * 
+     * @return The read string.
+     * 
+     * @throws eof_exception
+     *      If the complete string cannot be read.
+     * 
+     * @throws io_exception
+     *      If the underlying stream throws an error.
+     */
+    template<typename T>
+    tstring<T> read_string(tca::allocator* = tca::get_default_allocator());
+};
+
+    template<typename T>
     void idstream::read(T buf[], std::size_t sz) {
         for (std::size_t i = 0; i < sz; ++i)
             buf[i] = read<T>();
     }
+
+    template<typename T>
+    tstring<T> idstream::read_string(tca::allocator* alloc) {
+        using internal::ostream_string_reader;
+        return ostream_string_reader<T, sizeof(T)>::read(this, alloc);
+    }
 }
+
+namespace tc
+{
+namespace internal
+{
+
+    template<typename T, std::size_t SIZE>
+    /*static*/ tstring<T> ostream_string_reader<T, SIZE>::read(tc::idstream* in, tca::allocator* alloc) {
+        tstring<T> result(alloc);
+        
+        std::size_t len = static_cast<std::size_t>(in->read<len_type>());
+        result.set_length(len);
+
+        for (std::size_t i = 0; i < len; ++i)
+            result[i] = in->read<T>();
+
+        return result;
+    }
+
+    template<typename T>
+    /*static*/ tstring<T> ostream_string_reader<T, sizeof(char)>::read(tc::idstream* in, tca::allocator* alloc) {
+        tstring<T> result(alloc);
+
+        std::size_t len = static_cast<std::size_t>(in->read<len_type>());
+        result.set_length(len);
+
+        std::size_t readed = in->read(static_cast<char*>(result.c_str()), len);
+        if (readed != len)
+            throw_except<eof_exception>("cannot read type");
+
+        return result;
+    }
+
+}
+}
+
 
 #endif//_JSTD_CPP_LANG_IO_DATA_INPUT_STREAM_H_

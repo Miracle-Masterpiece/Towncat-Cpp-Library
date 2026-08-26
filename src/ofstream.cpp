@@ -68,15 +68,13 @@ namespace tc {
     }
     
     void ofstream::flush() {
-        JSTD_DEBUG_CODE
-        (
-            if (!m_handle)
-                throw_except<io_exception>("stream is null");
-        )
-        error_code err = filesystem::flush(m_handle);
-        if (err)
+        if (m_handle)
         {
-            internal::io::throw_error_code(err);
+            error_code err = filesystem::flush(m_handle);
+            if (err)
+            {
+                internal::io::throw_error_code(err);
+            }
         }
     }
     

@@ -1023,8 +1023,6 @@ public:
     template<typename TKEY_, typename TVALUE_>
     bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::put(TKEY_&& key, TVALUE_&& value) {
         
-        ensure_capacity();
-
         entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
         if (finded)
         {
@@ -1035,7 +1033,15 @@ public:
         }
         else
         {
-            entry* e = alloc_entry(std::forward<TKEY_>(key), std::forward<TVALUE_>(value), internal::map::hash_key<THASHER>(key));
+            ensure_capacity();
+            std::size_t hash = internal::map::hash_key<THASHER>(key);
+
+            entry* e = 
+                        alloc_entry(
+                            std::forward<TKEY_>(key),
+                            std::forward<TVALUE_>(value),
+                            hash
+                        );
             
             std::size_t idx = internal::map::bucket_index<THASHER>(key, m_buckets);
             internal::map::append_entry(idx, e, m_buckets);
@@ -1056,14 +1062,21 @@ public:
     template<typename TKEY_, typename TVALUE_>
     bool linked_hash_map<TKEY, TVALUE, THASHER, TEQUALER>::insert(TKEY_&& key, TVALUE_&& value) {
         
-        ensure_capacity();
-
         entry* finded = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
         if (!finded)
         {
-            entry* e = alloc_entry(std::forward<TKEY_>(key), std::forward<TVALUE_>(value), internal::map::hash_key<THASHER>(key));
+        
+            ensure_capacity();
+
+            std::size_t idx  = internal::map::bucket_index<THASHER>(key, m_buckets);
+            std::size_t hash = internal::map::hash_key<THASHER>(key);
+
+            entry* e = alloc_entry(
+                std::forward<TKEY_>(key), 
+                std::forward<TVALUE_>(value),
+                hash
+            );
             
-            std::size_t idx = internal::map::bucket_index<THASHER>(key, m_buckets);
             internal::map::append_entry(idx, e, m_buckets);
             
             ++m_size;

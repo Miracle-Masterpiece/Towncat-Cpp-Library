@@ -49,7 +49,7 @@ namespace tc
                 
                 assert(s.length() < INLINE_BUFFER_SIZE);
                 
-                std::memcpy(c_str(), s.c_str(), (s.length() + 1) * sizeof(TCHAR));
+                std::memcpy(inline_data, s.c_str(), (s.length() + 1) * sizeof(TCHAR));
                 cap  = INLINE_BUFFER_SIZE;
                 size = s.length();
             }
@@ -62,7 +62,7 @@ namespace tc
                                                         allocator->allocate_align(new_cap * sizeof(TCHAR), alignof(TCHAR))
                                                     );
                 if (!new_data)
-                    throw_except<out_of_memory_error>("Out of memory");
+                    throw_except<out_of_memory_error>("out of memory");
                 
                 std::memcpy(new_data, s.c_str(), (s.length() + 1) * sizeof(TCHAR));
 
@@ -90,30 +90,24 @@ namespace tc
             
             if (s.is_inline_string())
             {
-                std::memcpy(c_str(), s.c_str(), s.length());
                 cap  = s.cap;
                 size = s.length();
+                std::memcpy(inline_data, s.c_str(), sizeof(TCHAR) * (s.length() + 1));
             }
             else
             {
                 data   = s.data;
-                s.data = nullptr;
-
                 size   = s.size;
-                s.size = 0;
-
                 cap    = s.cap;
-                
-                s.cap            = INLINE_BUFFER_SIZE;
-                s.inline_data[0] = 0;
             }
-
+            s.size           = 0;
+            s.inline_data[0] = 0;
+            s.cap            = INLINE_BUFFER_SIZE;
         }
         else
         {
             *this = s;
         }
-
         return *this;
     }
 
@@ -125,7 +119,7 @@ namespace tc
 
         TCHAR* new_data     = static_cast<TCHAR*>( allocator->allocate_align(sizeof(TCHAR) * new_cap, alignof(TCHAR)) );
         if (!new_data)
-            throw_except<out_of_memory_error>("Out of memory");
+            throw_except<out_of_memory_error>("out of memory");
 
         std::memcpy(new_data, c_str(), (size + 1) * sizeof(TCHAR));
 
@@ -164,7 +158,7 @@ namespace tc
 
             TCHAR* new_data = static_cast<TCHAR*>( allocator->allocate_align(new_cap * sizeof(TCHAR), alignof(TCHAR)) );
             if (!new_data)
-                throw_except<out_of_memory_error>("Out of memory");
+                throw_except<out_of_memory_error>("out of memory");
             
             std::memcpy(new_data, c_str(), len * sizeof(TCHAR));
             new_data[len] = 0;

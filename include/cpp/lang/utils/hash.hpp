@@ -5,7 +5,7 @@
 #include <cpp/lang/traits/pointer_traits.hpp>
 #include <cpp/lang/traits/cv_traits.hpp>
 #include <cpp/lang/numbers.hpp>
-#include <cstdint>
+#include <cstddef>
 
 namespace tc
 {

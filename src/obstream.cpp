@@ -111,15 +111,13 @@ namespace tc
     }
     
     void obstream::flush() {
-        JSTD_DEBUG_CODE
-        (
-            if (!m_out)
-                throw_except<io_exception>("stream is null");
-        )
-        if (m_offset > 0)
+        if (m_out)
         {
-            m_out->write(m_buffer, m_offset);
-            m_offset = 0;
+            if (m_offset > 0)
+            {
+                m_out->write(m_buffer, m_offset);
+                m_offset = 0;
+            }
         }
     }
     

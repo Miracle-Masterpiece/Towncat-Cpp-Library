@@ -107,7 +107,7 @@ namespace tc {
          * Размер временного буфера, куда будет сохранено масштабированное изображение.
          * Буфер делится на rescale, так как если изначальное изображение весит килобайт, то масштабированный на 2, размер будет в два раза меньше и так далее.
          */
-        std::size_t buffer_size_for_resized_image = get_max_mem_size_for_max_image(m_images, m_cnt_imgs) / scale_factor;
+        std::size_t buffer_size_for_resized_image = get_max_mem_size_for_max_image(m_images, m_cnt_imgs) / static_cast<std::size_t>(scale_factor);
 
         /**
          * Линейный аллокатор, который нужен, чтобы выделять память под хранения временного масштабированного изображения

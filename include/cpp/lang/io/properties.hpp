@@ -34,7 +34,7 @@ public:
     /**
      * 
      */
-    using entry = map::entry<string, string>;
+    typedef pair<string, string> entry;
 
     /**
      * 

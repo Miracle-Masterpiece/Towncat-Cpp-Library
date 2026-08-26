@@ -715,8 +715,8 @@ private:
          */
         iterator_impl<TENTRY, PAIR_T> operator++ (int);
     };
-public:
 
+public:
     /**
      * 
      */
@@ -867,8 +867,6 @@ public:
     template<typename TKEY_, typename TVALUE_>
     bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::put(TKEY_&& key, TVALUE_&& value) {
         
-        ensure_capacity();
-
         entry* finded   = internal::map::find_entry<THASHER, TEQUALER>(key, m_buckets);
         if (finded)
         {
@@ -877,14 +875,18 @@ public:
         }
         else
         {
+            ensure_capacity();
+
+            std::size_t idx     = internal::map::bucket_index<THASHER>(key, m_buckets);
+            std::size_t hash    = internal::map::hash_key<THASHER>(key);
+
             entry* e = internal::map::alloc_entry<entry>(
                                                             std::forward<TKEY_>(key),
                                                             std::forward<TVALUE_>(value),
-                                                            internal::map::hash_key<THASHER>(key),
+                                                            hash,
                                                             m_allocator
                                                         );
             
-            std::size_t idx = internal::map::bucket_index<THASHER>(key, m_buckets);
             internal::map::append_entry(idx, e, m_buckets);
             
             ++m_size;
@@ -895,6 +897,7 @@ public:
     template<typename TKEY, typename TVALUE, typename THASHER, typename TEQUALER>
     template<typename TKEY_, typename TVALUE_>
     bool hash_map<TKEY, TVALUE, THASHER, TEQUALER>::insert(TKEY_&& key, TVALUE_&& value) {
+        
         ensure_capacity();
 
         entry* added = internal::map::insert<THASHER, TEQUALER>(
@@ -1130,8 +1133,8 @@ public:
     template<typename TENTRY, typename PAIR_T>
     typename hash_map<TKEY, TVALUE, THASHER, TEQUALER>::template iterator_impl<TENTRY, PAIR_T> hash_map<TKEY, TVALUE, THASHER, TEQUALER>::iterator_impl<TENTRY, PAIR_T>::operator++(int) {
         JSTD_DEBUG_CODE(check_non_null(m_node));
-        iterator_impl<TENTRY, PAIR_T> it(m_entries);
-        m_entries = m_entries->get_list_next();
+        iterator_impl<TENTRY, PAIR_T> it = *this;
+        ++(*this);
         return it;
     }
 }

@@ -123,7 +123,7 @@ struct stream_wrapper {
     bool     m_eof; //end of file flag  
 };
 
-/**
+    /**
      * Reads data from the stream.
      * 
      * STB image callback that reads a specified number of bytes from the stream.

@@ -5,9 +5,27 @@
 #include <cpp/lang/io/ostream.hpp>
 #include <cpp/lang/system.hpp>
 #include <cpp/lang/utils/utils.hpp>
+#include <cpp/lang/types.hpp>
 
 namespace tc
 {
+
+class odstream;
+
+namespace internal
+{
+
+template<typename T, std::size_t SIZE = sizeof(T)>
+struct ostream_string_write {
+    static void write(const tstring<T>& s, odstream*);
+};
+
+template<typename T>
+struct ostream_string_write<T, sizeof(char)> {
+    static void write(const tstring<T>& s, odstream*);
+};
+
+} //namespace internal
 
 /**
  * Output decorator stream for writing typed data.
@@ -133,6 +151,29 @@ public:
     }
 
     /**
+     * Writes a string to the stream with length prefix.
+     * 
+     * Writes the string length as a 32-bit unsigned integer followed
+     * by the string data. The string data is written in little-endian
+     * byte order for each character.
+     * 
+     * @tparam TCHAR
+     *      The character type of the string (char, wchar_t, etc.).
+     * 
+     * @param s
+     *      The string to write.
+     * 
+     * @throws io_exception
+     *      If the underlying stream throws an error.
+     * 
+     * @note The string format is: [length (4 bytes)] [character data]
+     * 
+     * @note Characters are written in little-endian byte order.
+     */
+    template<typename TCHAR>
+    void write_string(const tstring<TCHAR>& s);
+
+    /**
      * Writes an array of typed values to the stream.
      * 
      * Writes sz elements of type T to the underlying stream.
@@ -161,6 +202,42 @@ public:
             write<T>(arr[i]);
         }
     }
+
+    template<typename TCHAR>
+    void odstream::write_string(const tstring<TCHAR>& s) {
+        using internal::ostream_string_write;
+        ostream_string_write<TCHAR, sizeof(TCHAR)>::write(s, this);
+    }
 }
+
+
+namespace tc
+{
+namespace internal
+{
+    template<typename T, std::size_t SIZE>
+    /*static*/ void ostream_string_write<T, SIZE>::write(const tstring<T>& s, odstream* out) {
+        len_type len = static_cast<len_type>(s.length());
+        out->write<len_type>(len);
+        
+        for (std::size_t i = 0; i < s.length(); ++i)
+            out->write<T>(s[i]);
+    }
+    
+
+    template<typename T>
+    /*static*/ void ostream_string_write<T, sizeof(char)>::write(const tstring<T>& s, odstream* out) {    
+        len_type len     = static_cast<len_type>(s.length());
+        const char* data = static_cast<const char*>(s.c_str());
+    
+        // Write string length
+        out->write<len_type>(len);
+        
+        // Write string data
+        out->write(data, len);
+    }
+
+} //namespace internal
+} //namespace tc
 
 #endif//_JSTD_CPP_LANG_IO_DATA_OUTPUT_STREAM_H_

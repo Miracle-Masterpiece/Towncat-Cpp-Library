@@ -1,0 +1,4 @@
+#ifndef F0F96326_6F0C_4D6E_9B27_4EC95276CC5E
+#define F0F96326_6F0C_4D6E_9B27_4EC95276CC5E
+#include <allocators/synchronized_allocator.hpp>
+#endif /* F0F96326_6F0C_4D6E_9B27_4EC95276CC5E */
