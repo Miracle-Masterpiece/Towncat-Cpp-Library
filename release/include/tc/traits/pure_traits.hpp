@@ -1,0 +1,4 @@
+#ifndef C695EE77_4AF3_49B2_AAC1_77003BF6D6DD
+#define C695EE77_4AF3_49B2_AAC1_77003BF6D6DD
+#include <cpp/lang/traits/pure_traits.hpp>
+#endif /* C695EE77_4AF3_49B2_AAC1_77003BF6D6DD */

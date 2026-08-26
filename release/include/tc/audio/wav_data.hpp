@@ -1,0 +1,4 @@
+#ifndef EA900CCC_F13F_4621_99C7_7C1C6E6D03D7
+#define EA900CCC_F13F_4621_99C7_7C1C6E6D03D7
+#include <cpp/lang/utils/audio/wav_data.hpp>
+#endif /* EA900CCC_F13F_4621_99C7_7C1C6E6D03D7 */

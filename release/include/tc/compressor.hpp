@@ -1,0 +1,4 @@
+#ifndef CBF746D9_9B63_4B5B_A49D_CC74A098A32E
+#define CBF746D9_9B63_4B5B_A49D_CC74A098A32E
+#include <cpp/lang/compress/compressor.hpp>
+#endif /* CBF746D9_9B63_4B5B_A49D_CC74A098A32E */

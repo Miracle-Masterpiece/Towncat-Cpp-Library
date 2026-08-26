@@ -1,95 +1,28 @@
 
-OS   	    = WINDOWS
-TARGET_ARCH = X64
-TARGET_TYPE = SHARED
-OUTPUT_NAME = libtc-${TARGET_ARCH}
-
-# Windows
-CXX_ARM7_WINDOWS    = armv7-w64-mingw32-g++
-CXX_AARCH64_WINDOWS = aarch64-w64-mingw32-g++
-CXX_X64_WINDOWS     = x86_64-w64-mingw32-g++
-CXX_X86_WINDOWS	    = i686-w64-mingw32-g++
-
-# Windows compiler flags
-CXX_WINDOWS_STATIC_FLAGS =
-CXX_WINDOWS_SHARED_FLAGS =
-
-# Windows linker flags
-LDD_WINDOWS_STATIC_FLAGS =
-LDD_WINDOWS_SHARED_FLAGS = -shared -fPIC
-
-# Windows Librarires
-LDD_WINDOWS_LIB	= -lws2_32 -lstdc++exp
-
-# Output windows
-WINDOWS_SHARED_OUTPUT = ${OUTPUT_NAME}.dll
-WINDOWS_STATIC_OUTPUT = ${OUTPUT_NAME}.lib
-WINDOWS_EXE_OUTPUT    = a.exe
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Linux
-CXX_ARM7_LINUX		= clang++ --target=arm-linux-gnueabihf
-CXX_AARCH64_LINUX	= clang++ --target=aarch64-linux-gnu
-CXX_X64_LINUX	    = clang++ --target=x86_64-linux-gnu
-CXX_X86_LINUX		= clang++ --target=i686-linux-gnu
-
-# Linux compiler flags
-CXX_LINUX_STATIC_FLAGS =
-CXX_LINUX_SHARED_FLAGS = -fPIC
-
-# Linux linker flags
-LDD_LINUX_STATIC_FLAGS =
-LDD_LINUX_SHARED_FLAGS = -shared -fPIC
-
-# Linux Librarires
-# LDD_LINUX_LIB	= -lstdc++exp
-
-# Output linux
-LINUX_SHARED_OUTPUT = ${OUTPUT_NAME}.so
-LINUX_STATIC_OUTPUT = ${OUTPUT_NAME}.a
-
-
-
-# Crossplatform
-OUTPUT      = ${${OS}_${TARGET_TYPE}_OUTPUT}
-CXX_FLAGS   = ${CXX_${OS}_${TARGET_TYPE}_FLAGS}
-LDD_FLAGS   = ${LDD_${OS}_${TARGET_TYPE}_FLAGS}
-LDD_LIB     = ${LDD_${OS}_LIB}
-
+OS = WINDOWS
 
 # Paths
 SOURCE_DIR = src
-OBJECT_DIR = bin/${OS}_${TARGET_ARCH}
+OBJECT_DIR = bin/${OS}
 OUTPUT_DIR = build
 
+WINDOWS_EXE = a.exe
+LINUX_EXE   = a.out
+OUTPUT = ${${OS}_EXE}
 
 # Compiler settings
-COMPILER = ${CXX_${TARGET_ARCH}_${OS}} ${CXX_FLAGS}
-LINKER   = ${CXX_${TARGET_ARCH}_${OS}} ${LDD_FLAGS}
+COMPILER = clang++
+LINKER   = clang++
 STANDARD = -std=c++11
 DEFINE   =
 INCLUDE  = -I"include"
 WARNING  = -Wall -pedantic -Wextra -Wsign-promo -Wfloat-equal -Wconversion -Wno-unused-parameter -Wno-unused-value -Wnon-virtual-dtor -Wno-unused-function
 
-MAKE_STATIC = ar rcs ${__OUTPUT__} ${__OBJECTS__}
-MAKE_SHARED = ${LINKER} ${__OBJECTS__} -o ${__OUTPUT__} ${LDD_LIB}
+WINDOWS_LDD_LIB = -lws2_32
+LINUX_LDD_LIB   = 
+LDD_LIB         = ${${OS}_LDD_LIB}
+
 
 # System
 COMPILE= ${COMPILER} -c ${__SOURCE__} -o ${__OBJECT__} ${INCLUDE} ${STANDARD} ${DEFINE} ${WARNING} -MMD
-LINK   = ${MAKE_${TARGET_TYPE}}
+LINK   = ${LINKER} ${__OBJECTS__} -o ${__OUTPUT__} ${LDD_LIB}

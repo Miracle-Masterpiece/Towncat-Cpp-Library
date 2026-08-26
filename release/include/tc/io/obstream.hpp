@@ -1,0 +1,8 @@
+#ifndef AA6E3A16_16D7_4D30_BA2A_3DC9A42747CA
+#define AA6E3A16_16D7_4D30_BA2A_3DC9A42747CA
+#include <cpp/lang/io/obstream.hpp>
+namespace tc
+{
+    typedef obstream buffered_output_stream;
+}
+#endif /* AA6E3A16_16D7_4D30_BA2A_3DC9A42747CA */

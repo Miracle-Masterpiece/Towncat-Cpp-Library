@@ -1,0 +1,4 @@
+#ifndef EA141B36_4DEE_4377_BEE6_0ACB61BF524F
+#define EA141B36_4DEE_4377_BEE6_0ACB61BF524F
+#include <allocators/linear_allocator.hpp>
+#endif /* EA141B36_4DEE_4377_BEE6_0ACB61BF524F */

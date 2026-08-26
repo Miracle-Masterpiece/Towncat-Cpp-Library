@@ -1,0 +1,4 @@
+#ifndef A1129CFA_F54D_4C2B_96EF_D05ABD6FA7FA
+#define A1129CFA_F54D_4C2B_96EF_D05ABD6FA7FA
+#include <cpp/lang/utils/cond_compile.hpp>
+#endif /* A1129CFA_F54D_4C2B_96EF_D05ABD6FA7FA */

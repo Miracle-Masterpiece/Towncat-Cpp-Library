@@ -1,0 +1,4 @@
+#ifndef D6C6EDDD_A9CB_43BD_9F09_4E0CFAEABB47
+#define D6C6EDDD_A9CB_43BD_9F09_4E0CFAEABB47
+#include <allocators/base_allocator.hpp>
+#endif /* D6C6EDDD_A9CB_43BD_9F09_4E0CFAEABB47 */

@@ -1,0 +1,4 @@
+#ifndef D7BB2EEC_15DA_41C6_A24C_A8A915712823
+#define D7BB2EEC_15DA_41C6_A24C_A8A915712823
+#include <cpp/lang/utils/wrapped_ptr.hpp>
+#endif /* D7BB2EEC_15DA_41C6_A24C_A8A915712823 */

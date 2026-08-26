@@ -1,0 +1,4 @@
+#ifndef DF54F184_6469_4931_8261_60A1E728244C
+#define DF54F184_6469_4931_8261_60A1E728244C
+#include <allocators/inline_linear_allocator.hpp>
+#endif /* DF54F184_6469_4931_8261_60A1E728244C */

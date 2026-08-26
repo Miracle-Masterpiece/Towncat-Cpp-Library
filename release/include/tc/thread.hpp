@@ -1,0 +1,4 @@
+#ifndef A7CE6D15_5CF9_4567_ABF8_91E371F33A53
+#define A7CE6D15_5CF9_4567_ABF8_91E371F33A53
+#include <cpp/lang/concurrency/thread.hpp>
+#endif /* A7CE6D15_5CF9_4567_ABF8_91E371F33A53 */

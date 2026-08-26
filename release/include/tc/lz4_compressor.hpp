@@ -1,0 +1,4 @@
+#ifndef C0486E19_0582_4331_8B5E_0C47F979A23F
+#define C0486E19_0582_4331_8B5E_0C47F979A23F
+#include <cpp/lang/compress/lz4_compressor.hpp>
+#endif /* C0486E19_0582_4331_8B5E_0C47F979A23F */

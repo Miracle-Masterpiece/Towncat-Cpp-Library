@@ -1,0 +1,4 @@
+#ifndef B3826A25_F32D_4B1C_BC21_9083858A9199
+#define B3826A25_F32D_4B1C_BC21_9083858A9199
+#include <cpp/lang/compress/decompressor.hpp>
+#endif /* B3826A25_F32D_4B1C_BC21_9083858A9199 */

@@ -1,0 +1,4 @@
+#ifndef E604FB96_F301_4086_A08D_D6C18FBB830D
+#define E604FB96_F301_4086_A08D_D6C18FBB830D
+#include <cpp/lang/utils/images/image.hpp>
+#endif /* E604FB96_F301_4086_A08D_D6C18FBB830D */

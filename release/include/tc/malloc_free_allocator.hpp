@@ -1,0 +1,4 @@
+#ifndef AD7CA771_2245_4686_8CF5_E0C5B750F4F7
+#define AD7CA771_2245_4686_8CF5_E0C5B750F4F7
+#include <allocators/malloc_free_allocator.hpp>
+#endif /* AD7CA771_2245_4686_8CF5_E0C5B750F4F7 */

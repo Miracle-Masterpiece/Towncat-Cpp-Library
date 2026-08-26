@@ -1,0 +1,4 @@
+#ifndef C30010C1_432A_43D9_9549_E3C5F8CE0263
+#define C30010C1_432A_43D9_9549_E3C5F8CE0263
+#include <cpp/lang/utils/unique_ptr.hpp>
+#endif /* C30010C1_432A_43D9_9549_E3C5F8CE0263 */

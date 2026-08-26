@@ -1,0 +1,4 @@
+#ifndef AE47B724_3EE5_4FF6_8E36_35E50D2F5CF0
+#define AE47B724_3EE5_4FF6_8E36_35E50D2F5CF0
+#include <cpp/lang/traits/relatoship_traits.hpp>
+#endif /* AE47B724_3EE5_4FF6_8E36_35E50D2F5CF0 */

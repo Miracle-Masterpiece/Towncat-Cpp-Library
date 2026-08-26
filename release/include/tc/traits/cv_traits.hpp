@@ -1,0 +1,4 @@
+#ifndef C1B70711_9396_4D88_AE81_37177E525200
+#define C1B70711_9396_4D88_AE81_37177E525200
+#include <cpp/lang/traits/cv_traits.hpp>
+#endif /* C1B70711_9396_4D88_AE81_37177E525200 */

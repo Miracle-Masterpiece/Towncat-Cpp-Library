@@ -1,0 +1,4 @@
+#ifndef D9FF5E57_D564_42E3_9A41_19F6574FB9CE
+#define D9FF5E57_D564_42E3_9A41_19F6574FB9CE
+#include <cpp/lang/traits/pointer_traits.hpp>
+#endif /* D9FF5E57_D564_42E3_9A41_19F6574FB9CE */
