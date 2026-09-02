@@ -3,7 +3,6 @@
 
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/math/math.hpp>
-#include <internal/math_defs.hpp>
 #include <cpp/lang/string.hpp>
 
 namespace tc {
@@ -59,7 +58,7 @@ struct base_vec3 {
             };
         };
         
-        T arr[3]
+        T arr[3];
     };
 
     /**
@@ -637,13 +636,13 @@ struct base_vec3 {
 
     template<typename T>
     T& base_vec3<T>::get(std::size_t idx) {
-        JSTD_DEBUG_CODE(check_index(idx, 3));
+        JSTD_DEBUG_CODE(check_index<std::size_t>(idx, 3));
         return arr[idx];
     }
 
     template<typename T>
-    const T& base_vec3<T>::get(std::size_t index) const {
-        JSTD_DEBUG_CODE(check_index(idx, 3));
+    const T& base_vec3<T>::get(std::size_t idx) const {
+        JSTD_DEBUG_CODE(check_index<std::size_t>(idx, 3));
         return arr[idx];
     }
 
@@ -763,7 +762,7 @@ struct base_vec3 {
         .append("[x=").append(tc::to_string(x)).append(',')
          .append("y=").append(tc::to_string(y)).append(',')
          .append("z=").append(tc::to_string(z)).append(']');
-        return alloc;
+        return result;
     }
 
     template<typename T>

@@ -25,7 +25,7 @@ namespace tc
         try {
             m_mutex_impl.unlock();
         } catch (...) {
-            throw_except<interrupted_exception>();
+            throw make_except<interrupted_exception>("mutex interrupted");
         }
     }
     
@@ -33,7 +33,7 @@ namespace tc
         try {
             return m_mutex_impl.try_lock();
         } catch (...) {
-            throw_except<interrupted_exception>();
+            throw make_except<interrupted_exception>("mutex interrupted");
         }
     }
 

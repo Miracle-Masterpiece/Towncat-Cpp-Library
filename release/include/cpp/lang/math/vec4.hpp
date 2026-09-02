@@ -4,7 +4,6 @@
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/utils/objects.hpp>
 #include <cpp/lang/math/math.hpp>
-#include <internal/math_defs.hpp>
 #include <cpp/lang/string.hpp>
 
 namespace tc

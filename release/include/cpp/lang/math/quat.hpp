@@ -1,7 +1,6 @@
 #ifndef JSTD_CPP_LANG_MATH_QUAT_H
 #define JSTD_CPP_LANG_MATH_QUAT_H
 
-#include <internal/math_defs.hpp>
 #include <cpp/lang/math/math.hpp>
 #include <cpp/lang/math/vec3.hpp>
 #include <cpp/lang/string.hpp
