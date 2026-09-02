@@ -3,7 +3,7 @@
 
 #include <cpp/lang/math/math.hpp>
 #include <cpp/lang/math/vec3.hpp>
-#include <cpp/lang/string.hpp
+#include <cpp/lang/string.hpp>
 
 namespace tc
 {
@@ -408,9 +408,12 @@ struct base_quat {
     base_quat<T> base_quat<T>::inverse() const {
         const T EPSILON = (const T) 0.000001;
         const T n = norm();
-        if (n < EPSILON) {
+        if (n < EPSILON)
+        {
             return base_quat<T>(0, 0, 0, 1);
-        } else {
+        }
+        else
+        {
             return base_quat<T>(-i / n, -j / n, -k / n, a / n);
         }
     }
@@ -492,7 +495,7 @@ struct base_quat {
          .append("k=").append(tc::to_string(z)).append(',')
          .append("a=").append(tc::to_string(w)).append(']');
         
-        return alloc;
+        return result;
     }
 
     template<typename T>

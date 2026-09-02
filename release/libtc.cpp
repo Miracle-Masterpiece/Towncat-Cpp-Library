@@ -1,7 +1,3 @@
-/*
-                                                File auto generated. DO NOT EDIT!
-*/
-
 //#################################################### ./src/allocator.cpp ####################################################
 
 #include <allocators/allocator.hpp>
@@ -5523,6 +5519,71 @@ namespace tc {
     }
 }
 
+#if 0
+
+#include <cpp/lang/io/ifstream.hpp>
+#include <cpp/lang/io/file.hpp>
+#include <cpp/lang/string.hpp>
+#include <cpp/lang/io/utility.hpp>
+#include <cpp/lang/utils/images/imageio.hpp>
+#include <cpp/lang/utils/arrays.hpp>
+#include <cpp/lang/utils/utils.hpp>
+
+class png_filter : public tc::file_filter {
+public:
+    bool apply(const char* path, std::size_t path_length) const override {
+        return tc::string(path).ends_with(".png");   
+    }
+};
+
+
+tc::array<tc::image> read_all_images(const tc::file& path) {
+    tc::array<tc::file> files;
+    {
+        png_filter filter;
+        files = path.list_files(filter);
+    }
+
+    tc::array<tc::image> imgs(files.length);
+    for (std::size_t i = 0; i < imgs.length; ++i)
+    {
+        imgs[i] = tc::imageio::load_image(files[i]);
+    }
+
+    return imgs;
+}
+
+namespace jstd
+{
+    template<>
+    struct compare_to<image> {
+        int operator() (const image& a, const image& b) const {
+            return (b.get_width() * b.get_height()) - (a.get_width() * a.get_height());
+        }
+    };
+}
+
+int main(int argc, const char** args) {
+    try {
+        tc::file root = "./images/";    
+        tc::array<tc::image> images = read_all_images(root);
+        printf("len: %zu\n", images.length);
+        {
+            tc::utils::quick_sort(images.data(), images.length);
+        }
+        {
+            tc::image_packer packer(images.data(), images.length, 1024, 1024);
+            tc::image atlas = packer.pack(argc > 1 ? (*args[1]) - '0' : 1);
+            tc::imageio::write_image(tc::file("./img.png"), &atlas, "png");
+        }
+    } catch( const tc::throwable& t) {
+        std::printf("except: %s\n", t.cause());
+    }
+    
+}
+
+#endif
+
 //#################################################### ./src/image_tree.cpp ####################################################
 
 #include <cpp/lang/utils/images/image_tree.hpp>
@@ -8128,6 +8189,51 @@ namespace tc
     }
 }
 
+#if 0
+
+#include <lz4.h>
+#include <cpp/lang/ustring.hpp>
+
+int main() {
+    // const char* str = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.";
+    // const char* str = "abracadabraabracadabraabracadabraabracadabraabracadabra";
+    const std::size_t BUF_SZ = 1 << 17;
+    char compressed[BUF_SZ];
+    std::size_t compressed_length;
+
+
+    tc::string s;
+    for (int i = 0; i < 100000; ++i)
+        s.append("The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.");
+
+    {//compress
+        compressed_length = LZ4_compress_default(s.c_string(), compressed, (int) s.length(), (int) BUF_SZ);
+        std::printf("compressed: %zu\n", compressed_length);
+        for (std::size_t i = 0; i < compressed_length; ++i)
+        {
+            std::printf("%x ", compressed[i] & 0xff);
+        }
+        std::printf("\n");
+    }
+    
+    {//decompress
+        tc::lz4_decompressor decompressor;
+        decompressor.set_input(compressed, compressed_length);
+        
+        char decompressed[BUF_SZ];
+        std::size_t decompressed_length = decompressor.decompress(decompressed, BUF_SZ);
+        std::printf("decompressed: %zu\n", decompressed_length);
+
+        for (std::size_t i = 0; i < decompressed_length; ++i)
+        {
+            std::printf("%c", decompressed[i]);
+        }
+    }
+    
+}
+
+#endif
+
 //#################################################### ./src/malloc_free_allocator.cpp ####################################################
 
 #include <allocators/malloc_free_allocator.hpp>
@@ -8261,7 +8367,7 @@ namespace tc
         try {
             m_mutex_impl.unlock();
         } catch (...) {
-            throw_except<interrupted_exception>();
+            throw make_except<interrupted_exception>("mutex interrupted");
         }
     }
     
@@ -8269,7 +8375,7 @@ namespace tc
         try {
             return m_mutex_impl.try_lock();
         } catch (...) {
-            throw_except<interrupted_exception>();
+            throw make_except<interrupted_exception>("mutex interrupted");
         }
     }
 
@@ -9758,6 +9864,40 @@ namespace tc
     }
     
 }
+
+// #include <cpp/lang/utils/images/image.hpp>
+// #include <cpp/lang/utils/images/imageio.hpp>
+
+// #include <stdio.h>
+// #include <math.h>
+// #include <stdlib.h>
+
+// int main() {
+//     using namespace tc;
+//     int size = 1024;
+//     image img(size, size, 1);
+    
+//     smooth_noise noise(system::current_time_millis(), math::quintic);
+
+//     timepoint last = system::nano_time();
+//     for (int i = 0; i < size; ++i)
+//     {
+//         int xo = -10000000;
+//         int yo = 10000000;
+        
+//         for (int j = 0; j < size; ++j)
+//         {
+//             // float h = noise.get(xo + i, yo + j, 128, 8, 4, 4);
+//             float h = noise.get(xo + i, yo + j, 1024, 8, 2, 2);
+//             img.get_gray(i, j) = image::gray((unsigned char) (h * 255));
+
+//         }
+//     }
+//     timepoint now = system::nano_time();
+//     printf("passed: %f\n", (double) (now - last) / 1000000.0);
+
+//     imageio::write_image(tc::file("./rnd.png"), &img, ".png");
+// }
 
 //#################################################### ./src/stacktrace.cpp ####################################################
 

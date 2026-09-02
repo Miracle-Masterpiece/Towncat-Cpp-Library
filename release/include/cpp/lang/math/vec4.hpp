@@ -689,13 +689,13 @@ struct base_vec4 {
 
     template<typename T>
     T& base_vec4<T>::get(std::size_t idx) {
-        JSTD_DEBUG_CODE(check_index(idx, 4));
+        JSTD_DEBUG_CODE(check_index<std::size_t>(idx, 4));
         return arr[idx];
     }
     
     template<typename T>
     const T& base_vec4<T>::get(std::size_t idx) const {
-        JSTD_DEBUG_CODE(check_index(idx, 4));
+        JSTD_DEBUG_CODE(check_index<std::size_t>(idx, 4));
         return arr[idx];
     }
 
@@ -854,7 +854,7 @@ struct base_vec4 {
          .append("z=").append(tc::to_string(z)).append(',')
          .append("w=").append(tc::to_string(w)).append(']');
         
-        return alloc;
+        return result;
     }
 
     template<typename T>
