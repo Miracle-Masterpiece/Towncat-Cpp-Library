@@ -303,7 +303,7 @@ namespace tc
             
             if (!FlushFileBuffers(fhandle))
             {
-                internal::io::throw_error_code(error_code(GetLastError(), system_category()));
+                internal::io::throw_error_code(error_code(static_cast<int>(GetLastError()), system_category()));
             }
         )
 

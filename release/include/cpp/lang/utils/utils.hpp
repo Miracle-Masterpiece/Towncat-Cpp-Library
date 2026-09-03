@@ -49,7 +49,7 @@ namespace internal
         const std::size_t HBS   = CHAR_BIT * HSZ;
         const std::size_t HMASK = (T(1) << HBS) - T(1);
         
-        return (bswap<T, HSZ>(x & HMASK) << HBS) | bswap<T, HSZ>(x >> HBS);
+        return static_cast<T>(bswap<T, HSZ>(x & HMASK) << HBS) | bswap<T, HSZ>(x >> HBS);
     }
 }
     

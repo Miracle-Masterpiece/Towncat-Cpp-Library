@@ -38,7 +38,7 @@ namespace tc
         if (!data)
             throw_except<out_of_memory_error>("Out of memory");
         
-        std::memcpy(data, wav.data, wav.subchunk2Size);
+        std::memcpy(data, wav.data, static_cast<std::size_t>(wav.subchunk2Size));
         
         chunk_size      = wav.chunk_size;
         subchunk1Size   = wav.subchunk1Size;
@@ -57,17 +57,18 @@ namespace tc
     }
     
     wav_data::wav_data(wav_data&& wav) : wav_data(wav.m_allocator) {
-        std::swap(data, wav.data);
-        std::swap(chunk_size, wav.chunk_size);
-        std::swap(subchunk1Size, wav.subchunk1Size);
-        std::swap(sampleRate, wav.sampleRate);
-        std::swap(byteRate, wav.byteRate);
-        std::swap(subchunk2Size, wav.subchunk2Size);
-        std::swap(block_align, wav.block_align);
-        std::swap(audioFormat, wav.audioFormat);
-        std::swap(numChannels, wav.numChannels);
-        std::swap(bits_per_sample, wav.bits_per_sample);
-        std::memcpy(chunk_id, wav.chunk_id, sizeof(chunk_id));
+        std::swap(data,             wav.data);
+        std::swap(chunk_size,       wav.chunk_size);
+        std::swap(subchunk1Size,    wav.subchunk1Size);
+        std::swap(sampleRate,       wav.sampleRate);
+        std::swap(byteRate,         wav.byteRate);
+        std::swap(subchunk2Size,    wav.subchunk2Size);
+        std::swap(block_align,      wav.block_align);
+        std::swap(audioFormat,      wav.audioFormat);
+        std::swap(numChannels,      wav.numChannels);
+        std::swap(bits_per_sample,  wav.bits_per_sample);
+        
+        std::memcpy(chunk_id,   wav.chunk_id, sizeof(chunk_id));
         std::memcpy(format, wav.format, sizeof(format));
         std::memcpy(subchunk1Id, wav.subchunk1Id, sizeof(subchunk1Id));
         std::memcpy(subchunk2Id, wav.subchunk2Id, sizeof(subchunk2Id));
@@ -96,8 +97,8 @@ namespace tc
             numChannels     = wav.numChannels;
             bits_per_sample = wav.bits_per_sample;
     
-            std::memcpy(chunk_id, wav.chunk_id, sizeof(chunk_id));
-            std::memcpy(format, wav.format, sizeof(format));
+            std::memcpy(chunk_id,    wav.chunk_id, sizeof(chunk_id));
+            std::memcpy(format,      wav.format, sizeof(format));
             std::memcpy(subchunk1Id, wav.subchunk1Id, sizeof(subchunk1Id));
             std::memcpy(subchunk2Id, wav.subchunk2Id, sizeof(subchunk2Id));
         }
@@ -109,20 +110,20 @@ namespace tc
         {
             if (get_allocator() == wav.get_allocator())
             {
-                std::swap(data, wav.data);
-                std::swap(chunk_size, wav.chunk_size);
-                std::swap(subchunk1Size, wav.subchunk1Size);
-                std::swap(sampleRate, wav.sampleRate);
-                std::swap(byteRate, wav.byteRate);
-                std::swap(subchunk2Size, wav.subchunk2Size);
-                std::swap(block_align, wav.block_align);
-                std::swap(audioFormat, wav.audioFormat);
-                std::swap(numChannels, wav.numChannels);
-                std::swap(bits_per_sample, wav.bits_per_sample);
-                std::memcpy(chunk_id, wav.chunk_id, sizeof(chunk_id));
-                std::memcpy(format, wav.format, sizeof(format));
-                std::memcpy(subchunk1Id, wav.subchunk1Id, sizeof(subchunk1Id));
-                std::memcpy(subchunk2Id, wav.subchunk2Id, sizeof(subchunk2Id));
+                std::swap(data,             wav.data);
+                std::swap(chunk_size,       wav.chunk_size);
+                std::swap(subchunk1Size,    wav.subchunk1Size);
+                std::swap(sampleRate,       wav.sampleRate);
+                std::swap(byteRate,         wav.byteRate);
+                std::swap(subchunk2Size,    wav.subchunk2Size);
+                std::swap(block_align,      wav.block_align);
+                std::swap(audioFormat,      wav.audioFormat);
+                std::swap(numChannels,      wav.numChannels);
+                std::swap(bits_per_sample,  wav.bits_per_sample);
+                std::memcpy(chunk_id,       wav.chunk_id, sizeof(chunk_id));
+                std::memcpy(format,         wav.format, sizeof(format));
+                std::memcpy(subchunk1Id,    wav.subchunk1Id, sizeof(subchunk1Id));
+                std::memcpy(subchunk2Id,    wav.subchunk2Id, sizeof(subchunk2Id));
             }
             else
             {
@@ -264,7 +265,7 @@ namespace tc
     wav_data::~wav_data() {
         if (m_allocator != nullptr && data != nullptr)
         {
-            m_allocator->deallocate(data, subchunk2Size);
+            m_allocator->deallocate(data);
             data = nullptr;
         }
     }

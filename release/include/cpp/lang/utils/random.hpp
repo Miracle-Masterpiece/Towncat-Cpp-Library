@@ -190,7 +190,7 @@ public:
     template<typename T>
     T random::next(const T max) {
         T v = (T) (next<T>() % max);
-        return v < 0 ? -v : v;
+        return v < 0 ? static_cast<T>(-v) : v;
     }
 
     template<typename T>
