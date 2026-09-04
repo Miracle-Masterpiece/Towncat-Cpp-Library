@@ -9,116 +9,129 @@ namespace tc
 {
 
 /**
- * Представляет собой неизменяемую строку в стиле C (null-terminated), с кэшируемой длиной и удобными методами доступа.
- *
- * Класс c_str предоставляет обёртку над const char*, позволяя безопасно и удобно работать со строками, 
- * не копируя данные. Длина строки кэшируется после первого запроса, что ускоряет повторные вызовы length().
- * Поддерживает сравнение, хеширование и доступ к символам по индексу.
+ * Immutable wrapper for null-terminated C-style strings.
+ * 
+ * Provides a lightweight wrapper around const char* with cached length
+ * and hash computation. The string data is not copied; the wrapper
+ * maintains a pointer to the original C-string. Length is computed
+ * lazily on first access and cached for subsequent calls.
+ * 
+ * Supports comparison, hashing, character access by index, and implicit
+ * conversion to const char* for compatibility with C APIs.
  */
 class c_str {
-    const char* m_cstr;             // Указатель на C-строку (null-terminated).
-    mutable std::size_t m_length;   // Кэшированная длина строки. Вычисляется при первом вызове length().
+    const char* m_cstr;
+    mutable std::size_t m_length;
+    mutable std::size_t m_hashode;
 public:
     /**
-     * Конструктор из C-строки.
-     *
-     * @param s 
-     *      Указатель на null-terminated строку. 
-     *      Должен быть действительным на всё время жизни объекта.
+     * Constructs a c_str wrapper from a C-string.
+     * 
+     * @param s
+     *      Pointer to a null-terminated C-string.
+     *      Must remain valid for the lifetime of this object.
+     *      If s is nullptr, the string is treated as empty.
      */
     c_str(const char* s);
 
     /**
-     * Неявное преобразование к const char*.
-     * Позволяет использовать объект c_str в контексте, где ожидается C-строка, например при передаче в стандартные функции C.
-     *
-     * @return 
-     *      Указатель на исходную C-строку.
+     * Implicit conversion to const char*.
+     * 
+     * Allows using c_str objects where a C-string is expected,
+     * such as passing to C standard library functions or APIs
+     * that accept const char*.
+     * 
+     * @return
+     *      Pointer to the underlying C-string.
+     *      Returns nullptr if the underlying string was nullptr.
      */
     operator const char* () const;
 
     /**
-     * Возвращает длину строки (без учёта завершающего нуля).
-     *
-     * Длина строки вычисляется один раз и кэшируется для последующих вызовов.
-     *
-     * @return 
-     *      Количество символов в строке.
+     * Returns the length of the string.
+     * 
+     * The length is computed lazily on the first call and cached
+     * for subsequent calls. The length does not include the null
+     * terminator.
+     * 
+     * @return
+     *      Number of characters in the string (0 if m_cstr is nullptr).
      */
     std::size_t length() const;
 
-    /**
-     * Возвращает символ по индексу.
+     /**
+     * Accesses a character by index.
      * 
-     * @param idx 
-     *      Индекс символа.
+     * @param idx
+     *      Index of the character to access.
      * 
-     * @return 
-     *      Константная ссылка на символ по указанному индексу.
+     * @return
+     *      Const reference to the character at the specified index.
      * 
-     * @throws index_out_of_bound_exception
-     *      Если индекс меньше нуля или больше длины. (Если не определён NDEBUG).
+     * @throws index_out_of_bound_exception (in DEBUG build)
+     *      If idx is out of bounds.
      */
     const char& operator[] (std::size_t idx) const;
 
     /**
-     * Сравнивает две строки на равенство содержимого.
-     *
-     * Сравниваются символы строк посимвольно до первого отличия или конца строк.
-     *
-     * @param s 
-     *      Другая строка для сравнения.
+     * Compares two strings for equality.
      * 
-     * @return 
-     *      true, если строки идентичны, иначе — false.
+     * Performs character-by-character comparison. Strings are equal
+     * if they have the same length and all characters match.
+     * 
+     * @param s
+     *      The other string to compare with.
+     * 
+     * @return
+     *      True if the strings are identical, false otherwise.
      */
     bool equals(const c_str& s) const;
 
     /**
-     * Оператор сравнения на равенство.
-     *
-     * Делегирует выполнение методу equals().
-     *
-     * @param s 
-     *      Другая строка для сравнения.
+     * Equality comparison operator.
      * 
-     * @return 
-     *      true, если строки равны, иначе false.
+     * Delegates to equals().
+     * 
+     * @param s
+     *      The other string to compare with.
+     * 
+     * @return
+     *      True if the strings are equal, false otherwise.
      */
     bool operator==(const c_str& s) const;
 
     /**
-     * @brief Оператор сравнения на неравенство.
-     *
-     * Противоположность operator==.
-     *
-     * @param s 
-     *      Другая строка для сравнения.
+     * Inequality comparison operator.
      * 
-     * @return 
-     *      true, если строки не равны, иначе false.
+     * Returns the opposite of equals().
+     * 
+     * @param s
+     *      The other string to compare with.
+     * 
+     * @return
+     *      True if the strings are not equal, false otherwise.
      */
     bool operator!=(const c_str& s) const;
 
     /**
-     * Вычисляет хеш-код строки.
+     * Computes the hash code of the string.
      * 
-     * @return 
-     *      Хеш-код строки.
+     * Calculates a hash value for the string using the hash_for<char>()
+     * function. The result is cached for subsequent calls.
+     * 
+     * @return
+     *      Hash code of the string (0 if the string is empty).
      */
     std::size_t hashcode() const;
 
     /**
-     * Проверяет, является ли строка пустой.
-     *
-     * Возвращает true, если строка не содержит символов (т.е. длина равна нулю).
-     * Поведение идентично сравнению length() == 0. 
+     * Checks if the string is empty.
      * 
-     * Это касается как пустых строк, так и случая, когда строка равна nullptr. 
-     * В обоих случаях метод вернёт true.
-     *
-     * @return 
-     *      true, если строка пуста, иначе false.
+     * Returns true if the string contains no characters (length is 0).
+     * This handles both empty strings and nullptr strings.
+     * 
+     * @return
+     *      True if the string is empty, false otherwise.
      */
     bool is_empty() const;
 };

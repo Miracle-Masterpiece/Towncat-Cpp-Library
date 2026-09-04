@@ -149,24 +149,11 @@ namespace math
     }
 
     inline quat from_equler_z(float rad) {
-        using internal::real_t;
         const float w = cos(rad * 0.5f);
         const float x = 0;
         const float y = 0;
         const float z = sin(rad * 0.5f);
         return quat(x, y, z, w);
-    }
-
-    inline double pow(double x, double power) {
-        return ::pow(x, power);
-    }
-
-    inline long double pow(long double x, long double power) {
-        return ::powl(x, power);
-    }
-
-    inline float pow(float x, float power) {
-        return ::powf(x, power);
     }
 
     inline mat4 quat_to_matrix(const quat& q){

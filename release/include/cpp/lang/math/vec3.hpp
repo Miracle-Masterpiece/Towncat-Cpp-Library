@@ -20,7 +20,7 @@ typedef base_vec3<signed long> vec3l;
 typedef base_vec3<signed long long> vec3ll;
 
 typedef base_vec3<unsigned short> vec3us;
-typedef base_vec3<unsigned int> vec3ui;
+typedef base_vec3<unsigned int> vec3u;
 typedef base_vec3<unsigned long> vec3ul;
 typedef base_vec3<unsigned long long> vec3ull;
 
@@ -38,28 +38,9 @@ typedef base_vec3<unsigned long long> vec3ull;
 template<typename T>
 struct base_vec3 {
 
-    union
-    {
-        struct
-        {
-            union
-            {
-                T x, r, A;
-            };
-            
-            union
-            {
-                T y, g, B;
-            };
-
-            union
-            {
-                T z, b, C;
-            };
-        };
-        
-        T arr[3];
-    };
+    union{T x, r, A;};
+    union{T y, g, B;};
+    union{T z, b, C;};
 
     /**
      * Конструктор по значениям компонентов.
@@ -636,14 +617,24 @@ struct base_vec3 {
 
     template<typename T>
     T& base_vec3<T>::get(std::size_t idx) {
-        JSTD_DEBUG_CODE(check_index<std::size_t>(idx, 3));
-        return arr[idx];
+        switch (idx) {
+            case 0: return x;
+            case 1: return y;
+            case 2: return z;
+            default:
+                throw make_except<index_out_of_bound_exception>("%zu out of bound vec3", idx);
+        }
     }
 
     template<typename T>
     const T& base_vec3<T>::get(std::size_t idx) const {
-        JSTD_DEBUG_CODE(check_index<std::size_t>(idx, 3));
-        return arr[idx];
+        switch (idx) {
+            case 0: return x;
+            case 1: return y;
+            case 2: return z;
+            default:
+                throw make_except<index_out_of_bound_exception>("%zu out of bound vec3", idx);
+        }
     }
 
     template<typename T>
