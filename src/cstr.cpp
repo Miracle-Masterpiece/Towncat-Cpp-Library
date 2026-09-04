@@ -55,11 +55,14 @@ namespace tc
     }
 
     std::size_t c_str::hashcode() const {
-        if (length() > 0)
+        if (m_hashode == 0)
         {
-            return objects::hashcode(m_cstr,  m_cstr + length(), hash_for<char>());
+            if (length() > 0)
+            {
+                m_hashode = objects::hashcode(m_cstr,  m_cstr + length(), hash_for<char>());
+            }
         }
-        return 0;
+        return m_hashode;
     }
 
     bool c_str::is_empty() const {
