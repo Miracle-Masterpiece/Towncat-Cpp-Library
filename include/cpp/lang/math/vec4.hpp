@@ -725,7 +725,8 @@ struct base_vec4 {
     
     template<typename T>
     std::size_t base_vec4<T>::hashcode() const {
-        return objects::hashcode(arr, sizeof(arr) / sizeof(*arr));
+        const T tmp[] = {x, y, z, w};
+        return objects::hashcode(tmp, sizeof(tmp) / sizeof(T));
     }
 
     template<typename T>

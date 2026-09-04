@@ -678,7 +678,8 @@ struct base_vec3 {
     
     template<typename T>
     std::size_t base_vec3<T>::hashcode() const {
-        return objects::hashcode(arr, sizeof(arr) / sizeof(*arr));
+        const T tmp[] = {x, y, z};
+        return objects::hashcode(tmp, sizeof(tmp) / sizeof(T));
     }
 
     template<typename T>
