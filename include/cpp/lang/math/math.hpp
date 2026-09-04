@@ -234,6 +234,27 @@ namespace math
     /**
      * 
      */
+    inline double pow(double x, double power) {
+        return ::pow(x, power);
+    }
+
+    /**
+     * 
+     */
+    inline float pow(float x, float power) {
+        return ::powf(x, power);
+    }
+
+    /**
+     * 
+     */
+    inline long double pow(long double x, long double power) {
+        return ::powl(x, power);
+    }
+
+    /**
+     * 
+     */
     inline long double atan2(long double y, long double x) {
         return ::atan2l(y, x);
     }

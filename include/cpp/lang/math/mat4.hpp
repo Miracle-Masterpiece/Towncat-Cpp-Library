@@ -6,7 +6,8 @@
 #include <cpp/lang/math/vec4.hpp>
 #include <cpp/lang/string.hpp>
 
-namespace tc {
+namespace tc
+{
 
 template<typename T>
 struct base_mat4;
@@ -21,7 +22,7 @@ typedef base_mat4<signed long>      mat4l;
 typedef base_mat4<signed long long> mat4ll;
 
 typedef base_mat4<unsigned short>   mat4us;
-typedef base_mat4<unsigned int>     mat4ui;
+typedef base_mat4<unsigned int>     mat4u;
 typedef base_mat4<unsigned long>    mat4ul;
 typedef base_mat4<unsigned long>    mat4ull;
 
@@ -164,8 +165,9 @@ struct base_mat4 {
         const std::size_t y = row;
         const std::size_t x = col;
         const std::size_t idx = y + x * 4;
-        JSTD_DEBUG_CODE(
-            check_index(idx, 16);
+        JSTD_DEBUG_CODE
+        (
+            check_index(idx, static_cast<std::size_t>(16));
         );
         return m_data[idx];
     }
@@ -175,8 +177,9 @@ struct base_mat4 {
         const std::size_t y = row;
         const std::size_t x = col;
         const std::size_t idx = y + x * 4;
-        JSTD_DEBUG_CODE(
-            check_index(idx, 16);
+        JSTD_DEBUG_CODE
+        (
+            check_index(idx, static_cast<std::size_t>(16));
         );
         return m_data[idx];
     }
@@ -283,14 +286,17 @@ struct base_mat4 {
     tc::string base_mat4<T>::to_string(tca::allocator* alloc) const {
         tc::string result(alloc);
         
-        for (std::size_t y = 0; y < 4; ++y) {
+        for (std::size_t y = 0; y < 4; ++y)
+        {
             const T v0 = get(y, 0);
             const T v1 = get(y, 1);
             const T v2 = get(y, 2);
             const T v3 = get(y, 3);
-            if (bufsize <= offset)
-                break;
-            result.append(tc::to_string(T)).append(' ');
+            result
+            .append(tc::to_string(v0)).append(' ')
+            .append(tc::to_string(v1)).append(' ')
+            .append(tc::to_string(v2)).append(' ')
+            .append(tc::to_string(v3)).append('\n');
         }   
     
         return result;

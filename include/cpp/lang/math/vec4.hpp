@@ -21,7 +21,7 @@ typedef base_vec4<signed int> vec4i;
 typedef base_vec4<signed long> vec4l;
 
 typedef base_vec4<unsigned short> vec4us;
-typedef base_vec4<unsigned int> vec4ui;
+typedef base_vec4<unsigned int> vec4u;
 typedef base_vec4<unsigned long> vec4ul;
 typedef base_vec4<unsigned long long> vec4ull;
 
@@ -40,30 +40,11 @@ typedef base_vec4<unsigned long long> vec4ull;
 template<typename T>
 struct base_vec4 {
 
-    union
-    {
-        struct
-        {
-            union {
-                T x, r, A;
-            };
-
-            union {
-                T y, g, B;
-            };
-
-            union {
-                T z, b, C;
-            };
-
-            union {
-                T w, a, D;
-            };
-        };
-        
-        T arr[4];
-    };
-
+    union {T x, r, A;};
+    union {T y, g, B;};
+    union {T z, b, C;};
+    union {T w, a, D;};
+    
     /**
      * Конструктор по значениям компонентов.
      * 
@@ -689,14 +670,26 @@ struct base_vec4 {
 
     template<typename T>
     T& base_vec4<T>::get(std::size_t idx) {
-        JSTD_DEBUG_CODE(check_index<std::size_t>(idx, 4));
-        return arr[idx];
+        switch (idx) {
+            case 0: return x;
+            case 1: return y;
+            case 2: return z;
+            case 3: return w;
+            default:
+                throw make_except<index_out_of_bound_exception>("%zu out of bound vec4", idx);
+        }
     }
     
     template<typename T>
     const T& base_vec4<T>::get(std::size_t idx) const {
-        JSTD_DEBUG_CODE(check_index<std::size_t>(idx, 4));
-        return arr[idx];
+        switch (idx) {
+            case 0: return x;
+            case 1: return y;
+            case 2: return z;
+            case 3: return w;
+            default:
+                throw make_except<index_out_of_bound_exception>("%zu out of bound vec4", idx);
+        }
     }
 
     template<typename T>
