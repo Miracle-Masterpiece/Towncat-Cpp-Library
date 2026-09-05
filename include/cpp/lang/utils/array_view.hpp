@@ -103,6 +103,38 @@ public:
         );
         return m_data[idx];
     }
+
+    /**
+     * Returns an iterator to the beginning of the array view.
+     * 
+     * @return
+     *      Pointer to the first element of the array.
+     */
+    T* begin() {return m_data;}
+    
+    /**
+     * Returns an iterator to the end of the array view.
+     * 
+     * @return
+     *      Pointer to one past the last element of the array.
+     */
+    T* end() {return m_data + m_length;}
+    
+    /**
+     * Returns a const iterator to the beginning of the array view.
+     * 
+     * @return
+     *      Const pointer to the first element of the array.
+     */
+    const T* begin() const {return m_data;}
+    
+    /**
+     * Returns a const iterator to the end of the array view.
+     * 
+     * @return
+     *      Const pointer to one past the last element of the array.
+     */
+    const T* end() const {return m_data + m_length;}
 };
 
 }

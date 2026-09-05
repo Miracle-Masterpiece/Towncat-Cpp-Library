@@ -293,7 +293,7 @@ public:
     directory_iterator(directory_iterator&& other);
 
     // Перемещающее присваивание.
-    directory_iterator& operator=(directory_iterator& other);
+    directory_iterator& operator=(directory_iterator&& other);
 
     // Закрывает директорию, если открыта.
     ~directory_iterator();

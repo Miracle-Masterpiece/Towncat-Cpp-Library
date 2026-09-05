@@ -15,6 +15,11 @@ struct is_final {
 };
 
 template<typename T>
+struct is_polymorphic {
+    static const bool value = __is_polymorphic(T);
+};
+
+template<typename T>
 struct is_trivial {
     static const bool value = __is_trivial(T);
 };

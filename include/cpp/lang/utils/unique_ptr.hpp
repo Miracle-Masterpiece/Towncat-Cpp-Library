@@ -21,9 +21,19 @@ struct default_deleter {
     template<typename E, typename = typename enable_if<is_cv_castable<E, T>::value && is_base_of<E, T>::value>::type>
     default_deleter(const default_deleter<E>& a) {}
     
+    template<typename E, typename = typename enable_if<is_cv_castable<E, T>::value && is_base_of<E, T>::value>::type>
+    default_deleter<T>& operator=(const default_deleter<E>& a) {return *this;}
+    
+    template<typename = typename enable_if<is_polymorphic<T>::value>::type>
     void operator()(T* p) const {
         p->~T();
-        tca::get_default_allocator()->deallocate((void*) p);
+        tca::get_default_allocator()->deallocate(dynamic_cast<void*>(p));
+    }
+    
+    template<typename = typename enable_if<!is_polymorphic<T>::value>::type>
+    void operator()(T* p) const {
+        p->~T();
+        tca::get_default_allocator()->deallocate(static_cast<void*>(p));
     }
 };
 
@@ -38,9 +48,16 @@ struct alloc_deleter {
     template<typename E, typename = typename enable_if<is_cv_castable<E, T>::value && is_base_of<E, T>::value>::type>
     alloc_deleter(const alloc_deleter<E>& a) : m_alloc(a.m_alloc) {}
 
+    template<typename = typename enable_if<is_polymorphic<T>::value>::type>
     void operator()(T* p) const {
         p->~T();
-        m_alloc->deallocate(static_cast<void*>(p));
+        tca::get_default_allocator()->deallocate(dynamic_cast<void*>(p));
+    }
+    
+    template<typename = typename enable_if<!is_polymorphic<T>::value>::type>
+    void operator()(T* p) const {
+        p->~T();
+        tca::get_default_allocator()->deallocate(static_cast<void*>(p));
     }
 };
 
@@ -128,8 +145,8 @@ public:
     /**
      * 
      */
-    template<typename E, typename = typename enable_if<is_base_of<E, T>::value>::type>
-    unique_ptr<T, DELETER>& operator= (unique_ptr<E, DELETER>&&);
+    template<typename E, typename EDELETER, typename = typename enable_if<is_base_of<E, T>::value>::type>
+    unique_ptr<T, DELETER>& operator= (unique_ptr<E, EDELETER>&&);
 
     /**
      * 
@@ -219,11 +236,15 @@ public:
     }
     
     template<typename T, typename DELETER>
-    template<typename E, typename>
-    unique_ptr<T, DELETER>& unique_ptr<T, DELETER>::operator= (unique_ptr<E, DELETER>&& p) {
-        if (&p != this) {
+    template<typename E, typename EDELETER, typename>
+    unique_ptr<T, DELETER>& unique_ptr<T, DELETER>::operator= (unique_ptr<E, EDELETER>&& p) {
+        if (get() != p.get())
+        {
             cleanup();
-            m_pair = std::move(p.m_pair);
+
+            m_pair.first() = static_cast<E*>(p.m_pair.first());
+            m_pair.second() = std::move(p.m_pair.second());
+            
             p.m_pair.first() = nullptr;
         }
         return *this;

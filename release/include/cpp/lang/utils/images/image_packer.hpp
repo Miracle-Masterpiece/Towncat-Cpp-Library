@@ -147,6 +147,16 @@ public:
      * Для выделения памяти под массив используется внутренний m_allocator
      */
     array<uv> get_uv() const;
+
+    /**
+     * 
+     */
+    int get_width() {return m_width;}
+    
+    /**
+     * 
+     */
+    int get_height() {return m_height;}
 };
 
 

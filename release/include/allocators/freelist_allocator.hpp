@@ -139,7 +139,7 @@ class free_list_allocator : public allocator {
     }
 public:
     
-/**
+    /**
      * Allocates a large block directly from the parent allocator.
      * 
      * @param sz

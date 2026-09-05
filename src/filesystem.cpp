@@ -551,7 +551,7 @@ namespace tc
         it._entry   = nullptr;
     }
     
-    directory_iterator& directory_iterator::operator= (directory_iterator& it) {
+    directory_iterator& directory_iterator::operator= (directory_iterator&& it) {
         if (&it != this)
         {
             close();
@@ -979,7 +979,7 @@ namespace tc
         return (len == 1 && path[0] == '.') || (len == 2 && path[0] == '.' && path[1] == '.');
     }
 
-    directory_iterator::directory_iterator(const char* path) : _dir(), _entry(), _end(path == nullptr ? true : false) {
+    directory_iterator::directory_iterator(const char* path) : _dir(INVALID_HANDLE_VALUE), _entry(), _end(path == nullptr ? true : false) {
         if (path != nullptr) {
 
             wchar_t wbuf[io::constants::MAX_LENGTH_PATH];
@@ -1007,16 +1007,17 @@ namespace tc
         }
     }   
 
-    directory_iterator::directory_iterator(directory_iterator&& it) : _dir(std::move(it._dir)), _entry(std::move(it._entry)) {
-        it._dir     = {0};
-        //it._entry   = {0};
+    directory_iterator::directory_iterator(directory_iterator&& it) : _dir(std::move(it._dir)), _entry(std::move(it._entry)), _end(it._end) {
+        it._dir     = INVALID_HANDLE_VALUE;
+        it._end     = true;
     }
     
-    directory_iterator& directory_iterator::operator= (directory_iterator& it) {
+    directory_iterator& directory_iterator::operator= (directory_iterator&& it) {
         if (&it != this)
         {
-            std::swap(_dir, it._dir);
-            std::swap(_entry, it._entry);
+            std::swap(_dir,     it._dir);
+            std::swap(_entry,   it._entry);
+            std::swap(_end,     it._end);
         } 
         return *this;
     }
