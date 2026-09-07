@@ -470,7 +470,7 @@ namespace utf32
     }
 
     template<typename U8, typename U32>
-    tstring<U8>& u32_to_u8(const tstring<U32>& u32, tstring<U32>& u8, byte_order u32_byteorder = system::native_byte_order()) {
+    tstring<U8>& u32_to_u8(const tstring<U32>& u32, tstring<U8>& u8, byte_order u32_byteorder = system::native_byte_order()) {
         
         utf32::iterator<U32> begin = u32_begin  (u32, u32_byteorder);
         utf32::iterator<U32> end   = u32_end    (u32, u32_byteorder);
