@@ -6,19 +6,14 @@
 #include <allocators/allocator.hpp>
 #include <cpp/lang/string.hpp>
 #include <cpp/lang/system.hpp>
+#include <cpp/lang/traits/primitive_traits.hpp>
 
 namespace tc
 {
 namespace utf
 {
 
-#if __SIZEOF_INT__ == 4
-    typedef unsigned int utfpoint;
-#elif __SIZEOF_LONG__ == 4
-    typedef unsigned long utfpoint;
-#else
-    #error Undefined utfpoint type!
-#endif
+typedef typename int_of<32>::utype utfpoint;
 
 namespace utf8
 {

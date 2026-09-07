@@ -22,6 +22,9 @@ namespace utf
 
 namespace utf8
 {
+
+    const std::size_t MAX_CHAR_LENGTH = 4;
+
     template<typename U8>
     bool is_header(const U8& ch) {
         unsigned char chr = (unsigned char) (ch & 0xFF);
@@ -162,6 +165,9 @@ namespace utf8
 
 namespace utf16
 {
+
+    const std::size_t MAX_CHAR_LENGTH = 2;
+
     template<typename U16>
     bool is_high_surrogate(const U16& ch) {
         return ch >= 0xd800 && ch <= 0xdbff;
@@ -253,6 +259,9 @@ namespace utf16
 
 namespace utf32
 {
+
+    const std::size_t MAX_CHAR_LENGTH = 2;
+
     template<typename U32>
     class iterator {
         const U32*  seq;

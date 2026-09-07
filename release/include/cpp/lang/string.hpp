@@ -7,6 +7,7 @@
 #include <cpp/lang/exceptions.hpp>
 #include <cpp/lang/common.hpp>
 #include <cpp/lang/math.hpp>
+#include <cpp/lang/traits/primitive_traits.hpp>
 #include <utility>
 
 namespace tc
@@ -1155,8 +1156,8 @@ namespace internal
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
 using u8string  = tstring<char>;
-using u16string = tstring<unsigned short>;
-using u32string = tstring<unsigned long>;
+using u16string = tstring<typename int_of<16>::utype>;
+using u32string = tstring<typename int_of<32>::utype>;
 using wstring   = tstring<wchar_t>;
 using string    = u8string;
 
