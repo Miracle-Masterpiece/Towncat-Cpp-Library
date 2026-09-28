@@ -24,13 +24,6 @@ struct default_deleter {
     template<typename E, typename = typename enable_if<is_cv_castable<E, T>::value && is_base_of<E, T>::value>::type>
     default_deleter<T>& operator=(const default_deleter<E>& a) {return *this;}
     
-    template<typename = typename enable_if<is_polymorphic<T>::value>::type>
-    void operator()(T* p) const {
-        p->~T();
-        tca::get_default_allocator()->deallocate(dynamic_cast<void*>(p));
-    }
-    
-    template<typename = typename enable_if<!is_polymorphic<T>::value>::type>
     void operator()(T* p) const {
         p->~T();
         tca::get_default_allocator()->deallocate(static_cast<void*>(p));
@@ -48,13 +41,6 @@ struct alloc_deleter {
     template<typename E, typename = typename enable_if<is_cv_castable<E, T>::value && is_base_of<E, T>::value>::type>
     alloc_deleter(const alloc_deleter<E>& a) : m_alloc(a.m_alloc) {}
 
-    template<typename = typename enable_if<is_polymorphic<T>::value>::type>
-    void operator()(T* p) const {
-        p->~T();
-        tca::get_default_allocator()->deallocate(dynamic_cast<void*>(p));
-    }
-    
-    template<typename = typename enable_if<!is_polymorphic<T>::value>::type>
     void operator()(T* p) const {
         p->~T();
         tca::get_default_allocator()->deallocate(static_cast<void*>(p));

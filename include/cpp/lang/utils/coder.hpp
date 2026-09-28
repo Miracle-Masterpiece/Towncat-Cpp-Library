@@ -481,7 +481,7 @@ namespace utf32
         while (begin != end)
         {
             utfpoint codepoint = *begin;
-            std::size_t u8_sz  = utf8::codepoint_to_chars(u8_buf, codepoint);
+            std::size_t u8_sz  = utf8::codepoint_to_chars(u8_buf, codepoint & MASK);
             u8.append(u8_buf, u8_sz);
             ++begin;
         }
