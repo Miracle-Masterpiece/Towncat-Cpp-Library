@@ -1,4 +1,0 @@
-#ifndef CEC707F5_387A_4D05_8C18_A2FD44A15F28
-#define CEC707F5_387A_4D05_8C18_A2FD44A15F28
-#include <cpp/lang/concurrency/cond_var.hpp>
-#endif /* CEC707F5_387A_4D05_8C18_A2FD44A15F28 */

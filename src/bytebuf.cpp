@@ -1,5 +1,5 @@
-#include <cpp/lang/io/bytebuf.hpp>
-#include <cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/io/bytebuf.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
 #include <cassert>
 
 namespace tc

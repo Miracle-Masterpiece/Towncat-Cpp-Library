@@ -1,5 +1,5 @@
-#include <allocators/allocator.hpp>
-#include <allocators/malloc_free_allocator.hpp>
+#include <tc/internal/allocators/allocator.hpp>
+#include <tc/internal/allocators/malloc_free_allocator.hpp>
 #include <utility>
 
 namespace tca

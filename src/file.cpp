@@ -1,9 +1,9 @@
-#include <cpp/lang/io/file.hpp>
-#include <cpp/lang/io/file_filter.hpp>
-#include <internal/io/filesystem.hpp>
-#include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/utils/objects.hpp>
-#include <cpp/lang/math.hpp>
+#include <tc/internal/cpp/lang/io/file.hpp>
+#include <tc/internal/cpp/lang/io/file_filter.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/utils/objects.hpp>
+#include <tc/internal/cpp/lang/math.hpp>
+#include <tc/internal/io/filesystem.hpp>
 #include <cstring>
 #include <algorithm>
 #include <cstdarg>

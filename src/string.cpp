@@ -1,4 +1,4 @@
-#include <cpp/lang/string.hpp>
+#include <tc/internal/cpp/lang/string.hpp>
 #include <cstring>
 #include <cassert>
 #include <cstdio>

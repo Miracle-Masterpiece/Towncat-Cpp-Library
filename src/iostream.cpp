@@ -1,9 +1,9 @@
-#include <cpp/lang/io/istream.hpp>
-#include <cpp/lang/io/ostream.hpp>
-#include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/errcode.hpp>
-#include <allocators/inline_linear_allocator.hpp>
-#include <internal/io/io_helpers.hpp>
+#include <tc/internal/cpp/lang/io/istream.hpp>
+#include <tc/internal/cpp/lang/io/ostream.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/errcode.hpp>
+#include <tc/internal/allocators/inline_linear_allocator.hpp>
+#include <tc/internal/io/io_helpers.hpp>
 
 namespace tc
 {

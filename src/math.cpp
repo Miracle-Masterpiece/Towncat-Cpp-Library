@@ -1,5 +1,5 @@
-#include <cpp/lang/math/math.hpp>
-#include <cpp/lang/utils/random.hpp>
+#include <tc/internal/cpp/lang/math/math.hpp>
+#include <tc/internal/cpp/lang/utils/random.hpp>
 
 namespace tc
 {

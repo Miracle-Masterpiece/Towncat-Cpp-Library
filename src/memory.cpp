@@ -1,7 +1,7 @@
-#include <internal/memory.hpp>
-#include <allocators/base_allocator.hpp>
-#include <cpp/lang/math.hpp>
-#include <allocators/helpers.hpp>
+#include <tc/internal/memory.hpp>
+#include <tc/internal/allocators/base_allocator.hpp>
+#include <tc/internal/cpp/lang/math.hpp>
+#include <tc/internal/allocators/helpers.hpp>
 #include <cassert>
 #include <cstdint>
 

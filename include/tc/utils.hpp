@@ -1,4 +1,4 @@
 #ifndef A81E47A5_7A2E_4810_875D_BB8145283050
 #define A81E47A5_7A2E_4810_875D_BB8145283050
-#include <cpp/lang/utils/utils.hpp>
+#include <tc/internal/cpp/lang/utils/utils.hpp>
 #endif /* A81E47A5_7A2E_4810_875D_BB8145283050 */

@@ -1,5 +1,5 @@
-#include <cpp/lang/io/imstream.hpp>
-#include <cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/io/imstream.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
 #include <iostream>
 
 namespace tc

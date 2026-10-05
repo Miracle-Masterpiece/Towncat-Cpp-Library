@@ -1,6 +1,6 @@
-#include <allocators/pool_allocator.hpp>
-#include <allocators/helpers.hpp>
-#include <cpp/lang/math.hpp>
+#include <tc/internal/allocators/pool_allocator.hpp>
+#include <tc/internal/allocators/helpers.hpp>
+#include <tc/internal/cpp/lang/math.hpp>
 #include <cassert>
 #include <cstdint>
 #include <utility>

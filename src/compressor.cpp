@@ -1,4 +1,4 @@
-#include <cpp/lang/compress/compressor.hpp>
+#include <tc/internal/cpp/lang/compress/compressor.hpp>
 
     const char* compressor::get_input() const {
         return input;

@@ -1,5 +1,5 @@
-#include <allocators/linear_allocator.hpp>
-#include <allocators/helpers.hpp>
+#include <tc/internal/allocators/linear_allocator.hpp>
+#include <tc/internal/allocators/helpers.hpp>
 #include <exception>
 #include <cstdio>
 #include <cstddef>

@@ -1,8 +1,7 @@
-#include <allocators/arena_free_list_allocator.hpp>
-#include <allocators/helpers.hpp>
-#include <cpp/lang/system.hpp>
+#include <tc/internal/allocators/arena_free_list_allocator.hpp>
+#include <tc/internal/allocators/helpers.hpp>
+#include <tc/internal/cpp/lang/system.hpp>
 #include <utility>
-
 
 namespace tca
 {

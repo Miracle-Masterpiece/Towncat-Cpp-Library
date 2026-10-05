@@ -1,8 +1,8 @@
-#include <cpp/lang/io/rafstream.hpp>
-#include <internal/io/io_helpers.hpp>
-#include <internal/io/filesystem.hpp>
-#include <cpp/lang/traits/primitive_traits.hpp>
-#include <cpp/lang/io/basebuf.hpp>
+#include <tc/internal/cpp/lang/io/rafstream.hpp>
+#include <tc/internal/io/io_helpers.hpp>
+#include <tc/internal/io/filesystem.hpp>
+#include <tc/internal/cpp/lang/traits/primitive_traits.hpp>
+#include <tc/internal/cpp/lang/io/basebuf.hpp>
 #include <cstdio>
 #include <cerrno>
 

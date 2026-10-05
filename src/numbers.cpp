@@ -1,5 +1,5 @@
-#include <cpp/lang/numbers.hpp>
-#include <cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/numbers.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
 #include <cstring>
 
 namespace tc 

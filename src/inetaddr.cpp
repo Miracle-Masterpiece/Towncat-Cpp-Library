@@ -1,4 +1,4 @@
-#include <cpp/lang/net/inetaddr.hpp>
+#include <tc/internal/cpp/lang/net/inetaddr.hpp>
 
 #if defined(JSTD_OS_LINUX) || defined(JSTD_OS_MAC)
 #include <netinet/tcp.h>
@@ -17,12 +17,12 @@
 #endif
 
 #include <cstring>
-#include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/string.hpp>
-#include <allocators/inline_linear_allocator.hpp>
-#include <cpp/lang/array.hpp>
-#include <cpp/lang/numbers.hpp>
-#include <internal/inet/ip_parser.h>
+#include <tc/internal/cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/string.hpp>
+#include <tc/internal/allocators/inline_linear_allocator.hpp>
+#include <tc/internal/cpp/lang/array.hpp>
+#include <tc/internal/cpp/lang/numbers.hpp>
+#include <tc/internal/inet/ip_parser.h>
 
 #if defined(JSTD_OS_LINUX) || defined(JSTD_OS_MAC)
 #define UNIX_CODE(code) code

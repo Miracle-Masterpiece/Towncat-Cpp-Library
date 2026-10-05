@@ -1,4 +1,0 @@
-#ifndef CCC978F4_8B47_4BB9_8F7A_FCB5D9AD0312
-#define CCC978F4_8B47_4BB9_8F7A_FCB5D9AD0312
-#include <cpp/lang/io/file_channel.hpp>
-#endif /* CCC978F4_8B47_4BB9_8F7A_FCB5D9AD0312 */

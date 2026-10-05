@@ -1,8 +1,8 @@
-#include <cpp/lang/concurrency/thread.hpp>
-#include <cpp/lang/concurrency/mutex.hpp>
-#include <cpp/lang/concurrency/runnable.hpp>
-#include <cpp/lang/utils/arrays.hpp>
-#include <cpp/lang/system.hpp>
+#include <tc/internal/cpp/lang/concurrency/thread.hpp>
+#include <tc/internal/cpp/lang/concurrency/mutex.hpp>
+#include <tc/internal/cpp/lang/concurrency/runnable.hpp>
+#include <tc/internal/cpp/lang/utils/arrays.hpp>
+#include <tc/internal/cpp/lang/system.hpp>
 #include <cstring>
 #include <exception>
 #include <iostream>

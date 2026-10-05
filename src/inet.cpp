@@ -1,9 +1,9 @@
-#include <cpp/lang/net/inet.hpp>
-#include <cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/net/inet.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
 
 #if defined(_WIN32)
 #include <winsock2.h>
-#include <internal/bsd_socket_errors.hpp>
+#include <tc/internal/bsd_socket_errors.hpp>
 #define __VERSION22 MAKEWORD(2, 2)
 #define __VERSION20 MAKEWORD(2, 0)
 #endif//_WIN32

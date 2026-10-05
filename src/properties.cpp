@@ -1,5 +1,5 @@
-#include <cpp/lang/io/properties.hpp>
-#include <cpp/lang/utils/date.hpp>
+#include <tc/internal/cpp/lang/io/properties.hpp>
+#include <tc/internal/cpp/lang/utils/date.hpp>
 
 namespace tc {
 

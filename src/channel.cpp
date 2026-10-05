@@ -1,4 +1,4 @@
-#include <cpp/lang/io/channel.hpp>
+#include <tc/internal/cpp/lang/io/channel.hpp>
 
 namespace tc
 {

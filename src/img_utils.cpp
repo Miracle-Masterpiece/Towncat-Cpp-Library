@@ -1,7 +1,7 @@
-#include <internal/img_utils.hpp>
-#include <cpp/lang/utils/array_view.hpp>
-#include <cpp/lang/array.hpp>
-#include <cpp/lang/math.hpp>
+#include <tc/internal/img_utils.hpp>
+#include <tc/internal/cpp/lang/utils/array_view.hpp>
+#include <tc/internal/cpp/lang/array.hpp>
+#include <tc/internal/cpp/lang/math.hpp>
 #include <cassert>
 #include <cerrno>
 

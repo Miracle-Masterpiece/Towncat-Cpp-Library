@@ -1,5 +1,5 @@
-#include <cpp/lang/utils/smooth_noise.hpp>
-#include <cpp/lang/math/math.hpp>
+#include <tc/internal/cpp/lang/utils/smooth_noise.hpp>
+#include <tc/internal/cpp/lang/math/math.hpp>
 
 namespace tc
 {

@@ -1,7 +1,7 @@
-#include <internal/bsd_socket.hpp>
+#include <tc/internal/bsd_socket.hpp>
 #include <iostream>
-#include <cpp/lang/types.hpp>
-#include <cpp/lang/utils/utils.hpp>
+#include <tc/internal/cpp/lang/types.hpp>
+#include <tc/internal/cpp/lang/utils/utils.hpp>
 
 #if defined(__WIN32)
 #define _____WIN_CODE____(___code) ___code 

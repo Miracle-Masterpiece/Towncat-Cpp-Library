@@ -1,4 +1,4 @@
 #ifndef A8569C7C_B0CC_488A_A633_9B73D520BE5B
 #define A8569C7C_B0CC_488A_A633_9B73D520BE5B
-#include <allocators/freelist_allocator.hpp>
+#include <tc/internal/allocators/freelist_allocator.hpp>
 #endif /* A8569C7C_B0CC_488A_A633_9B73D520BE5B */

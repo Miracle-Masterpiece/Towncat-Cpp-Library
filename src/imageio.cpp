@@ -1,10 +1,10 @@
-#include <cpp/lang/utils/images/imageio.hpp>
-#include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/utils/unique_ptr.hpp>
-#include <allocators/malloc_free_allocator.hpp>
-#include <cpp/lang/io/ifstream.hpp>
-#include <cpp/lang/io/ofstream.hpp>
-#include <cpp/lang/io/iostream.hpp>
+#include <tc/internal/cpp/lang/utils/images/imageio.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/utils/unique_ptr.hpp>
+#include <tc/internal/cpp/lang/io/ifstream.hpp>
+#include <tc/internal/cpp/lang/io/ofstream.hpp>
+#include <tc/internal/cpp/lang/io/iostream.hpp>
+#include <tc/internal/allocators/malloc_free_allocator.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
@@ -53,8 +53,8 @@ static void* tc_malloc(std::size_t sz);
 static void* tc_realloc(void* p, std::size_t sz);
 static void  tc_free(void* ptr);
 
-#include <cpp/lang/utils/images/stb_image.h>
-#include <cpp/lang/utils/images/stb_image_write.h>
+#include <tc/internal/cpp/lang/utils/images/stb_image.h>
+#include <tc/internal/cpp/lang/utils/images/stb_image_write.h>
 
 /**
  * Returns the singleton allocator instance used by STB libraries.

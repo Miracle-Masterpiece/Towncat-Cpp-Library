@@ -1,6 +1,6 @@
-#include <allocators/freelist_allocator.hpp>
-#include <cpp/lang/math.hpp>
-#include <internal/memory.hpp>
+#include <tc/internal/allocators/freelist_allocator.hpp>
+#include <tc/internal/cpp/lang/math.hpp>
+#include <tc/internal/memory.hpp>
 #include <cstddef>
 #include <cstdint>
 

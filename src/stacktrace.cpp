@@ -1,7 +1,7 @@
-#include <cpp/lang/stacktrace/stacktrace.hpp>
-#include <cpp/lang/io/ostream.hpp>
-#include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/system.hpp>
+#include <tc/internal/cpp/lang/stacktrace/stacktrace.hpp>
+#include <tc/internal/cpp/lang/io/ostream.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/system.hpp>
 #include <utility>
 #include <iostream>
 #include <string>

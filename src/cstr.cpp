@@ -1,5 +1,5 @@
-#include <cpp/lang/cstr.hpp>
-#include <cpp/lang/common.hpp>
+#include <tc/internal/cpp/lang/cstr.hpp>
+#include <tc/internal/cpp/lang/common.hpp>
 
 namespace tc
 {

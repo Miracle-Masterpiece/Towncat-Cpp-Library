@@ -1,10 +1,10 @@
 
-#include <cpp/lang/logging/logger.hpp>
-#include <cpp/lang/utils/date.hpp>
-#include <cpp/lang/utils/objects.hpp>
-#include <cpp/lang/io/ostream.hpp>
-#include <cpp/lang/system.hpp>
-#include <cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/logging/logger.hpp>
+#include <tc/internal/cpp/lang/utils/date.hpp>
+#include <tc/internal/cpp/lang/utils/objects.hpp>
+#include <tc/internal/cpp/lang/io/ostream.hpp>
+#include <tc/internal/cpp/lang/system.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
 #include <cstring>
 
 namespace tc

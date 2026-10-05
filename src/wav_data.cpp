@@ -1,9 +1,9 @@
-#include <cpp/lang/utils/audio/wav_data.hpp>
-#include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/io/bytebuf.hpp>
-#include <cpp/lang/utils/unique_ptr.hpp>
-#include <cpp/lang/io/ifstream.hpp>
-#include <cpp/lang/io/iostream.hpp>
+#include <tc/internal/cpp/lang/utils/audio/wav_data.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/io/bytebuf.hpp>
+#include <tc/internal/cpp/lang/utils/unique_ptr.hpp>
+#include <tc/internal/cpp/lang/io/ifstream.hpp>
+#include <tc/internal/cpp/lang/io/iostream.hpp>
 #include <iostream>
 
 

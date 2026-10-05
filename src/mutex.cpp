@@ -1,5 +1,5 @@
-#include <cpp/lang/concurrency/mutex.hpp>
-#include <cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/concurrency/mutex.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
 #include <utility>
 
 namespace tc

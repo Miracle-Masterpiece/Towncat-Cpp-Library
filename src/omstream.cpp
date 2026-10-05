@@ -1,5 +1,5 @@
-#include <cpp/lang/io/omstream.hpp>
-#include <cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/io/omstream.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
 #include <iostream>
 #include <cassert>
 

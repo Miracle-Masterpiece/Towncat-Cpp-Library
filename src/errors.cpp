@@ -1,12 +1,12 @@
-#include <cpp/lang/errors.hpp>
+#include <tc/internal/cpp/lang/errors.hpp>
+#include <tc/internal/cpp/lang/utils/cond_compile.hpp>
+#include <tc/internal/cpp/lang/string.hpp>
 #include <cstring>
-#include <cpp/lang/utils/cond_compile.hpp>
 
 #if defined(_WIN32)
 # include <windows.h>
 #endif
 
-#include <cpp/lang/string.hpp>
 #include <iostream>
 
 namespace tc

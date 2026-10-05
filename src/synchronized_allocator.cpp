@@ -1,4 +1,4 @@
-#include <allocators/synchronized_allocator.hpp>
+#include <tc/internal/allocators/synchronized_allocator.hpp>
 
 namespace tca
 {

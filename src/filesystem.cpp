@@ -1,9 +1,9 @@
-#include <allocators/inline_linear_allocator.hpp>
-#include <internal/io/io_helpers.hpp>
-#include <internal/io/filesystem.hpp>
-#include <cpp/lang/utils/coder.hpp>
-#include <cpp/lang/string.hpp>
-#include <cpp/lang/math.hpp>
+#include <tc/internal/allocators/inline_linear_allocator.hpp>
+#include <tc/internal/cpp/lang/utils/coder.hpp>
+#include <tc/internal/cpp/lang/string.hpp>
+#include <tc/internal/cpp/lang/math.hpp>
+#include <tc/internal/io/io_helpers.hpp>
+#include <tc/internal/io/filesystem.hpp>
 #include <cerrno>
 #include <cassert>
 

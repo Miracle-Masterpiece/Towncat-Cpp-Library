@@ -1,11 +1,11 @@
-#include <cpp/lang/io/ofstream.hpp>
-#include <internal/io/filesystem.hpp>
-#include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/system.hpp>
+#include <tc/internal/cpp/lang/io/ofstream.hpp>
+#include <tc/internal/io/filesystem.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/system.hpp>
 #include <errno.h>
 #include <cstring>
 #include <iostream>
-#include <internal/io/io_helpers.hpp>
+#include <tc/internal/io/io_helpers.hpp>
 
 namespace tc {
 

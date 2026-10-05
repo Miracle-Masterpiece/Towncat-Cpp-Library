@@ -1,6 +1,6 @@
-#include <cpp/lang/utils/images/image_tree.hpp>
-#include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/utils/unique_ptr.hpp>
+#include <tc/internal/cpp/lang/utils/images/image_tree.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/utils/unique_ptr.hpp>
 #include <new>
 
 namespace tc

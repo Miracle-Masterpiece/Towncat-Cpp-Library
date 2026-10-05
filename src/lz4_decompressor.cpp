@@ -1,5 +1,5 @@
-#include <cpp/lang/compress/lz4_decompressor.hpp>
-#include <cpp/lang/math.hpp>
+#include <tc/internal/cpp/lang/compress/lz4_decompressor.hpp>
+#include <tc/internal/cpp/lang/math.hpp>
 #include <cassert>
 #include <cstring>
 #include <cstdio>

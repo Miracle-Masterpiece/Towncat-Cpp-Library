@@ -1,8 +1,8 @@
-#include <cpp/lang/utils/images/image.hpp>
-#include <cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/utils/images/image.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/utils/unique_ptr.hpp>
+#include <tc/internal/img_utils.hpp>
 #include <utility>
-#include <cpp/lang/utils/unique_ptr.hpp>
-#include <internal/img_utils.hpp>
 
 namespace tc {
 

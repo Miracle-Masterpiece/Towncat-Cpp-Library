@@ -1,4 +1,4 @@
-#include <cpp/lang/compress/decompressor.hpp>
+#include <tc/internal/cpp/lang/compress/decompressor.hpp>
 
 
 namespace tc

@@ -1,8 +1,8 @@
-#include <cpp/lang/system.hpp>
-#include <cpp/lang/concurrency/mutex.hpp>
+#include <tc/internal/cpp/lang/system.hpp>
+#include <tc/internal/cpp/lang/concurrency/mutex.hpp>
+#include <tc/internal/cpp/lang/utils/cond_compile.hpp>
 #include <cstdarg>
 #include <cstdio>
-#include <cpp/lang/utils/cond_compile.hpp>
 
 #if defined(_WIN32)
     #include <windows.h>

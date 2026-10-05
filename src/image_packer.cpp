@@ -1,7 +1,7 @@
-#include <allocators/linear_allocator.hpp>
-#include <cpp/lang/utils/images/image_packer.hpp>
-#include <cpp/lang/utils/images/image_tree.hpp>
-#include <cpp/lang/utils/images/image.hpp>
+#include <tc/internal/allocators/linear_allocator.hpp>
+#include <tc/internal/cpp/lang/utils/images/image_packer.hpp>
+#include <tc/internal/cpp/lang/utils/images/image_tree.hpp>
+#include <tc/internal/cpp/lang/utils/images/image.hpp>
 #include <algorithm>
 
 namespace tc {

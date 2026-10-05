@@ -1,4 +1,4 @@
-#include <cpp/lang/io/idstream.hpp>
+#include <tc/internal/cpp/lang/io/idstream.hpp>
 #include <iostream>
 
 namespace tc {

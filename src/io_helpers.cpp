@@ -1,7 +1,7 @@
-#include <internal/io/io_helpers.hpp>
-#include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/errcode.hpp>
-#include <allocators/inline_linear_allocator.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/errcode.hpp>
+#include <tc/internal/allocators/inline_linear_allocator.hpp>
+#include <tc/internal/io/io_helpers.hpp>
 
 namespace tc
 {

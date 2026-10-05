@@ -1,6 +1,6 @@
-#include <cpp/lang/io/obstream.hpp>
-#include <cpp/lang/exceptions.hpp>
-#include <cpp/lang/errcode.hpp>
+#include <tc/internal/cpp/lang/io/obstream.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/errcode.hpp>
 #include <iostream>
 #include <cassert>
 

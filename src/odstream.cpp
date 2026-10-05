@@ -1,5 +1,5 @@
-#include <cpp/lang/io/odstream.hpp>
-#include <cpp/lang/exceptions.hpp>
+#include <tc/internal/cpp/lang/io/odstream.hpp>
+#include <tc/internal/cpp/lang/exceptions.hpp>
 
 namespace tc
 {

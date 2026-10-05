@@ -1,6 +1,6 @@
-#include <internal/bsd_socket_class.hpp>
-#include <internal/bsd_socket.hpp>
-#include <cpp/lang/utils/utils.hpp>
+#include <tc/internal/bsd_socket_class.hpp>
+#include <tc/internal/bsd_socket.hpp>
+#include <tc/internal/cpp/lang/utils/utils.hpp>
 #include <iostream>
 
 namespace tc 
