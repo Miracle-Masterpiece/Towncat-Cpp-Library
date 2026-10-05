@@ -12,19 +12,9 @@ namespace tc
 template<typename T>
 struct base_mat4;
 
-typedef base_mat4<float>  mat4;
-typedef base_mat4<double> mat4d;
-typedef base_mat4<long double> mat4ld;
-
-typedef base_mat4<short>            mat4s;
-typedef base_mat4<signed int>       mat4i;
-typedef base_mat4<signed long>      mat4l;
-typedef base_mat4<signed long long> mat4ll;
-
-typedef base_mat4<unsigned short>   mat4us;
-typedef base_mat4<unsigned int>     mat4u;
-typedef base_mat4<unsigned long>    mat4ul;
-typedef base_mat4<unsigned long>    mat4ull;
+typedef base_mat4<float>        mat4;
+typedef base_mat4<double>       mat4d;
+typedef base_mat4<long double>  mat4ld;
 
 template<typename T>
 struct base_mat4 {
@@ -49,10 +39,12 @@ struct base_mat4 {
     /**
      * 
      */
-    base_mat4(  T m00 = T(0), T m01 = T(0), T m02 = T(0), T m03 = T(0),
-                T m10 = T(0), T m11 = T(0), T m12 = T(0), T m13 = T(0),
-                T m20 = T(0), T m21 = T(0), T m22 = T(0), T m23 = T(0),
-                T m30 = T(0), T m31 = T(0), T m32 = T(0), T m33 = T(0));
+    base_mat4(  
+        T m00 = T(0), T m01 = T(0), T m02 = T(0), T m03 = T(0),
+        T m10 = T(0), T m11 = T(0), T m12 = T(0), T m13 = T(0),
+        T m20 = T(0), T m21 = T(0), T m22 = T(0), T m23 = T(0),
+        T m30 = T(0), T m31 = T(0), T m32 = T(0), T m33 = T(0)
+    );
     
     /**
      * 
