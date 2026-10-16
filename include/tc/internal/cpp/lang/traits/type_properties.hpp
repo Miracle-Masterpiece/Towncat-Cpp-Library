@@ -34,6 +34,20 @@ struct is_array<T[]> {
     static const bool value = true;
 };
 
+template<typename T, std::size_t N>
+struct is_array<T[N]> {
+    static const bool value = true;
+};
+
+template<typename T>
+struct is_array<const T[]> {
+    static const bool value = true;
+};
+
+template<typename T, std::size_t N>
+struct is_array<const T[N]> {
+    static const bool value = true;
+};
 
 } //namespace tc
 

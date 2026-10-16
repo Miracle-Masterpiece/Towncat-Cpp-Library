@@ -325,6 +325,30 @@ namespace math
     T abs(const T& x) {
         return x < 0 ? -x : x;
     }
+    
+    /**
+     * @since 1.1.0
+     */
+    template<>
+    inline float abs(const float& x) {
+        return fabsf(x);
+    }
+    
+    /**
+     * @since 1.1.0
+     */
+    template<>
+    inline double abs(const double& x) {
+        return fabs(x);
+    }
+    
+    /**
+     * @since 1.1.0
+     */
+    template<>
+    inline long double abs(const long double& x) {
+        return fabsl(x);
+    }
 
     /**
      * 

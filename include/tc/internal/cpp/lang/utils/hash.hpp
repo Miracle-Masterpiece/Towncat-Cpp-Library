@@ -5,6 +5,8 @@
 #include <tc/internal/cpp/lang/traits/pointer_traits.hpp>
 #include <tc/internal/cpp/lang/traits/cv_traits.hpp>
 #include <tc/internal/cpp/lang/numbers.hpp>
+#include <tc/internal/cpp/lang/utils/limits.hpp>
+#include <tc/internal/cpp/lang/math/math.hpp>
 #include <cstddef>
 
 namespace tc
@@ -107,6 +109,36 @@ struct equal_to {
      */
     bool operator() (const K& v1, const K& v2) const {
         return v1 == v2;
+    }
+};
+
+/**
+ * @since 1.1.0
+ */
+template<>
+struct equal_to<float> {
+    bool operator() (const float& v1, const float& v2) const {
+        return tc::math::abs(v1 - v2) < num_limits<float>::epsilon();
+    }
+};
+
+/**
+ * @since 1.1.0
+ */
+template<>
+struct equal_to<double> {
+    bool operator() (const double& v1, const double& v2) const {
+        return tc::math::abs(v1 - v2) < num_limits<double>::epsilon();
+    }
+};
+
+/**
+ * @since 1.1.0
+ */
+template<>
+struct equal_to<long double> {
+    bool operator() (const long double& v1, const long double& v2) const {
+        return tc::math::abs(v1 - v2) < num_limits<long double>::epsilon();
     }
 };
 

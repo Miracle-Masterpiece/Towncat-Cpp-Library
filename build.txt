@@ -13,7 +13,7 @@ OUTPUT = ${${OS}_EXE}
 # Compiler settings
 COMPILER = clang++
 LINKER   = clang++
-STANDARD = -std=c++11
+STANDARD = -std=c++11 -O0
 DEFINE   =
 INCLUDE  = -I"include"
 WARNING  = -Wall -pedantic -Wextra -Wsign-promo -Wfloat-equal -Wconversion -Wno-unused-parameter -Wno-unused-value -Wnon-virtual-dtor -Wno-unused-function

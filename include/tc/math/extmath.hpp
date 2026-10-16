@@ -1,4 +1,0 @@
-#ifndef B9F4F944_444D_4D31_9FD0_0553DFB5BFFE
-#define B9F4F944_444D_4D31_9FD0_0553DFB5BFFE
-#include <tc/internal/cpp/lang/math/extmath.hpp>
-#endif /* B9F4F944_444D_4D31_9FD0_0553DFB5BFFE */

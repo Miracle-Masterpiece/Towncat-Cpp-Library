@@ -3,7 +3,6 @@
 #include <tc/internal/cpp/lang/utils/unique_ptr.hpp>
 #include <tc/internal/cpp/lang/io/ifstream.hpp>
 #include <tc/internal/cpp/lang/io/ofstream.hpp>
-#include <tc/internal/cpp/lang/io/iostream.hpp>
 #include <tc/internal/allocators/malloc_free_allocator.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
