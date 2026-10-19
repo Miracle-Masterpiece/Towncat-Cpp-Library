@@ -145,7 +145,7 @@ namespace tc
     ) {
         Ttype c = math::cos(angle);
         Ttype s = math::sin(angle);
-        Ttype t = Ttype(1) / c;
+        Ttype t = Ttype(1) - c;
 
         Ttype x2 = x*x;
         Ttype y2 = y*y;
@@ -170,8 +170,55 @@ namespace tc
 }
 
 namespace tc
-{
+{    
+#ifdef TC_FORCE_DEPTH_ZERO_TO_ONE
+    inline base_mat<float, 4, 4> frustum(float left, float right, float bottom, float top, float near, float far) {
+        const float _00    = (2 * near)            /   (right - left);
+        const float _11    = (2 * near)           /   (top - bottom); 
+        const float A      = (right + left)        /   (right - left);
+        const float B      = -((top + bottom)       /   (top - bottom));
+        const float C      = -(far / (far - near));
+        const float D      = -((far * near)        /   (far - near));
 
+        return base_mat<float, 4, 4>(
+            _00, 0,     A,      0, 
+            0,  _11,    B,      0,
+            0,   0,     C,      D,
+            0,   0,    -1,      0
+        );
+    }
+
+    inline base_mat<float, 4, 4> perspective(float fov, float aspect, float near, float far) {
+        const float half_fov_tan = tan(fov / 2);
+        const float _00 = 1.0f / (aspect * half_fov_tan);
+        const float _11 = 1.0f / half_fov_tan; 
+        const float _22 = -(far / (far - near));
+        const float _23 = -((far * near) / (far - near));
+
+        return base_mat<float, 4, 4>(
+            _00,    0,    0,    0, 
+            0,     _11,   0,    0,
+            0,      0,   _22,  _23,
+            0,      0,   -1,    0
+        );
+    }
+    inline base_mat<float, 4, 4> ortho(float left, float right, float bottom, float top, float near, float far) {
+        const float _m00 = 2.0f / (right - left);
+        const float _m11 = 2.0f / (top - bottom); 
+        const float _m22 = -1.0f / (far - near);
+
+        const float tx = -((right + left) / (right - left));
+        const float ty = ((top + bottom) / (top - bottom)); 
+        const float tz = -(near / (far - near));
+
+        return base_mat<float, 4, 4>(
+            _m00,   0,      0,      tx, 
+            0,      _m11,   0,      ty,
+            0,      0,      _m22,   tz,
+            0,      0,      0,      1
+        );
+    }
+#else
     inline base_mat<float, 4, 4> ortho(float left, float right, float bottom, float top, float near, float far) {
         const float _m00 = 2.0f / (right - left);
         const float _m11 = 2.0f / (top - bottom);
@@ -187,8 +234,8 @@ namespace tc
             0,      0,      _m22,   tz,
             0,      0,      0,      1
         );
-    } 
-    
+    }     
+
     inline base_mat<float, 4, 4> frustum(float left, float right, float bottom, float top, float near, float far) {
         const float _00    = (2 * near)            /   (right -  left);
         const float _11    = (2 * near)            /   (top - bottom);
@@ -219,6 +266,7 @@ namespace tc
             0,      0,   -1,    0
         );
     } 
+#endif
 }
 
 namespace tc

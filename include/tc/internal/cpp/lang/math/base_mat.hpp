@@ -117,10 +117,17 @@ struct base_mat {
 
 private:
     static std::size_t index_at(std::size_t row, std::size_t col) {
+#if 0
         #ifndef NDEBUG
         assert((row * Tcol + col) < (Trow * Tcol));
         #endif
         return row * Tcol + col;
+#else
+        #ifndef NDEBUG
+        assert((col * Trow + row) < (Trow * Tcol));
+        #endif
+        return col * Trow + row;
+#endif
     }
     Ttype m_data[Trow * Tcol];
 };
