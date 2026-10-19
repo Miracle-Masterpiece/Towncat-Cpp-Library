@@ -44,7 +44,7 @@ namespace tc
 {
     template<typename Ttype>
     base_mat<Ttype, 3, 3> scale(
-        const base_mat<Ttype, 3, 3>& mat, Ttype x, Ttype y
+        const base_mat<Ttype, 3, 3>& mat, const Ttype& x, const Ttype& y
     ) {
         return mat * base_mat<Ttype, 3, 3>(
             x, 0, 0,
@@ -63,7 +63,7 @@ namespace tc
     
     template<typename Ttype>
     base_mat<Ttype, 3, 3> translate(
-        const base_mat<Ttype, 3, 3>& mat, Ttype x, Ttype y
+        const base_mat<Ttype, 3, 3>& mat, const Ttype& x, const Ttype& y
     ) {
         return mat * base_mat<Ttype, 3, 3>(
             1, 0, x,
@@ -99,7 +99,7 @@ namespace tc
     template<typename Ttype>
     base_mat<Ttype, 4, 4> scale(
         const base_mat<Ttype, 4, 4>& mat, 
-        Ttype x, Ttype y, Ttype z
+        const Ttype& x, const Ttype& y, const Ttype& z
     ) {
         return mat * base_mat<Ttype, 4, 4>(
             x, 0, 0, 0,
@@ -120,7 +120,7 @@ namespace tc
     template<typename Ttype>
     base_mat<Ttype, 4, 4> translate(
         const base_mat<Ttype, 4, 4>& mat, 
-        Ttype x, Ttype y, Ttype z
+        const Ttype& x, const Ttype& y, const Ttype& z
     ) {
         return mat * base_mat<Ttype, 4, 4>(
             1, 0, 0, x,
@@ -141,7 +141,7 @@ namespace tc
     template<typename Ttype>
     base_mat<Ttype, 4, 4> rotate(
         const base_mat<Ttype, 4, 4>& mat,
-        Ttype angle, Ttype x, Ttype y, Ttype z
+        const Ttype& angle, const Ttype& x, const Ttype& y, const Ttype& z
     ) {
         Ttype c = math::cos(angle);
         Ttype s = math::sin(angle);
